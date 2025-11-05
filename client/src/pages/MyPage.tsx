@@ -25,12 +25,6 @@ export default function MyPage() {
     avatar: "",
   };
 
-  const stats = [
-    { label: "작성한 의견", count: 12, icon: MessageSquare },
-    { label: "단 답글", count: 34, icon: MessageCircle },
-    { label: "받은 좋아요", count: 89, icon: Heart },
-  ];
-
   const notifications = [
     {
       id: "1",
@@ -59,11 +53,17 @@ export default function MyPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <div className="max-w-7xl mx-auto px-4 pt-6">
-        <h2 className="text-2xl font-bold mb-6">마이페이지</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">마이페이지</h2>
+          <Button variant="outline" size="sm" data-testid="button-edit-profile">
+            <User className="w-4 h-4 mr-2" />
+            프로필 수정
+          </Button>
+        </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 pb-6 space-y-6">
         <Card className="p-6">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20" data-testid="avatar-profile">
               <AvatarImage src={userProfile.avatar} />
               <AvatarFallback>{userProfile.name[0]}</AvatarFallback>
@@ -76,20 +76,6 @@ export default function MyPage() {
                 {userProfile.email}
               </p>
             </div>
-            <Button variant="outline" size="sm" data-testid="button-edit-profile">
-              <User className="w-4 h-4 mr-2" />
-              프로필 수정
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center p-4 rounded-lg bg-muted/50">
-                <stat.icon className="w-5 h-5 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold">{stat.count}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
           </div>
         </Card>
 
