@@ -79,7 +79,7 @@ export default function MyPage() {
         </Card>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">내 활동</h3>
+          <h3 className="text-lg font-semibold">활동 내역</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <Card 
@@ -183,13 +183,6 @@ export default function MyPage() {
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">계정 설정</h3>
-
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-profile-settings">
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium">프로필 수정</span>
-            </div>
-          </Card>
 
           <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-account-settings">
             <div className="flex items-center gap-3">

@@ -57,7 +57,7 @@ export default function AgendaListPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <div className="max-w-5xl mx-auto px-4 pt-6">
+      <div className="max-w-5xl mx-auto px-4 pt-6 pb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">안건 현황</h2>
           <Button
@@ -69,26 +69,26 @@ export default function AgendaListPage() {
             <Search className="w-5 h-5" />
           </Button>
         </div>
-      </div>
-      <CategoryFilter
-        categories={categories}
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
-      />
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
-        {filteredAgendas.length > 0 ? (
-          filteredAgendas.map((agenda) => (
-            <AgendaCard
-              key={agenda.id}
-              {...agenda}
-              onClick={() => setLocation(`/agenda/${agenda.id}`)}
-            />
-          ))
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-lg">안건이 없어요</p>
-          </div>
-        )}
+        <CategoryFilter
+          categories={categories}
+          selected={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
+        <div className="mt-6 space-y-4">
+          {filteredAgendas.length > 0 ? (
+            filteredAgendas.map((agenda) => (
+              <AgendaCard
+                key={agenda.id}
+                {...agenda}
+                onClick={() => setLocation(`/agenda/${agenda.id}`)}
+              />
+            ))
+          ) : (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-lg">안건이 없어요</p>
+            </div>
+          )}
+        </div>
       </div>
       <MobileNav />
     </div>

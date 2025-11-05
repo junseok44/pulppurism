@@ -42,17 +42,17 @@ export default function OpinionListPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <div className="max-w-4xl mx-auto px-4 pt-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6 pb-6">
         <h2 className="text-2xl font-bold mb-6">주민의 목소리</h2>
-      </div>
-      <div className="max-w-4xl mx-auto px-4 pb-6 space-y-4">
-        {mockOpinions.map((opinion) => (
-          <OpinionCard
-            key={opinion.id}
-            {...opinion}
-            onClick={() => setLocation(`/opinion/${opinion.id}`)}
-          />
-        ))}
+        <div className="space-y-4">
+          {mockOpinions.map((opinion) => (
+            <OpinionCard
+              key={opinion.id}
+              {...opinion}
+              onClick={() => setLocation(`/opinion/${opinion.id}`)}
+            />
+          ))}
+        </div>
       </div>
       <Button
         className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-40 flex items-center gap-2"

@@ -56,6 +56,17 @@ export default function AgendaDetailPage() {
       <Header />
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="space-y-6">
+          <div className="w-full h-64 bg-muted rounded-lg overflow-hidden" data-testid="agenda-hero-image">
+            <img 
+              src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop" 
+              alt="안건 대표 이미지"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='400'%3E%3Crect width='1200' height='400' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%239ca3af'%3E안건 이미지%3C/text%3E%3C/svg%3E";
+              }}
+            />
+          </div>
+
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
