@@ -9,8 +9,20 @@ import Timeline from "@/components/Timeline";
 import OpinionCard from "@/components/OpinionCard";
 import { Card } from "@/components/ui/card";
 import { ExternalLink, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function AgendaDetailPage() {
+  const [, setLocation] = useLocation();
+  const [comment, setComment] = useState("");
+
+  const handleCommentSubmit = () => {
+    if (comment.trim()) {
+      console.log("Comment submitted:", comment);
+      setComment("");
+    }
+  };
   // todo: remove mock functionality
   const timelineSteps = [
     { label: "의견 접수", status: "completed" as const, date: "2024.01.15" },
@@ -95,10 +107,34 @@ export default function AgendaDetailPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="opinions" className="space-y-4 mt-6">
+            <TabsContent value="opinions" className="space-y-4 mt-6 pb-32">
               {relatedOpinions.map((opinion) => (
-                <OpinionCard key={opinion.id} {...opinion} />
+                <OpinionCard
+                  key={opinion.id}
+                  {...opinion}
+                  onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                />
               ))}
+              
+              <div className="fixed bottom-20 md:bottom-0 left-0 right-0 bg-card border-t border-card-border p-4 z-30">
+                <div className="max-w-7xl mx-auto flex gap-3">
+                  <Textarea
+                    placeholder="이 안건에 대한 의견을 입력하세요..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="min-h-12 resize-none"
+                    data-testid="input-agenda-comment"
+                  />
+                  <Button
+                    onClick={handleCommentSubmit}
+                    disabled={!comment.trim()}
+                    className="self-end"
+                    data-testid="button-submit-agenda-comment"
+                  >
+                    등록
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="references" className="space-y-4 mt-6">
