@@ -37,7 +37,7 @@ export default function MyPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header title="마이페이지" />
+      <Header />
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Card className="p-6 mb-6">
           <div className="flex items-center gap-4">

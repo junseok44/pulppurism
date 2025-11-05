@@ -41,7 +41,7 @@ export default function AgendaDetailPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header title="안건 상세" />
+      <Header />
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
           <div className="flex items-start justify-between gap-4">

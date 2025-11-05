@@ -60,7 +60,7 @@ export default function OpinionDetailPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header title="의견 상세" />
+      <Header />
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="space-y-6">
           <div className="space-y-4">

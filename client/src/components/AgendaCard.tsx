@@ -32,6 +32,9 @@ export default function AgendaCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-3">
+          <h3 className="text-xl font-semibold line-clamp-1" data-testid={`text-title-${id}`}>
+            {title}
+          </h3>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${id}`}>
               {category}
@@ -40,9 +43,6 @@ export default function AgendaCard({
               {status}
             </Badge>
           </div>
-          <h3 className="text-xl font-semibold line-clamp-2" data-testid={`text-title-${id}`}>
-            {title}
-          </h3>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1" data-testid={`text-comments-${id}`}>
               <MessageSquare className="w-4 h-4" />

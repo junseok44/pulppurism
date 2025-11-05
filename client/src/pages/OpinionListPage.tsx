@@ -41,7 +41,7 @@ export default function OpinionListPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header title="주민의견" />
+      <Header />
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
         {mockOpinions.map((opinion) => (
           <OpinionCard
@@ -52,12 +52,12 @@ export default function OpinionListPage() {
         ))}
       </div>
       <Button
-        size="icon"
-        className="fixed bottom-24 right-6 md:bottom-6 w-14 h-14 rounded-full shadow-lg z-40"
+        className="fixed bottom-24 right-6 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-40 flex items-center gap-2"
         onClick={() => setLocation("/opinion/new")}
         data-testid="button-add-opinion"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-5 h-5" />
+        <span className="font-semibold">제안하기</span>
       </Button>
       <MobileNav />
     </div>

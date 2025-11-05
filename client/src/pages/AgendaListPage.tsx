@@ -54,7 +54,7 @@ export default function AgendaListPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header title="안건" />
+      <Header />
       <CategoryFilter
         categories={categories}
         selected={selectedCategory}
