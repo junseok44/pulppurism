@@ -1,13 +1,15 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MoreVertical } from "lucide-react";
+import { Heart, MoreVertical, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import CommentThread from "@/components/CommentThread";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocation } from "wouter";
 
 export default function OpinionDetailPage() {
+  const [, setLocation] = useLocation();
   const [liked, setLiked] = useState(true);
   const [likes, setLikes] = useState(12);
   const [comment, setComment] = useState("");
@@ -62,6 +64,15 @@ export default function OpinionDetailPage() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <div className="max-w-3xl mx-auto px-4 py-6">
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setLocation("/opinions")}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex gap-3">

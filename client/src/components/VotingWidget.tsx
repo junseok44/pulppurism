@@ -44,7 +44,7 @@ export default function VotingWidget({
           <div className="flex flex-col items-center gap-2 text-center">
             <ThumbsUp className={`w-8 h-8 ${selectedVote === "agree" ? "text-primary" : ""}`} />
             <span className="font-medium">찬성</span>
-            <span className="text-2xl font-bold">{Math.round(agreePercent)}%</span>
+            {selectedVote && <span className="text-2xl font-bold">{Math.round(agreePercent)}%</span>}
           </div>
         </Card>
         <Card
@@ -57,7 +57,7 @@ export default function VotingWidget({
           <div className="flex flex-col items-center gap-2 text-center">
             <MinusCircle className={`w-8 h-8 ${selectedVote === "neutral" ? "text-primary" : ""}`} />
             <span className="font-medium">중립</span>
-            <span className="text-2xl font-bold">{Math.round(neutralPercent)}%</span>
+            {selectedVote && <span className="text-2xl font-bold">{Math.round(neutralPercent)}%</span>}
           </div>
         </Card>
         <Card
@@ -70,33 +70,35 @@ export default function VotingWidget({
           <div className="flex flex-col items-center gap-2 text-center">
             <ThumbsDown className={`w-8 h-8 ${selectedVote === "disagree" ? "text-primary" : ""}`} />
             <span className="font-medium">반대</span>
-            <span className="text-2xl font-bold">{Math.round(disagreePercent)}%</span>
+            {selectedVote && <span className="text-2xl font-bold">{Math.round(disagreePercent)}%</span>}
           </div>
         </Card>
       </div>
-      <div className="space-y-2">
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>찬성</span>
-            <span className="text-muted-foreground">{agreeCount}표</span>
+      {selectedVote && (
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>찬성</span>
+              <span className="text-muted-foreground">{agreeCount}표</span>
+            </div>
+            <Progress value={agreePercent} className="h-2" />
           </div>
-          <Progress value={agreePercent} className="h-2" />
-        </div>
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>중립</span>
-            <span className="text-muted-foreground">{neutralCount}표</span>
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>중립</span>
+              <span className="text-muted-foreground">{neutralCount}표</span>
+            </div>
+            <Progress value={neutralPercent} className="h-2" />
           </div>
-          <Progress value={neutralPercent} className="h-2" />
-        </div>
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>반대</span>
-            <span className="text-muted-foreground">{disagreeCount}표</span>
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>반대</span>
+              <span className="text-muted-foreground">{disagreeCount}표</span>
+            </div>
+            <Progress value={disagreePercent} className="h-2" />
           </div>
-          <Progress value={disagreePercent} className="h-2" />
         </div>
-      </div>
+      )}
     </div>
   );
 }

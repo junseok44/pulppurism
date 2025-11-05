@@ -4,6 +4,8 @@ import MobileNav from "@/components/MobileNav";
 import CategoryFilter from "@/components/CategoryFilter";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
@@ -55,6 +57,19 @@ export default function AgendaListPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
+      <div className="max-w-7xl mx-auto px-4 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">안건 현황</h2>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setLocation("/search")}
+            data-testid="button-search-agenda"
+          >
+            <Search className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
       <CategoryFilter
         categories={categories}
         selected={selectedCategory}

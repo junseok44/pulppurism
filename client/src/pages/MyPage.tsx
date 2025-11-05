@@ -38,7 +38,10 @@ export default function MyPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 pt-6">
+        <h2 className="text-2xl font-bold mb-6">마이페이지</h2>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 pb-6">
         <Card className="p-6 mb-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20" data-testid="avatar-profile">
