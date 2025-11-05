@@ -7,6 +7,10 @@ import NotFound from "@/pages/not-found";
 import AgendaListPage from "@/pages/AgendaListPage";
 import OpinionListPage from "@/pages/OpinionListPage";
 import MyPage from "@/pages/MyPage";
+import MyOpinionsPage from "@/pages/MyOpinionsPage";
+import LikedOpinionsPage from "@/pages/LikedOpinionsPage";
+import MyAgendasPage from "@/pages/MyAgendasPage";
+import BookmarkedAgendasPage from "@/pages/BookmarkedAgendasPage";
 import AgendaDetailPage from "@/pages/AgendaDetailPage";
 import OpinionDetailPage from "@/pages/OpinionDetailPage";
 import NewOpinionPage from "@/pages/NewOpinionPage";
@@ -19,6 +23,10 @@ function Router() {
       <Route path="/" component={AgendaListPage} />
       <Route path="/opinions" component={OpinionListPage} />
       <Route path="/my" component={MyPage} />
+      <Route path="/my/opinions" component={MyOpinionsPage} />
+      <Route path="/my/liked" component={LikedOpinionsPage} />
+      <Route path="/my/agendas" component={MyAgendasPage} />
+      <Route path="/my/bookmarks" component={BookmarkedAgendasPage} />
       <Route path="/agenda/:id" component={AgendaDetailPage} />
       <Route path="/opinion/new" component={NewOpinionPage} />
       <Route path="/opinion/:id" component={OpinionDetailPage} />

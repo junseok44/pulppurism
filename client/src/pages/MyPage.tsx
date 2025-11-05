@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   MessageSquare, 
-  MessageCircle, 
   Heart, 
   FileText, 
   Bookmark, 
@@ -82,55 +81,71 @@ export default function MyPage() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">내 활동</h3>
           
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-opinions">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">내가 쓴 주민 의견</span>
+          <div className="grid grid-cols-2 gap-4">
+            <Card 
+              className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+              data-testid="card-my-opinions"
+              onClick={() => window.location.href = '/my/opinions'}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">내가 쓴 주민 의견</p>
+                  <p className="text-2xl font-bold mt-1">12</p>
+                </div>
               </div>
-              <Badge variant="secondary">12</Badge>
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-comments">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">내가 단 답글</span>
+            <Card 
+              className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+              data-testid="card-liked-opinions"
+              onClick={() => window.location.href = '/my/liked'}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">좋아요한 의견</p>
+                  <p className="text-2xl font-bold mt-1">23</p>
+                </div>
               </div>
-              <Badge variant="secondary">34</Badge>
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-liked-opinions">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Heart className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">좋아요한 의견</span>
+            <Card 
+              className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+              data-testid="card-my-agendas"
+              onClick={() => window.location.href = '/my/agendas'}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">내 의견이 포함된 안건</p>
+                  <p className="text-2xl font-bold mt-1">5</p>
+                </div>
               </div>
-              <Badge variant="secondary">23</Badge>
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-agendas">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">내 의견이 포함된 안건</span>
+            <Card 
+              className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+              data-testid="card-bookmarked-agendas"
+              onClick={() => window.location.href = '/my/bookmarks'}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Bookmark className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">즐겨찾기한 안건</p>
+                  <p className="text-2xl font-bold mt-1">8</p>
+                </div>
               </div>
-              <Badge variant="secondary">5</Badge>
-            </div>
-          </Card>
-
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-bookmarked-agendas">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bookmark className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">즐겨찾기한 안건</span>
-              </div>
-              <Badge variant="secondary">8</Badge>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
 
         <div className="space-y-4">
