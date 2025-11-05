@@ -9,6 +9,7 @@ import OpinionListPage from "@/pages/OpinionListPage";
 import MyPage from "@/pages/MyPage";
 import AgendaDetailPage from "@/pages/AgendaDetailPage";
 import OpinionDetailPage from "@/pages/OpinionDetailPage";
+import NewOpinionPage from "@/pages/NewOpinionPage";
 import SearchPage from "@/pages/SearchPage";
 import AdminDashboard from "@/pages/AdminDashboard";
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/opinions" component={OpinionListPage} />
       <Route path="/my" component={MyPage} />
       <Route path="/agenda/:id" component={AgendaDetailPage} />
+      <Route path="/opinion/new" component={NewOpinionPage} />
       <Route path="/opinion/:id" component={OpinionDetailPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/admin" component={AdminDashboard} />
