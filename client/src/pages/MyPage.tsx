@@ -51,7 +51,7 @@ export default function MyPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 pt-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">마이페이지</h2>
           <Button variant="outline" size="sm" data-testid="button-edit-profile">
@@ -60,7 +60,7 @@ export default function MyPage() {
           </Button>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 pb-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 pb-6 space-y-6">
         <Card className="p-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20" data-testid="avatar-profile">

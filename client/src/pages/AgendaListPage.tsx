@@ -57,7 +57,7 @@ export default function AgendaListPage() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 pt-6">
+      <div className="max-w-5xl mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">안건 현황</h2>
           <Button
@@ -75,7 +75,7 @@ export default function AgendaListPage() {
         selected={selectedCategory}
         onSelect={setSelectedCategory}
       />
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
         {filteredAgendas.length > 0 ? (
           filteredAgendas.map((agenda) => (
             <AgendaCard
