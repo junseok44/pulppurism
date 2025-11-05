@@ -1,37 +1,57 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Heart, FileText, Bookmark, Bell, Settings, LogOut } from "lucide-react";
-import OpinionCard from "@/components/OpinionCard";
-import AgendaCard from "@/components/AgendaCard";
+import { Badge } from "@/components/ui/badge";
+import { 
+  MessageSquare, 
+  MessageCircle, 
+  Heart, 
+  FileText, 
+  Bookmark, 
+  Bell,
+  User,
+  Settings,
+  LogOut
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function MyPage() {
   // todo: remove mock functionality
-  const myOpinions = [
-    {
-      id: "1",
-      authorName: "김철수",
-      content: "A초등학교 앞 도로가 너무 위험합니다. 과속방지턱 설치가 시급합니다.",
-      likeCount: 12,
-      commentCount: 5,
-      isLiked: true,
-      timestamp: "2시간 전",
-      isAuthor: true,
-    },
+  const userProfile = {
+    name: "김철수",
+    email: "kimcs@example.com",
+    avatar: "",
+  };
+
+  const stats = [
+    { label: "작성한 의견", count: 12, icon: MessageSquare },
+    { label: "단 답글", count: 34, icon: MessageCircle },
+    { label: "받은 좋아요", count: 89, icon: Heart },
   ];
 
-  const bookmarkedAgendas = [
+  const notifications = [
     {
       id: "1",
-      title: "A초등학교 앞 과속방지턱 설치 요청",
-      category: "교통",
-      status: "주민 투표",
-      commentCount: 45,
-      bookmarkCount: 23,
-      isBookmarked: true,
+      type: "reply",
+      message: "내 의견에 새로운 답글이 달렸습니다",
+      time: "2시간 전",
+      isRead: false,
+    },
+    {
+      id: "2",
+      type: "agenda",
+      message: "내 의견이 '학교 앞 교통안전' 안건에 포함되었습니다",
+      time: "1일 전",
+      isRead: false,
+    },
+    {
+      id: "3",
+      type: "update",
+      message: "즐겨찾기한 '공원 소음 문제' 안건이 '검토 중'으로 변경되었습니다",
+      time: "2일 전",
+      isRead: true,
     },
   ];
 
@@ -41,108 +61,156 @@ export default function MyPage() {
       <div className="max-w-7xl mx-auto px-4 pt-6">
         <h2 className="text-2xl font-bold mb-6">마이페이지</h2>
       </div>
-      <div className="max-w-7xl mx-auto px-4 pb-6">
-        <Card className="p-6 mb-6">
-          <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto px-4 pb-6 space-y-6">
+        <Card className="p-6">
+          <div className="flex items-center gap-4 mb-6">
             <Avatar className="w-20 h-20" data-testid="avatar-profile">
-              <AvatarImage src="" />
-              <AvatarFallback>김</AvatarFallback>
+              <AvatarImage src={userProfile.avatar} />
+              <AvatarFallback>{userProfile.name[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold" data-testid="text-username">김철수</h2>
-              <p className="text-sm text-muted-foreground">user@example.com</p>
+              <h3 className="text-xl font-bold" data-testid="text-username">
+                {userProfile.name}
+              </h3>
+              <p className="text-sm text-muted-foreground" data-testid="text-email">
+                {userProfile.email}
+              </p>
             </div>
-            <Button variant="outline" data-testid="button-edit-profile">
+            <Button variant="outline" size="sm" data-testid="button-edit-profile">
+              <User className="w-4 h-4 mr-2" />
               프로필 수정
             </Button>
           </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center p-4 rounded-lg bg-muted/50">
+                <stat.icon className="w-5 h-5 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold">{stat.count}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="flex flex-col items-center gap-2">
-              <MessageSquare className="w-8 h-8 text-muted-foreground" />
-              <p className="text-2xl font-bold">8</p>
-              <p className="text-sm text-muted-foreground">내 의견</p>
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">내 활동</h3>
+          
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-opinions">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">내가 쓴 주민 의견</span>
+              </div>
+              <Badge variant="secondary">12</Badge>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex flex-col items-center gap-2">
-              <Heart className="w-8 h-8 text-muted-foreground" />
-              <p className="text-2xl font-bold">23</p>
-              <p className="text-sm text-muted-foreground">좋아요</p>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-comments">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">내가 단 답글</span>
+              </div>
+              <Badge variant="secondary">34</Badge>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex flex-col items-center gap-2">
-              <FileText className="w-8 h-8 text-muted-foreground" />
-              <p className="text-2xl font-bold">3</p>
-              <p className="text-sm text-muted-foreground">포함된 안건</p>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-liked-opinions">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Heart className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">좋아요한 의견</span>
+              </div>
+              <Badge variant="secondary">23</Badge>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex flex-col items-center gap-2">
-              <Bookmark className="w-8 h-8 text-muted-foreground" />
-              <p className="text-2xl font-bold">5</p>
-              <p className="text-sm text-muted-foreground">즐겨찾기</p>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-my-agendas">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">내 의견이 포함된 안건</span>
+              </div>
+              <Badge variant="secondary">5</Badge>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-bookmarked-agendas">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bookmark className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">즐겨찾기한 안건</span>
+              </div>
+              <Badge variant="secondary">8</Badge>
             </div>
           </Card>
         </div>
 
-        <Tabs defaultValue="opinions" className="w-full">
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="opinions" data-testid="tab-my-opinions">내 의견</TabsTrigger>
-            <TabsTrigger value="bookmarks" data-testid="tab-bookmarks">즐겨찾기</TabsTrigger>
-            <TabsTrigger value="notifications" data-testid="tab-notifications">알림</TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">설정</TabsTrigger>
-          </TabsList>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">알림 내역</h3>
+            <Button variant="ghost" size="sm" data-testid="button-view-all-notifications">
+              전체보기
+            </Button>
+          </div>
 
-          <TabsContent value="opinions" className="space-y-4 mt-6">
-            {myOpinions.map((opinion) => (
-              <OpinionCard key={opinion.id} {...opinion} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="bookmarks" className="space-y-4 mt-6">
-            {bookmarkedAgendas.map((agenda) => (
-              <AgendaCard key={agenda.id} {...agenda} />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-4 mt-6">
-            <Card className="p-4">
-              <div className="flex gap-3">
-                <Bell className="w-5 h-5 text-primary" />
-                <div className="flex-1">
-                  <p className="font-medium">새로운 답글</p>
-                  <p className="text-sm text-muted-foreground">
-                    회원님의 의견에 새로운 답글이 달렸습니다.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">2시간 전</p>
+          <div className="space-y-2">
+            {notifications.map((notification) => (
+              <Card
+                key={notification.id}
+                className={`p-4 hover-elevate active-elevate-2 cursor-pointer ${
+                  !notification.isRead ? "border-l-4 border-l-primary" : ""
+                }`}
+                data-testid={`card-notification-${notification.id}`}
+              >
+                <div className="flex items-start gap-3">
+                  <Bell className={`w-5 h-5 mt-0.5 ${!notification.isRead ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="flex-1">
+                    <p className={notification.isRead ? "text-muted-foreground" : ""}>
+                      {notification.message}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{notification.time}</p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          </TabsContent>
+              </Card>
+            ))}
+          </div>
+        </div>
 
-          <TabsContent value="settings" className="space-y-4 mt-6">
-            <Card className="p-4">
-              <div className="space-y-4">
-                <Button variant="ghost" className="w-full justify-start" data-testid="button-alarm-settings">
-                  <Bell className="w-5 h-5 mr-3" />
-                  알림 설정
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" data-testid="button-account-settings">
-                  <Settings className="w-5 h-5 mr-3" />
-                  계정 설정
-                </Button>
-                <Button variant="ghost" className="w-full justify-start text-destructive" data-testid="button-logout">
-                  <LogOut className="w-5 h-5 mr-3" />
-                  로그아웃
-                </Button>
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Separator />
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">계정 설정</h3>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-profile-settings">
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium">프로필 수정</span>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-account-settings">
+            <div className="flex items-center gap-3">
+              <Settings className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium">계정 정보</span>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-notification-settings">
+            <div className="flex items-center gap-3">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium">알림 설정</span>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-logout">
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium">로그아웃</span>
+            </div>
+          </Card>
+        </div>
       </div>
       <MobileNav />
     </div>

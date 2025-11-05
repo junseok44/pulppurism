@@ -76,13 +76,19 @@ export default function AgendaListPage() {
         onSelect={setSelectedCategory}
       />
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-        {filteredAgendas.map((agenda) => (
-          <AgendaCard
-            key={agenda.id}
-            {...agenda}
-            onClick={() => setLocation(`/agenda/${agenda.id}`)}
-          />
-        ))}
+        {filteredAgendas.length > 0 ? (
+          filteredAgendas.map((agenda) => (
+            <AgendaCard
+              key={agenda.id}
+              {...agenda}
+              onClick={() => setLocation(`/agenda/${agenda.id}`)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground text-lg">안건이 없어요</p>
+          </div>
+        )}
       </div>
       <MobileNav />
     </div>

@@ -67,7 +67,7 @@ export default function OpinionDetailPage() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => setLocation("/opinions")}
+          onClick={() => window.history.back()}
           data-testid="button-back"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
