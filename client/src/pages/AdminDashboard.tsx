@@ -13,8 +13,12 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
+import ClusterWorkbench from "@/components/admin/ClusterWorkbench";
+import ReportManagement from "@/components/admin/ReportManagement";
+import AllOpinionsManagement from "@/components/admin/AllOpinionsManagement";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -285,6 +289,59 @@ export default function AdminDashboard() {
 }
 
 function OpinionManagement() {
+  const [subView, setSubView] = useState<string | null>(null);
+
+  if (subView === "clusters") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-opinions"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <ClusterWorkbench />
+      </div>
+    );
+  }
+
+  if (subView === "reports") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-opinions"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <ReportManagement />
+      </div>
+    );
+  }
+
+  if (subView === "all") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-opinions"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <AllOpinionsManagement />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -295,7 +352,11 @@ function OpinionManagement() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-clusters">
+        <Card
+          className="p-6 hover-elevate active-elevate-2 cursor-pointer"
+          onClick={() => setSubView("clusters")}
+          data-testid="card-clusters"
+        >
           <h3 className="font-semibold text-lg mb-2">의견 클러스터 워크벤치</h3>
           <p className="text-sm text-muted-foreground mb-4">
             AI가 제안한 클러스터를 관리하고 안건을 생성합니다
@@ -303,7 +364,11 @@ function OpinionManagement() {
           <Badge variant="secondary">12개 클러스터</Badge>
         </Card>
 
-        <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-reports">
+        <Card
+          className="p-6 hover-elevate active-elevate-2 cursor-pointer"
+          onClick={() => setSubView("reports")}
+          data-testid="card-reports"
+        >
           <h3 className="font-semibold text-lg mb-2">신고 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
             신고된 의견과 답글을 검토하고 조치합니다
@@ -311,7 +376,11 @@ function OpinionManagement() {
           <Badge variant="destructive">5건 대기 중</Badge>
         </Card>
 
-        <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-all-opinions">
+        <Card
+          className="p-6 hover-elevate active-elevate-2 cursor-pointer"
+          onClick={() => setSubView("all")}
+          data-testid="card-all-opinions"
+        >
           <h3 className="font-semibold text-lg mb-2">전체 의견 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
             모든 의견을 검색하고 관리합니다
