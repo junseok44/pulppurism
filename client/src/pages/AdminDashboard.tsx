@@ -347,7 +347,7 @@ function OpinionManagement() {
       <div>
         <h2 className="text-2xl font-bold mb-2">주민 의견 관리</h2>
         <p className="text-muted-foreground">
-          의견 클러스터링, 신고 관리, 전체 의견을 관리합니다
+          클러스터링, 신고 처리, 의견 관리 기능을 제공합니다
         </p>
       </div>
 
@@ -357,11 +357,14 @@ function OpinionManagement() {
           onClick={() => setSubView("clusters")}
           data-testid="card-clusters"
         >
-          <h3 className="font-semibold text-lg mb-2">의견 클러스터 워크벤치</h3>
+          <h3 className="font-semibold text-lg mb-2">클러스터 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            AI가 제안한 클러스터를 관리하고 안건을 생성합니다
+            의견 클러스터를 관리하고 안건을 생성합니다
           </p>
-          <Badge variant="secondary">12개 클러스터</Badge>
+          <div className="flex gap-2">
+            <Badge variant="secondary">12개 클러스터</Badge>
+            <Badge variant="outline">5개 미분류</Badge>
+          </div>
         </Card>
 
         <Card
