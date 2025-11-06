@@ -19,6 +19,9 @@ import { useState } from "react";
 import ClusterWorkbench from "@/components/admin/ClusterWorkbench";
 import ReportManagement from "@/components/admin/ReportManagement";
 import AllOpinionsManagement from "@/components/admin/AllOpinionsManagement";
+import AllAgendasManagement from "@/components/admin/AllAgendasManagement";
+import CategoryManagement from "@/components/admin/CategoryManagement";
+import NewAgendaForm from "@/components/admin/NewAgendaForm";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -396,6 +399,59 @@ function OpinionManagement() {
 }
 
 function AgendaManagement() {
+  const [subView, setSubView] = useState<string | null>(null);
+
+  if (subView === "all") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-agendas"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <AllAgendasManagement />
+      </div>
+    );
+  }
+
+  if (subView === "categories") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-agendas"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <CategoryManagement />
+      </div>
+    );
+  }
+
+  if (subView === "new") {
+    return (
+      <div>
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => setSubView(null)}
+          data-testid="button-back-agendas"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          뒤로가기
+        </Button>
+        <NewAgendaForm />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -405,14 +461,21 @@ function AgendaManagement() {
             안건 생성, 수정, 카테고리 관리를 합니다
           </p>
         </div>
-        <Button data-testid="button-create-agenda">
+        <Button
+          onClick={() => setSubView("new")}
+          data-testid="button-create-agenda"
+        >
           <FileText className="w-4 h-4 mr-2" />
           새 안건 생성
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-all-agendas">
+        <Card
+          className="p-6 hover-elevate active-elevate-2 cursor-pointer"
+          onClick={() => setSubView("all")}
+          data-testid="card-all-agendas"
+        >
           <h3 className="font-semibold text-lg mb-2">전체 안건 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
             모든 안건을 조회하고 수정, 삭제할 수 있습니다
@@ -423,7 +486,11 @@ function AgendaManagement() {
           </div>
         </Card>
 
-        <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-categories">
+        <Card
+          className="p-6 hover-elevate active-elevate-2 cursor-pointer"
+          onClick={() => setSubView("categories")}
+          data-testid="card-categories"
+        >
           <h3 className="font-semibold text-lg mb-2">카테고리 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
             안건 카테고리를 생성, 수정, 삭제합니다
