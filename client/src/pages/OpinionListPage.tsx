@@ -40,14 +40,14 @@ export default function OpinionListPage() {
   ];
 
   return (
-    <div className="h-screen flex flex-col pb-20 md:pb-0">
+    <div className="h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
         <div className="max-w-4xl mx-auto w-full px-4 pt-6 pb-4">
           <h2 className="text-2xl font-bold">주민의 목소리</h2>
         </div>
         <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="max-w-4xl mx-auto w-full px-4 pb-24 md:pb-6 space-y-4">
+          <div className="max-w-4xl mx-auto w-full px-4 pb-32 md:pb-20 space-y-4">
             {mockOpinions.map((opinion) => (
               <OpinionCard
                 key={opinion.id}
@@ -59,7 +59,7 @@ export default function OpinionListPage() {
         </div>
       </div>
       <Button
-        className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36"
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36"
         onClick={() => setLocation("/opinion/new")}
         data-testid="button-add-opinion"
       >
