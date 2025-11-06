@@ -116,7 +116,6 @@ export default function AdminDashboard() {
       category: "교통",
       similarityScore: 0.92,
       recentActivity: "3시간 전",
-      status: "안건 생성 가능",
       trending: true,
     },
     {
@@ -126,7 +125,6 @@ export default function AdminDashboard() {
       category: "문화",
       similarityScore: 0.88,
       recentActivity: "5시간 전",
-      status: "의견 수집 중",
       trending: false,
     },
     {
@@ -136,7 +134,6 @@ export default function AdminDashboard() {
       category: "교통",
       similarityScore: 0.85,
       recentActivity: "1일 전",
-      status: "안건 생성 가능",
       trending: false,
     },
   ];
@@ -272,19 +269,22 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>{cluster.recentActivity}</span>
-                          <Badge
-                            variant={
-                              cluster.status === "안건 생성 가능"
-                                ? "default"
-                                : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {cluster.status}
-                          </Badge>
                         </div>
                       </div>
-                      {cluster.status === "안건 생성 가능" && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpinionSubView("clusters");
+                            setActiveTab("opinions");
+                          }}
+                          data-testid={`button-view-cluster-${cluster.id}`}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          의견 보기
+                        </Button>
                         <Button
                           size="sm"
                           onClick={(e) => {
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
                           <FileText className="w-4 h-4 mr-2" />
                           안건 생성
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </Card>
                 ))}
