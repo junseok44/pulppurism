@@ -7,6 +7,20 @@ interface CategoryFilterProps {
   onSelect: (category: string) => void;
 }
 
+const categoryEmojis: Record<string, string> = {
+  "돌봄": "👶",
+  "의료": "🏥",
+  "환경": "🌱",
+  "교육": "📚",
+  "생활": "🏠",
+  "교통": "🚗",
+  "경제": "💰",
+  "문화": "🎨",
+  "정치": "🏛️",
+  "행정": "📋",
+  "복지": "🤝",
+};
+
 export default function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
   return (
     <ScrollArea className="w-full" data-testid="filter-categories">
@@ -17,7 +31,7 @@ export default function CategoryFilter({ categories, selected, onSelect }: Categ
           onClick={() => onSelect("")}
           data-testid="button-category-all"
         >
-          전체
+          🏘️ 전체
         </Button>
         {categories.map((category) => (
           <Button
@@ -27,7 +41,7 @@ export default function CategoryFilter({ categories, selected, onSelect }: Categ
             onClick={() => onSelect(category)}
             data-testid={`button-category-${category}`}
           >
-            {category}
+            {categoryEmojis[category]} {category}
           </Button>
         ))}
       </div>
