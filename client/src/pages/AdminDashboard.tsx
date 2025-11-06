@@ -17,7 +17,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ClusterWorkbench from "@/components/admin/ClusterWorkbench";
 import ReportManagement from "@/components/admin/ReportManagement";
 import AllOpinionsManagement from "@/components/admin/AllOpinionsManagement";
@@ -27,6 +27,7 @@ import NewAgendaForm from "@/components/admin/NewAgendaForm";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [opinionSubView, setOpinionSubView] = useState<string | null>(null);
 
   // todo: remove mock functionality
   const stats = {
@@ -224,6 +225,87 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  주목할 만한 클러스터
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setOpinionSubView("clusters");
+                    setActiveTab("opinions");
+                  }}
+                  data-testid="button-view-all-clusters"
+                >
+                  전체 보기
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {noteworthyClusters.map((cluster) => (
+                  <Card
+                    key={cluster.id}
+                    className="p-4 hover-elevate active-elevate-2"
+                    data-testid={`cluster-card-${cluster.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold">{cluster.name}</h3>
+                          {cluster.trending && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <TrendingUp className="w-3 h-3" />
+                              화제
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mb-2 text-sm">
+                          <Badge variant="outline">{cluster.category}</Badge>
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <MessageSquare className="w-4 h-4" />
+                            {cluster.opinionCount}개 의견
+                          </span>
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Sparkles className="w-3 h-3" />
+                            유사도 {(cluster.similarityScore * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>{cluster.recentActivity}</span>
+                          <Badge
+                            variant={
+                              cluster.status === "안건 생성 가능"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {cluster.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {cluster.status === "안건 생성 가능" && (
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Create agenda from cluster", cluster.id);
+                          }}
+                          data-testid={`button-create-agenda-${cluster.id}`}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          안건 생성
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-destructive" />
                   긴급 처리 필요
                 </h2>
@@ -281,71 +363,6 @@ export default function AdminDashboard() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  주목할 만한 클러스터
-                </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveTab("opinions")}
-                  data-testid="button-view-all-clusters"
-                >
-                  전체 보기
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {noteworthyClusters.map((cluster) => (
-                  <Card
-                    key={cluster.id}
-                    className="p-4 hover-elevate active-elevate-2 cursor-pointer"
-                    data-testid={`cluster-card-${cluster.id}`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold">{cluster.name}</h3>
-                          {cluster.trending && (
-                            <Badge variant="secondary" className="gap-1 text-xs">
-                              <TrendingUp className="w-3 h-3" />
-                              화제
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mb-2 text-sm">
-                          <Badge variant="outline">{cluster.category}</Badge>
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <MessageSquare className="w-4 h-4" />
-                            {cluster.opinionCount}개 의견
-                          </span>
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Sparkles className="w-3 h-3" />
-                            유사도 {(cluster.similarityScore * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>{cluster.recentActivity}</span>
-                          <Badge
-                            variant={
-                              cluster.status === "안건 생성 가능"
-                                ? "default"
-                                : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {cluster.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <h2 className="text-xl font-semibold mb-4">최근 활동</h2>
               <div className="space-y-2">
                 {recentActivities.map((activity) => (
@@ -375,7 +392,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="opinions">
-            <OpinionManagement />
+            <OpinionManagement
+              initialSubView={opinionSubView}
+              onSubViewChange={setOpinionSubView}
+            />
           </TabsContent>
 
           <TabsContent value="agendas">
@@ -391,8 +411,25 @@ export default function AdminDashboard() {
   );
 }
 
-function OpinionManagement() {
-  const [subView, setSubView] = useState<string | null>(null);
+function OpinionManagement({
+  initialSubView,
+  onSubViewChange,
+}: {
+  initialSubView?: string | null;
+  onSubViewChange?: (view: string | null) => void;
+}) {
+  const [subView, setSubView] = useState<string | null>(initialSubView || null);
+
+  useEffect(() => {
+    if (initialSubView !== undefined) {
+      setSubView(initialSubView);
+    }
+  }, [initialSubView]);
+
+  const handleSubViewChange = (view: string | null) => {
+    setSubView(view);
+    onSubViewChange?.(view);
+  };
 
   if (subView === "clusters") {
     return (
@@ -400,7 +437,7 @@ function OpinionManagement() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => setSubView(null)}
+          onClick={() => handleSubViewChange(null)}
           data-testid="button-back-opinions"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -417,7 +454,7 @@ function OpinionManagement() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => setSubView(null)}
+          onClick={() => handleSubViewChange(null)}
           data-testid="button-back-opinions"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -434,7 +471,7 @@ function OpinionManagement() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => setSubView(null)}
+          onClick={() => handleSubViewChange(null)}
           data-testid="button-back-opinions"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -457,7 +494,7 @@ function OpinionManagement() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className="p-6 hover-elevate active-elevate-2 cursor-pointer"
-          onClick={() => setSubView("clusters")}
+          onClick={() => handleSubViewChange("clusters")}
           data-testid="card-clusters"
         >
           <h3 className="font-semibold text-lg mb-2">클러스터 관리</h3>
@@ -472,7 +509,7 @@ function OpinionManagement() {
 
         <Card
           className="p-6 hover-elevate active-elevate-2 cursor-pointer"
-          onClick={() => setSubView("reports")}
+          onClick={() => handleSubViewChange("reports")}
           data-testid="card-reports"
         >
           <h3 className="font-semibold text-lg mb-2">신고 관리</h3>
@@ -484,7 +521,7 @@ function OpinionManagement() {
 
         <Card
           className="p-6 hover-elevate active-elevate-2 cursor-pointer"
-          onClick={() => setSubView("all")}
+          onClick={() => handleSubViewChange("all")}
           data-testid="card-all-opinions"
         >
           <h3 className="font-semibold text-lg mb-2">전체 의견 관리</h3>
