@@ -59,7 +59,7 @@ export default function OpinionListPage() {
         </div>
       </div>
       <Button
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36"
+        className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36"
         onClick={() => setLocation("/opinion/new")}
         data-testid="button-add-opinion"
       >
