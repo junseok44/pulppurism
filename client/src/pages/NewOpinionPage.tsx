@@ -3,25 +3,19 @@ import MobileNav from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageSquare, Mic } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Category, InsertOpinion } from "@shared/schema";
+import type { InsertOpinion } from "@shared/schema";
 
 export default function NewOpinionPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [content, setContent] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("");
   const [isRecording, setIsRecording] = useState(false);
-
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
 
   const createOpinionMutation = useMutation({
     mutationFn: async (data: InsertOpinion) => {
@@ -55,18 +49,8 @@ export default function NewOpinionPage() {
       return;
     }
 
-    if (!categoryId) {
-      toast({
-        variant: "destructive",
-        title: "카테고리를 선택해주세요",
-        description: "의견 카테고리는 필수 항목입니다.",
-      });
-      return;
-    }
-
     createOpinionMutation.mutate({
       content: content.trim(),
-      categoryId,
       userId: "temp-user-id",
       type: "text",
     });
@@ -145,24 +129,6 @@ export default function NewOpinionPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                카테고리
-              </label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="카테고리를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
                 의견 내용
               </label>
               <Textarea
@@ -203,7 +169,7 @@ export default function NewOpinionPage() {
               <Button
                 className="flex-1"
                 onClick={handleTextSubmit}
-                disabled={!content.trim() || !categoryId || isRecording || createOpinionMutation.isPending}
+                disabled={!content.trim() || isRecording || createOpinionMutation.isPending}
                 data-testid="button-submit"
               >
                 {createOpinionMutation.isPending ? "제출 중..." : "게시하기"}
