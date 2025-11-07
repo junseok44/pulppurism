@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 **Database ORM**: Drizzle ORM configured for PostgreSQL with Neon serverless adapter for connection pooling.
 
-**API Pattern**: RESTful API structure with routes prefixed under `/api`. The storage interface pattern separates data access logic, currently using an in-memory implementation (MemStorage) that can be swapped for database-backed storage.
+**API Pattern**: RESTful API structure with routes prefixed under `/api`. The storage interface pattern separates data access logic, using database-backed storage (DatabaseStorage) with PostgreSQL via Drizzle ORM.
 
 **Development Setup**: Vite middleware integration for HMR in development, with separate build process for production using esbuild to bundle the server.
 
@@ -40,7 +40,19 @@ Preferred communication style: Simple, everyday language.
 
 **ORM**: Drizzle ORM with PostgreSQL dialect, schema defined in `shared/schema.ts`.
 
-**Current Schema**: Minimal user table with UUID primary keys, username/password fields. Schema uses Drizzle's type inference for compile-time safety and zod integration for validation.
+**Current Schema**: Comprehensive schema for civic engagement platform including:
+- Users: Authentication and user management (temporary user seeded: "temp-user-id")
+- Categories: 11 predefined categories (교육, 교통, 환경, 안전, 복지, 문화, 경제, 보건, 주거, 행정, 기타)
+- Opinions: Citizen submissions with text/voice support, status workflow (pending/approved/rejected), and like counts
+- Agendas: Discussion topics with voting periods, view counts, and status management
+- Votes: One vote per user per agenda with support for agree/disagree/neutral positions
+- Clusters: AI-generated opinion groupings with similarity scores
+- OpinionClusters: Many-to-many relationship between opinions and clusters
+- Reports: Content moderation system for flagging inappropriate content
+- OpinionLikes: User likes on opinions with duplicate prevention
+- AgendaBookmarks: User bookmarks on agendas with duplicate prevention
+
+Schema uses Drizzle's type inference for compile-time safety, Zod integration for validation, and composite unique constraints to prevent duplicate votes/likes/bookmarks.
 
 **Migration Strategy**: Drizzle Kit configured for schema migrations with output to `./migrations` directory.
 
@@ -91,3 +103,11 @@ Preferred communication style: Simple, everyday language.
 **clsx + tailwind-merge**: Utility for conditional className composition with Tailwind class conflict resolution.
 
 **class-variance-authority**: Type-safe variant API for component styling.
+
+## AI Integration
+
+**OpenAI**: AI-powered opinion clustering using:
+- text-embedding-3-small for semantic similarity analysis
+- gpt-4o-mini for cluster title and summary generation
+- Cosine similarity matching for grouping related opinions
+- Automatic cluster generation via API endpoint (/api/clusters/generate)

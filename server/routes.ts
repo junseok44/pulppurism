@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema } from "@shared/schema";
 import { z } from "zod";
+import { clusterOpinions } from "./clustering";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/categories", async (req, res) => {
@@ -283,6 +284,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clusters/:id/opinions", async (req, res) => {
     const opinionClusters = await storage.getOpinionClustersByCluster(req.params.id);
     res.json(opinionClusters);
+  });
+
+  app.post("/api/clusters/generate", async (req, res) => {
+    try {
+      const schema = z.object({
+        categoryId: z.string().optional(),
+      });
+      
+      const { categoryId } = schema.parse(req.body);
+      const result = await clusterOpinions(categoryId);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Clustering error:", error);
+      res.status(500).json({ error: "Failed to generate clusters" });
+    }
   });
 
   app.post("/api/reports", async (req, res) => {
