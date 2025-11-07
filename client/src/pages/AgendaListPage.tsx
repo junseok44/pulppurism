@@ -1,58 +1,55 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CategoryFilter from "@/components/CategoryFilter";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+import type { Agenda, Category } from "@shared/schema";
+
+interface AgendaWithCategory extends Agenda {
+  category?: Category;
+  bookmarkCount?: number;
+  isBookmarked?: boolean;
+}
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
 
-  const categories = ["돌봄", "의료", "환경", "교육", "생활", "교통", "경제", "문화", "정치", "행정", "복지"];
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
 
-  // todo: remove mock functionality
-  const mockAgendas = [
-    {
-      id: "1",
-      title: "A초등학교 앞 과속방지턱 설치 요청",
-      category: "교통",
-      status: "주민 투표",
-      commentCount: 45,
-      bookmarkCount: 23,
-      isBookmarked: true,
-    },
-    {
-      id: "2",
-      title: "공원 내 야간 소음 문제 해결 방안",
-      category: "환경",
-      status: "검토 중",
-      commentCount: 89,
-      bookmarkCount: 56,
-    },
-    {
-      id: "3",
-      title: "지역 도서관 운영 시간 연장 건의",
-      category: "문화",
-      status: "답변 완료",
-      commentCount: 34,
-      bookmarkCount: 12,
-    },
-    {
-      id: "4",
-      title: "노후 놀이터 시설 개선 요청",
-      category: "생활",
-      status: "의견 접수",
-      commentCount: 67,
-      bookmarkCount: 45,
-    },
-  ];
+  const selectedCategory = categories?.find(c => c.name === selectedCategoryName);
+  const selectedCategoryId = selectedCategory?.id;
 
-  const filteredAgendas = selectedCategory
-    ? mockAgendas.filter((a) => a.category === selectedCategory)
-    : mockAgendas;
+  const agendasQueryKey = selectedCategoryId 
+    ? `/api/agendas?categoryId=${selectedCategoryId}`
+    : "/api/agendas";
+
+  const { data: agendas, isLoading: agendasLoading, error: agendasError } = useQuery<AgendaWithCategory[]>({
+    queryKey: [agendasQueryKey],
+    enabled: !categoriesLoading,
+  });
+
+  const filteredAgendas = agendas || [];
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "draft": return "초안";
+      case "active": return "활성";
+      case "voting": return "투표 중";
+      case "closed": return "종료";
+      case "implemented": return "시행됨";
+      default: return status;
+    }
+  };
+
+  const isLoading = categoriesLoading || agendasLoading;
+  const hasError = categoriesError || agendasError;
 
   return (
     <div className="h-screen flex flex-col pb-20 md:pb-0">
@@ -60,7 +57,7 @@ export default function AgendaListPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="max-w-5xl mx-auto w-full px-4 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">안건 현황</h2>
+            <h2 className="text-2xl font-bold" data-testid="heading-agendas">안건 현황</h2>
             <Button
               size="icon"
               variant="ghost"
@@ -70,25 +67,45 @@ export default function AgendaListPage() {
               <Search className="w-5 h-5" />
             </Button>
           </div>
-          <CategoryFilter
-            categories={categories}
-            selected={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
+          {categoriesError ? (
+            <div className="p-4 bg-destructive/10 text-destructive rounded-md" data-testid="error-categories">
+              카테고리를 불러오는 데 실패했습니다.
+            </div>
+          ) : !categoriesLoading && categories && (
+            <CategoryFilter
+              categories={categories.map(c => c.name)}
+              selected={selectedCategoryName}
+              onSelect={setSelectedCategoryName}
+            />
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto w-full px-4 py-6 space-y-4">
-            {filteredAgendas.length > 0 ? (
+            {hasError && agendasError ? (
+              <div className="p-4 bg-destructive/10 text-destructive rounded-md text-center" data-testid="error-agendas">
+                안건 목록을 불러오는 데 실패했습니다.
+              </div>
+            ) : isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filteredAgendas.length > 0 ? (
               filteredAgendas.map((agenda) => (
                 <AgendaCard
                   key={agenda.id}
-                  {...agenda}
+                  id={agenda.id}
+                  title={agenda.title}
+                  category={agenda.category?.name || ""}
+                  status={getStatusLabel(agenda.status)}
+                  commentCount={agenda.voteCount}
+                  bookmarkCount={agenda.bookmarkCount || 0}
+                  isBookmarked={agenda.isBookmarked || false}
                   onClick={() => setLocation(`/agenda/${agenda.id}`)}
                 />
               ))
             ) : (
               <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">안건이 없어요</p>
+                <p className="text-muted-foreground text-lg" data-testid="text-no-agendas">안건이 없어요</p>
               </div>
             )}
           </div>

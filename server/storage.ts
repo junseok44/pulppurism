@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
   users,
   categories,

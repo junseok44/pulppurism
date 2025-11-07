@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema } from "@shared/schema";
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
+import { db } from "./db";
+import { agendas, categories } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/categories", async (req, res) => {
@@ -101,14 +104,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/agendas", async (req, res) => {
-    const { limit, offset, status, categoryId } = req.query;
-    const agendas = await storage.getAgendas({
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
-      status: status as string,
-      categoryId: categoryId as string,
-    });
-    res.json(agendas);
+    try {
+      const { limit, offset, status, categoryId } = req.query;
+      
+      const conditions = [];
+      if (status) {
+        conditions.push(eq(agendas.status, status as any));
+      }
+      if (categoryId) {
+        conditions.push(eq(agendas.categoryId, categoryId as string));
+      }
+      
+      let query = db
+        .select({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+          category: categories,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      query = query.orderBy(desc(agendas.createdAt)) as any;
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string)) as any;
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string)) as any;
+      }
+      
+      const results = await query;
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching agendas:", error);
+      res.status(500).json({ error: "Failed to fetch agendas" });
+    }
   });
 
   app.get("/api/agendas/:id", async (req, res) => {
