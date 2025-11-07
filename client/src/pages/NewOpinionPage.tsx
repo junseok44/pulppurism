@@ -3,26 +3,81 @@ import MobileNav from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageSquare, Mic } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Category, InsertOpinion } from "@shared/schema";
 
 export default function NewOpinionPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [content, setContent] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [isRecording, setIsRecording] = useState(false);
 
-  const handleTextSubmit = () => {
-    if (content.trim()) {
-      console.log("Opinion submitted:", content);
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const createOpinionMutation = useMutation({
+    mutationFn: async (data: InsertOpinion) => {
+      const response = await apiRequest("POST", "/api/opinions", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      toast({
+        title: "의견이 제출되었습니다",
+        description: "관리자 검토 후 안건으로 전환될 수 있습니다.",
+      });
       setLocation("/opinions");
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "제출 실패",
+        description: "의견 제출 중 오류가 발생했습니다. 다시 시도해주세요.",
+      });
+    },
+  });
+
+  const handleTextSubmit = () => {
+    if (!content.trim()) {
+      toast({
+        variant: "destructive",
+        title: "내용을 입력해주세요",
+        description: "의견 내용은 필수 항목입니다.",
+      });
+      return;
     }
+
+    if (!categoryId) {
+      toast({
+        variant: "destructive",
+        title: "카테고리를 선택해주세요",
+        description: "의견 카테고리는 필수 항목입니다.",
+      });
+      return;
+    }
+
+    createOpinionMutation.mutate({
+      content: content.trim(),
+      categoryId,
+      userId: "temp-user-id",
+      type: "text",
+    });
   };
 
   const handleVoiceInput = () => {
     setIsRecording(true);
-    console.log("Voice recording started");
-    // todo: remove mock functionality - implement actual voice recording
+    toast({
+      title: "음성 녹음 시작",
+      description: "음성 녹음 기능은 향후 업데이트될 예정입니다.",
+    });
     setTimeout(() => {
       setIsRecording(false);
       setContent("음성으로 입력된 내용입니다. 실제 구현 시 음성 인식 API를 사용합니다.");
@@ -90,6 +145,24 @@ export default function NewOpinionPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
+                카테고리
+              </label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger data-testid="select-category">
+                  <SelectValue placeholder="카테고리를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
                 의견 내용
               </label>
               <Textarea
@@ -98,7 +171,7 @@ export default function NewOpinionPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-48"
-                disabled={isRecording}
+                disabled={isRecording || createOpinionMutation.isPending}
                 data-testid="input-opinion-content"
               />
               <p className="text-sm text-muted-foreground mt-2">
@@ -122,6 +195,7 @@ export default function NewOpinionPage() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setLocation("/opinions")}
+                disabled={createOpinionMutation.isPending}
                 data-testid="button-cancel"
               >
                 취소
@@ -129,10 +203,10 @@ export default function NewOpinionPage() {
               <Button
                 className="flex-1"
                 onClick={handleTextSubmit}
-                disabled={!content.trim() || isRecording}
+                disabled={!content.trim() || !categoryId || isRecording || createOpinionMutation.isPending}
                 data-testid="button-submit"
               >
-                게시하기
+                {createOpinionMutation.isPending ? "제출 중..." : "게시하기"}
               </Button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { db, pool } from "./db";
-import { categories } from "@shared/schema";
+import { categories, users } from "@shared/schema";
 
 const defaultCategories = [
   { name: "교육", type: "education" as const, description: "학교, 교육 시설, 교육 정책 등" },
@@ -19,18 +19,24 @@ export async function seedDatabase() {
   console.log("Starting database seed...");
 
   try {
+    const existingUsers = await db.select().from(users);
+    if (existingUsers.length === 0) {
+      await db.insert(users).values([
+        { id: "temp-user-id", username: "임시사용자", password: "temp" },
+      ]);
+      console.log("Temporary user created.");
+    }
+
     const existingCategories = await db.select().from(categories);
     
     if (existingCategories.length > 0) {
-      console.log(`Categories already exist (${existingCategories.length} found). Skipping seed.`);
-      return;
+      console.log(`Categories already exist (${existingCategories.length} found). Skipping category seed.`);
+    } else {
+      for (const category of defaultCategories) {
+        await db.insert(categories).values(category);
+      }
+      console.log("Database seeded successfully with 11 categories.");
     }
-
-    for (const category of defaultCategories) {
-      await db.insert(categories).values(category);
-    }
-
-    console.log("Database seeded successfully with 11 categories.");
   } catch (error) {
     console.error("Error seeding database:", error);
     throw error;

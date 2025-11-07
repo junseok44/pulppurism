@@ -1,13 +1,324 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema } from "@shared/schema";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  app.get("/api/categories", async (req, res) => {
+    const categories = await storage.getCategories();
+    res.json(categories);
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.get("/api/opinions", async (req, res) => {
+    const { limit, offset, status, categoryId } = req.query;
+    const opinions = await storage.getOpinions({
+      limit: limit ? parseInt(limit as string) : undefined,
+      offset: offset ? parseInt(offset as string) : undefined,
+      status: status as string,
+      categoryId: categoryId as string,
+    });
+    res.json(opinions);
+  });
+
+  app.get("/api/opinions/:id", async (req, res) => {
+    const opinion = await storage.getOpinion(req.params.id);
+    if (!opinion) {
+      return res.status(404).json({ error: "Opinion not found" });
+    }
+    res.json(opinion);
+  });
+
+  app.post("/api/opinions", async (req, res) => {
+    try {
+      const data = insertOpinionSchema.parse(req.body);
+      const opinion = await storage.createOpinion(data);
+      res.status(201).json(opinion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create opinion" });
+    }
+  });
+
+  app.patch("/api/opinions/:id", async (req, res) => {
+    try {
+      const opinion = await storage.updateOpinion(req.params.id, req.body);
+      if (!opinion) {
+        return res.status(404).json({ error: "Opinion not found" });
+      }
+      res.json(opinion);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update opinion" });
+    }
+  });
+
+  app.delete("/api/opinions/:id", async (req, res) => {
+    const success = await storage.deleteOpinion(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Opinion not found" });
+    }
+    res.status(204).send();
+  });
+
+  app.post("/api/opinions/:id/like", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      const existing = await storage.getOpinionLike(userId, req.params.id);
+      if (existing) {
+        return res.status(400).json({ error: "Already liked" });
+      }
+
+      await storage.createOpinionLike({ userId, opinionId: req.params.id });
+      await storage.incrementOpinionLikes(req.params.id);
+      res.status(201).json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to like opinion" });
+    }
+  });
+
+  app.delete("/api/opinions/:id/like", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      const success = await storage.deleteOpinionLike(userId, req.params.id);
+      if (success) {
+        await storage.decrementOpinionLikes(req.params.id);
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to unlike opinion" });
+    }
+  });
+
+  app.get("/api/agendas", async (req, res) => {
+    const { limit, offset, status, categoryId } = req.query;
+    const agendas = await storage.getAgendas({
+      limit: limit ? parseInt(limit as string) : undefined,
+      offset: offset ? parseInt(offset as string) : undefined,
+      status: status as string,
+      categoryId: categoryId as string,
+    });
+    res.json(agendas);
+  });
+
+  app.get("/api/agendas/:id", async (req, res) => {
+    const agenda = await storage.getAgenda(req.params.id);
+    if (!agenda) {
+      return res.status(404).json({ error: "Agenda not found" });
+    }
+    await storage.incrementAgendaViewCount(req.params.id);
+    res.json(agenda);
+  });
+
+  app.post("/api/agendas", async (req, res) => {
+    try {
+      const data = insertAgendaSchema.parse(req.body);
+      const agenda = await storage.createAgenda(data);
+      res.status(201).json(agenda);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create agenda" });
+    }
+  });
+
+  app.patch("/api/agendas/:id", async (req, res) => {
+    try {
+      const agenda = await storage.updateAgenda(req.params.id, req.body);
+      if (!agenda) {
+        return res.status(404).json({ error: "Agenda not found" });
+      }
+      res.json(agenda);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update agenda" });
+    }
+  });
+
+  app.delete("/api/agendas/:id", async (req, res) => {
+    const success = await storage.deleteAgenda(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Agenda not found" });
+    }
+    res.status(204).send();
+  });
+
+  app.post("/api/agendas/:id/bookmark", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      const existing = await storage.getAgendaBookmark(userId, req.params.id);
+      if (existing) {
+        return res.status(400).json({ error: "Already bookmarked" });
+      }
+
+      await storage.createAgendaBookmark({ userId, agendaId: req.params.id });
+      res.status(201).json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to bookmark agenda" });
+    }
+  });
+
+  app.delete("/api/agendas/:id/bookmark", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      await storage.deleteAgendaBookmark(userId, req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove bookmark" });
+    }
+  });
+
+  app.get("/api/agendas/:id/votes", async (req, res) => {
+    const votes = await storage.getVotes(req.params.id);
+    
+    const agreeCount = votes.filter(v => v.voteType === "agree").length;
+    const disagreeCount = votes.filter(v => v.voteType === "disagree").length;
+    const neutralCount = votes.filter(v => v.voteType === "neutral").length;
+    
+    res.json({
+      total: votes.length,
+      agree: agreeCount,
+      disagree: disagreeCount,
+      neutral: neutralCount,
+    });
+  });
+
+  app.post("/api/votes", async (req, res) => {
+    try {
+      const data = insertVoteSchema.parse(req.body);
+      
+      const existing = await storage.getVoteByUserAndAgenda(data.userId, data.agendaId);
+      if (existing) {
+        if (existing.voteType !== data.voteType) {
+          const updated = await storage.updateVote(existing.id, data.voteType);
+          return res.json(updated);
+        }
+        return res.json(existing);
+      }
+
+      const vote = await storage.createVote(data);
+      await storage.incrementAgendaVoteCount(data.agendaId);
+      res.status(201).json(vote);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create vote" });
+    }
+  });
+
+  app.get("/api/votes/user/:userId/agenda/:agendaId", async (req, res) => {
+    const vote = await storage.getVoteByUserAndAgenda(req.params.userId, req.params.agendaId);
+    res.json(vote || null);
+  });
+
+  app.get("/api/clusters", async (req, res) => {
+    const { limit, offset, status } = req.query;
+    const clusters = await storage.getClusters({
+      limit: limit ? parseInt(limit as string) : undefined,
+      offset: offset ? parseInt(offset as string) : undefined,
+      status: status as string,
+    });
+    res.json(clusters);
+  });
+
+  app.get("/api/clusters/:id", async (req, res) => {
+    const cluster = await storage.getCluster(req.params.id);
+    if (!cluster) {
+      return res.status(404).json({ error: "Cluster not found" });
+    }
+    res.json(cluster);
+  });
+
+  app.post("/api/clusters", async (req, res) => {
+    try {
+      const data = insertClusterSchema.parse(req.body);
+      const cluster = await storage.createCluster(data);
+      res.status(201).json(cluster);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create cluster" });
+    }
+  });
+
+  app.patch("/api/clusters/:id", async (req, res) => {
+    try {
+      const cluster = await storage.updateCluster(req.params.id, req.body);
+      if (!cluster) {
+        return res.status(404).json({ error: "Cluster not found" });
+      }
+      res.json(cluster);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update cluster" });
+    }
+  });
+
+  app.delete("/api/clusters/:id", async (req, res) => {
+    const success = await storage.deleteCluster(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Cluster not found" });
+    }
+    res.status(204).send();
+  });
+
+  app.get("/api/clusters/:id/opinions", async (req, res) => {
+    const opinionClusters = await storage.getOpinionClustersByCluster(req.params.id);
+    res.json(opinionClusters);
+  });
+
+  app.post("/api/reports", async (req, res) => {
+    try {
+      const data = insertReportSchema.parse(req.body);
+      const report = await storage.createReport(data);
+      res.status(201).json(report);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
+  app.get("/api/reports", async (req, res) => {
+    const { limit, offset, status } = req.query;
+    const reports = await storage.getReports({
+      limit: limit ? parseInt(limit as string) : undefined,
+      offset: offset ? parseInt(offset as string) : undefined,
+      status: status as string,
+    });
+    res.json(reports);
+  });
+
+  app.patch("/api/reports/:id", async (req, res) => {
+    try {
+      const report = await storage.updateReport(req.params.id, req.body);
+      if (!report) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update report" });
+    }
+  });
 
   const httpServer = createServer(app);
 
