@@ -18,61 +18,66 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { Search, Eye, EyeOff, Trash2, Filter } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Search, Eye, Trash2, CheckCircle, XCircle, ThumbsUp, MessageSquare } from "lucide-react";
+import type { Opinion, Category } from "@shared/schema";
 
 export default function AllOpinionsManagement() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const { toast } = useToast();
 
-  // todo: remove mock functionality
-  const opinions = [
-    {
-      id: "1",
-      author: "김철수",
-      title: "A초등학교 앞 과속방지턱 설치 요청",
-      category: "교통",
-      likes: 12,
-      comments: 5,
-      status: "공개",
-      linkedAgenda: "A초등학교 앞 과속방지턱 설치",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: "2",
-      author: "이영희",
-      title: "도서관 운영 시간 연장 건의",
-      category: "문화",
-      likes: 8,
-      comments: 3,
-      status: "공개",
-      linkedAgenda: null,
-      createdAt: "2024-01-14",
-    },
-    {
-      id: "3",
-      author: "박민수",
-      title: "공원 소음 문제 해결 방안",
-      category: "생활",
-      likes: 15,
-      comments: 7,
-      status: "숨김",
-      linkedAgenda: "공원 야간 소음 규제",
-      createdAt: "2024-01-13",
-    },
-    {
-      id: "4",
-      author: "최지영",
-      title: "놀이터 시설 개선 요청",
-      category: "돌봄",
-      likes: 6,
-      comments: 2,
-      status: "공개",
-      linkedAgenda: null,
-      createdAt: "2024-01-12",
-    },
-  ];
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
 
-  const getStatusColor = (status: string) => {
-    return status === "공개" ? "default" : "secondary";
+  const { data: opinions = [], isLoading } = useQuery<Opinion[]>({
+    queryKey: ["/api/opinions"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/opinions/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      toast({
+        title: "의견 삭제 완료",
+        description: "의견이 성공적으로 삭제되었습니다.",
+      });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiRequest("PATCH", `/api/opinions/${id}`, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      toast({
+        title: "상태 변경 완료",
+        description: "의견 상태가 변경되었습니다.",
+      });
+    },
+  });
+
+  const filteredOpinions = opinions.filter((opinion) => {
+    const matchesSearch = opinion.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || opinion.status === statusFilter;
+    const matchesCategory = categoryFilter === "all" || opinion.categoryId === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
+  const statusColors: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+    pending: "outline",
+    approved: "default",
+    rejected: "destructive",
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending: "대기 중",
+    approved: "승인됨",
+    rejected: "거부됨",
   };
 
   return (
@@ -85,140 +90,156 @@ export default function AllOpinionsManagement() {
       </div>
 
       <Card className="p-4">
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="제목, 작성자, 내용으로 검색..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              data-testid="input-search"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="col-span-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="의견 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search"
+              />
+            </div>
           </div>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-40" data-testid="select-category-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체 카테고리</SelectItem>
-              <SelectItem value="traffic">교통</SelectItem>
-              <SelectItem value="culture">문화</SelectItem>
-              <SelectItem value="education">교육</SelectItem>
-              <SelectItem value="care">돌봄</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-32" data-testid="select-status-filter">
-              <SelectValue />
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger data-testid="select-status-filter">
+              <SelectValue placeholder="상태 선택" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 상태</SelectItem>
-              <SelectItem value="visible">공개</SelectItem>
-              <SelectItem value="hidden">숨김</SelectItem>
+              <SelectItem value="pending">대기 중</SelectItem>
+              <SelectItem value="approved">승인됨</SelectItem>
+              <SelectItem value="rejected">거부됨</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" data-testid="button-advanced-filter">
-            <Filter className="w-4 h-4 mr-2" />
-            고급 필터
-          </Button>
+
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger data-testid="select-category-filter">
+              <SelectValue placeholder="카테고리 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 카테고리</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>제목</TableHead>
-              <TableHead>작성자</TableHead>
-              <TableHead>카테고리</TableHead>
-              <TableHead>반응</TableHead>
-              <TableHead>연결된 안건</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead>작성일</TableHead>
-              <TableHead>작업</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {opinions.map((opinion) => (
-              <TableRow key={opinion.id} data-testid={`opinion-row-${opinion.id}`}>
-                <TableCell className="font-medium max-w-xs">
-                  <p className="truncate">{opinion.title}</p>
-                </TableCell>
-                <TableCell>{opinion.author}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{opinion.category}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2 text-sm">
-                    <span>👍 {opinion.likes}</span>
-                    <span>💬 {opinion.comments}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {opinion.linkedAgenda ? (
-                    <Badge variant="secondary" className="text-xs">
-                      {opinion.linkedAgenda}
-                    </Badge>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusColor(opinion.status)}>
-                    {opinion.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {opinion.createdAt}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      data-testid={`button-view-${opinion.id}`}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      data-testid={`button-toggle-visibility-${opinion.id}`}
-                    >
-                      {opinion.status === "공개" ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      data-testid={`button-delete-${opinion.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+      {isLoading ? (
+        <Card className="p-12">
+          <p className="text-center text-muted-foreground">로딩 중...</p>
+        </Card>
+      ) : filteredOpinions.length === 0 ? (
+        <Card className="p-12">
+          <p className="text-center text-muted-foreground">의견이 없습니다</p>
+        </Card>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>내용</TableHead>
+                <TableHead>카테고리</TableHead>
+                <TableHead>상태</TableHead>
+                <TableHead>좋아요</TableHead>
+                <TableHead className="text-right">작업</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+            </TableHeader>
+            <TableBody>
+              {filteredOpinions.map((opinion) => (
+                <TableRow key={opinion.id} data-testid={`opinion-row-${opinion.id}`}>
+                  <TableCell>
+                    <div className="max-w-md">
+                      <p className="line-clamp-2">{opinion.content}</p>
+                      {opinion.voiceUrl && (
+                        <Badge variant="outline" className="mt-1 text-xs gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          음성
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {categories.find((c) => c.id === opinion.categoryId)?.name || "미분류"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusColors[opinion.status]}>
+                      {statusLabels[opinion.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <ThumbsUp className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">{opinion.likes}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      {opinion.status === "pending" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              updateStatusMutation.mutate({ id: opinion.id, status: "approved" })
+                            }
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`button-approve-${opinion.id}`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              updateStatusMutation.mutate({ id: opinion.id, status: "rejected" })
+                            }
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`button-reject-${opinion.id}`}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/opinion/${opinion.id}`, "_blank")}
+                        data-testid={`button-view-${opinion.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(opinion.id)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`button-delete-${opinion.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          전체 {opinions.length}개 의견
+          총 {filteredOpinions.length}개의 의견
         </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" data-testid="button-prev-page">
-            이전
-          </Button>
-          <Button variant="outline" size="sm" data-testid="button-next-page">
-            다음
-          </Button>
-        </div>
       </div>
     </div>
   );
