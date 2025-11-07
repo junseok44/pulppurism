@@ -5,8 +5,8 @@ import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReport
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
-import { agendas, categories } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { agendas, categories, clusters, opinionClusters, opinions } from "@shared/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/categories", async (req, res) => {
@@ -155,12 +155,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/agendas/:id", async (req, res) => {
-    const agenda = await storage.getAgenda(req.params.id);
-    if (!agenda) {
-      return res.status(404).json({ error: "Agenda not found" });
+    try {
+      const agendaData = await db
+        .select({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+          category: categories,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .where(eq(agendas.id, req.params.id));
+
+      if (agendaData.length === 0) {
+        return res.status(404).json({ error: "Agenda not found" });
+      }
+
+      await storage.incrementAgendaViewCount(req.params.id);
+      res.json(agendaData[0]);
+    } catch (error) {
+      console.error("Error fetching agenda:", error);
+      res.status(500).json({ error: "Failed to fetch agenda" });
     }
-    await storage.incrementAgendaViewCount(req.params.id);
-    res.json(agenda);
+  });
+
+  app.get("/api/agendas/:id/opinions", async (req, res) => {
+    try {
+      const agendaClusters = await db
+        .select()
+        .from(clusters)
+        .where(eq(clusters.agendaId, req.params.id));
+
+      if (agendaClusters.length === 0) {
+        return res.json([]);
+      }
+
+      const clusterIds = agendaClusters.map(c => c.id);
+      
+      const opinionClusterLinks = await db
+        .select()
+        .from(opinionClusters)
+        .where(inArray(opinionClusters.clusterId, clusterIds));
+
+      if (opinionClusterLinks.length === 0) {
+        return res.json([]);
+      }
+
+      const opinionIds = opinionClusterLinks.map(oc => oc.opinionId);
+      
+      const agendaOpinions = await db
+        .select()
+        .from(opinions)
+        .where(and(
+          inArray(opinions.id, opinionIds),
+          eq(opinions.status, "approved")
+        ))
+        .orderBy(desc(opinions.likes));
+
+      res.json(agendaOpinions);
+    } catch (error) {
+      console.error("Error fetching agenda opinions:", error);
+      res.status(500).json({ error: "Failed to fetch agenda opinions" });
+    }
   });
 
   app.post("/api/agendas", async (req, res) => {

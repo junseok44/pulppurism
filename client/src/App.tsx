@@ -21,6 +21,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AgendaListPage} />
+      <Route path="/agendas" component={AgendaListPage} />
       <Route path="/opinions" component={OpinionListPage} />
       <Route path="/my" component={MyPage} />
       <Route path="/my/opinions" component={MyOpinionsPage} />

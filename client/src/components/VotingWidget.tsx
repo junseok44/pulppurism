@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { ThumbsUp, MinusCircle, ThumbsDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 
 interface VotingWidgetProps {
@@ -9,6 +9,7 @@ interface VotingWidgetProps {
   disagreeCount: number;
   userVote?: "agree" | "neutral" | "disagree";
   onVote?: (vote: "agree" | "neutral" | "disagree") => void;
+  disabled?: boolean;
 }
 
 export default function VotingWidget({
@@ -17,6 +18,7 @@ export default function VotingWidget({
   disagreeCount,
   userVote,
   onVote,
+  disabled = false,
 }: VotingWidgetProps) {
   const [selectedVote, setSelectedVote] = useState(userVote);
   const total = agreeCount + neutralCount + disagreeCount;
@@ -24,7 +26,12 @@ export default function VotingWidget({
   const neutralPercent = total > 0 ? (neutralCount / total) * 100 : 0;
   const disagreePercent = total > 0 ? (disagreeCount / total) * 100 : 0;
 
+  useEffect(() => {
+    setSelectedVote(userVote);
+  }, [userVote]);
+
   const handleVote = (vote: "agree" | "neutral" | "disagree") => {
+    if (disabled) return;
     setSelectedVote(vote);
     onVote?.(vote);
     console.log("Voted:", vote);
@@ -35,9 +42,9 @@ export default function VotingWidget({
       <h3 className="font-semibold text-lg">투표하기</h3>
       <div className="grid grid-cols-3 gap-4">
         <Card
-          className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
+          className={`p-4 hover-elevate active-elevate-2 ${
             selectedVote === "agree" ? "border-2 border-primary" : ""
-          }`}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           onClick={() => handleVote("agree")}
           data-testid="button-vote-agree"
         >
@@ -48,9 +55,9 @@ export default function VotingWidget({
           </div>
         </Card>
         <Card
-          className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
+          className={`p-4 hover-elevate active-elevate-2 ${
             selectedVote === "neutral" ? "border-2 border-primary" : ""
-          }`}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           onClick={() => handleVote("neutral")}
           data-testid="button-vote-neutral"
         >
@@ -61,9 +68,9 @@ export default function VotingWidget({
           </div>
         </Card>
         <Card
-          className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
+          className={`p-4 hover-elevate active-elevate-2 ${
             selectedVote === "disagree" ? "border-2 border-primary" : ""
-          }`}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           onClick={() => handleVote("disagree")}
           data-testid="button-vote-disagree"
         >

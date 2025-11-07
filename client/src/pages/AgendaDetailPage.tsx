@@ -3,7 +3,7 @@ import MobileNav from "@/components/MobileNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
 import VotingWidget from "@/components/VotingWidget";
 import Timeline from "@/components/Timeline";
 import OpinionCard from "@/components/OpinionCard";
@@ -11,11 +11,85 @@ import { Card } from "@/components/ui/card";
 import { ExternalLink, FileText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Agenda, Category, Opinion } from "@shared/schema";
+
+interface AgendaWithCategory extends Agenda {
+  category?: Category;
+}
+
+interface VoteStats {
+  total: number;
+  agree: number;
+  disagree: number;
+  neutral: number;
+}
+
+interface Vote {
+  id: string;
+  userId: string;
+  agendaId: string;
+  voteType: "agree" | "disagree" | "neutral";
+}
 
 export default function AgendaDetailPage() {
   const [, setLocation] = useLocation();
   const [comment, setComment] = useState("");
+  const [match, params] = useRoute("/agenda/:id");
+  const agendaId = params?.id;
+
+  const TEMP_USER_ID = "temp-user-id";
+
+  const { data: agenda, isLoading: agendaLoading, error: agendaError } = useQuery<AgendaWithCategory>({
+    queryKey: [`/api/agendas/${agendaId}`],
+    enabled: !!agendaId,
+  });
+
+  const { data: voteStats, isLoading: voteStatsLoading } = useQuery<VoteStats>({
+    queryKey: [`/api/agendas/${agendaId}/votes`],
+    enabled: !!agendaId,
+  });
+
+  const { data: userVote } = useQuery<Vote | null>({
+    queryKey: [`/api/votes/user/${TEMP_USER_ID}/agenda/${agendaId}`],
+    enabled: !!agendaId,
+  });
+
+  const { data: relatedOpinions = [], isLoading: opinionsLoading } = useQuery<Opinion[]>({
+    queryKey: [`/api/agendas/${agendaId}/opinions`],
+    enabled: !!agendaId,
+  });
+
+  const voteMutation = useMutation({
+    mutationFn: async (voteType: "agree" | "disagree" | "neutral") => {
+      const res = await apiRequest("POST", "/api/votes", {
+        userId: TEMP_USER_ID,
+        agendaId,
+        voteType,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/votes`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/votes/user/${TEMP_USER_ID}/agenda/${agendaId}`] });
+    },
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: async (isBookmarked: boolean) => {
+      if (isBookmarked) {
+        await apiRequest("DELETE", `/api/agendas/${agendaId}/bookmark`, {
+          userId: TEMP_USER_ID,
+        });
+      } else {
+        await apiRequest("POST", `/api/agendas/${agendaId}/bookmark`, {
+          userId: TEMP_USER_ID,
+        });
+      }
+    },
+  });
 
   const handleCommentSubmit = () => {
     if (comment.trim()) {
@@ -23,7 +97,22 @@ export default function AgendaDetailPage() {
       setComment("");
     }
   };
-  // todo: remove mock functionality
+
+  const handleVote = (voteType: "agree" | "disagree" | "neutral") => {
+    voteMutation.mutate(voteType);
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "draft": return "초안";
+      case "active": return "활성";
+      case "voting": return "투표 중";
+      case "closed": return "종료";
+      case "implemented": return "시행됨";
+      default: return status;
+    }
+  };
+
   const timelineSteps = [
     { label: "의견 접수", status: "completed" as const, date: "2024.01.15" },
     { label: "안건 작성", status: "completed" as const, date: "2024.02.01" },
@@ -32,24 +121,51 @@ export default function AgendaDetailPage() {
     { label: "답변 및 결과", status: "upcoming" as const },
   ];
 
-  const relatedOpinions = [
-    {
-      id: "1",
-      authorName: "김철수",
-      content: "A초등학교 앞 도로가 너무 위험합니다. 아이들이 등하교할 때 차량 속도가 너무 빠릅니다.",
-      likeCount: 12,
-      commentCount: 5,
-      timestamp: "2시간 전",
-    },
-    {
-      id: "2",
-      authorName: "이영희",
-      content: "과속방지턱 설치에 찬성합니다. 우리 아이도 그 길로 등교합니다.",
-      likeCount: 8,
-      commentCount: 3,
-      timestamp: "5시간 전",
-    },
-  ];
+  if (!match || !agendaId) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-5xl mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground">안건을 찾을 수 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (agendaError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-5xl mx-auto px-4 py-20">
+          <div className="p-4 bg-destructive/10 text-destructive rounded-md text-center">
+            안건을 불러오는 데 실패했습니다.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (agendaLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-5xl mx-auto px-4 py-20 flex justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!agenda) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-5xl mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground">안건을 찾을 수 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -70,15 +186,21 @@ export default function AgendaDetailPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">교통</Badge>
-                <Badge variant="outline">주민 투표</Badge>
+                <Badge variant="secondary">{agenda.category?.name || "기타"}</Badge>
+                <Badge variant="outline">{getStatusLabel(agenda.status)}</Badge>
               </div>
               <h1 className="text-3xl font-bold" data-testid="text-agenda-title">
-                A초등학교 앞 과속방지턱 설치 요청
+                {agenda.title}
               </h1>
             </div>
-            <Button size="icon" variant="ghost" data-testid="button-bookmark">
-              <Bookmark className="w-5 h-5 fill-current text-primary" />
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => bookmarkMutation.mutate(false)}
+              disabled={bookmarkMutation.isPending}
+              data-testid="button-bookmark"
+            >
+              <Bookmark className="w-5 h-5" />
             </Button>
           </div>
 
@@ -93,17 +215,17 @@ export default function AgendaDetailPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">안건 소개</h2>
                 <p className="text-base leading-relaxed" data-testid="text-description">
-                  A초등학교 앞 도로는 아이들의 주요 등하교 경로입니다. 하지만 차량들의 과속으로 인해
-                  안전사고 위험이 높습니다. 학부모들과 지역 주민들이 지속적으로 과속방지턱 설치를
-                  요청하고 있으며, 이를 안건으로 상정하여 주민 의견을 수렴하고자 합니다.
+                  {agenda.description}
                 </p>
               </div>
 
               <VotingWidget
-                agreeCount={156}
-                neutralCount={34}
-                disagreeCount={23}
-                userVote="agree"
+                agreeCount={voteStats?.agree || 0}
+                neutralCount={voteStats?.neutral || 0}
+                disagreeCount={voteStats?.disagree || 0}
+                userVote={userVote?.voteType}
+                onVote={handleVote}
+                disabled={voteMutation.isPending}
               />
 
               <Timeline steps={timelineSteps} />
@@ -119,13 +241,28 @@ export default function AgendaDetailPage() {
             </TabsContent>
 
             <TabsContent value="opinions" className="space-y-4 mt-6 pb-32">
-              {relatedOpinions.map((opinion) => (
-                <OpinionCard
-                  key={opinion.id}
-                  {...opinion}
-                  onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                />
-              ))}
+              {opinionsLoading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : relatedOpinions.length > 0 ? (
+                relatedOpinions.map((opinion) => (
+                  <OpinionCard
+                    key={opinion.id}
+                    id={opinion.id}
+                    authorName="익명"
+                    content={opinion.content}
+                    likeCount={opinion.likes}
+                    commentCount={0}
+                    timestamp={new Date(opinion.createdAt).toLocaleDateString('ko-KR')}
+                    onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">관련 의견이 없습니다.</p>
+                </div>
+              )}
               
               <div className="fixed bottom-20 md:bottom-0 left-0 right-0 bg-card border-t border-card-border p-4 z-30">
                 <div className="max-w-7xl mx-auto flex gap-3">
