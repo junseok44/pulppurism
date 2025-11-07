@@ -64,20 +64,31 @@ export default function AllOpinionsManagement() {
   const filteredOpinions = opinions.filter((opinion) => {
     const matchesSearch = opinion.content.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || opinion.status === statusFilter;
-    const matchesCategory = categoryFilter === "all" || opinion.categoryId === categoryFilter;
+    const matchesCategory = 
+      categoryFilter === "all" || 
+      (categoryFilter === "uncategorized" && (!opinion.categoryId || opinion.categoryId.trim() === "")) ||
+      opinion.categoryId === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const statusColors: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-    pending: "outline",
-    approved: "default",
-    rejected: "destructive",
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
+    const statusMap: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+      pending: "outline",
+      approved: "default",
+      rejected: "destructive",
+      clustered: "secondary",
+    };
+    return statusMap[status] || "outline";
   };
 
-  const statusLabels: Record<string, string> = {
-    pending: "대기 중",
-    approved: "승인됨",
-    rejected: "거부됨",
+  const getStatusLabel = (status: string): string => {
+    const labelMap: Record<string, string> = {
+      pending: "대기 중",
+      approved: "승인됨",
+      rejected: "거부됨",
+      clustered: "클러스터링됨",
+    };
+    return labelMap[status] || status;
   };
 
   return (
@@ -113,6 +124,7 @@ export default function AllOpinionsManagement() {
               <SelectItem value="pending">대기 중</SelectItem>
               <SelectItem value="approved">승인됨</SelectItem>
               <SelectItem value="rejected">거부됨</SelectItem>
+              <SelectItem value="clustered">클러스터링됨</SelectItem>
             </SelectContent>
           </Select>
 
@@ -122,6 +134,7 @@ export default function AllOpinionsManagement() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 카테고리</SelectItem>
+              <SelectItem value="uncategorized">미분류</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
@@ -172,8 +185,8 @@ export default function AllOpinionsManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusColors[opinion.status]}>
-                      {statusLabels[opinion.status]}
+                    <Badge variant={getStatusBadgeVariant(opinion.status)}>
+                      {getStatusLabel(opinion.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>
