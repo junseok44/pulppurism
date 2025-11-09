@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "passport";
+import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, users } from "@shared/schema";
 import { z } from "zod";
@@ -31,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper to generate OAuth state
   function generateState() {
-    return require('crypto').randomBytes(32).toString('hex');
+    return randomBytes(32).toString('hex');
   }
 
   // Google OAuth - only if enabled
