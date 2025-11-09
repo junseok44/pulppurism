@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import passport from "passport";
 import { storage } from "./storage";
 import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, users } from "@shared/schema";
 import { z } from "zod";
@@ -10,6 +11,9 @@ import { eq, and, desc, inArray } from "drizzle-orm";
 import { requireAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const GOOGLE_ENABLED = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const KAKAO_ENABLED = !!process.env.KAKAO_CLIENT_ID;
+
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
     if (!req.user) {
@@ -18,49 +22,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username } = req.body;
-      
-      if (!username) {
-        return res.status(400).json({ error: "Username is required" });
-      }
-
-      // Find or create user
-      let [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (!user) {
-        [user] = await db
-          .insert(users)
-          .values({ username })
-          .returning();
-      }
-
-      // Set session
-      (req as any).session.userId = user.id;
-      
-      res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        displayName: user.displayName,
-        avatarUrl: user.avatarUrl,
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Login failed" });
-    }
+  app.get("/api/auth/providers", (req, res) => {
+    res.json({
+      google: GOOGLE_ENABLED,
+      kakao: KAKAO_ENABLED,
+    });
   });
 
+  // Helper to generate OAuth state
+  function generateState() {
+    return require('crypto').randomBytes(32).toString('hex');
+  }
+
+  // Google OAuth - only if enabled
+  if (GOOGLE_ENABLED) {
+    app.get("/api/auth/google", (req, res, next) => {
+      const state = generateState();
+      (req.session as any).oauthState = state;
+      passport.authenticate("google", { 
+        scope: ["profile", "email"],
+        state
+      })(req, res, next);
+    });
+
+    app.get("/api/auth/google/callback", (req, res, next) => {
+      const sessionState = (req.session as any).oauthState;
+      const callbackState = req.query.state;
+
+      if (!sessionState || sessionState !== callbackState) {
+        return res.status(403).send("Invalid state parameter - CSRF protection");
+      }
+
+      delete (req.session as any).oauthState;
+
+      passport.authenticate("google", (err: any, user: any, info: any) => {
+        if (err) {
+          console.error("Authentication error:", err);
+          return res.redirect("/");
+        }
+        if (!user) {
+          return res.redirect("/");
+        }
+
+        req.session.regenerate((err) => {
+          if (err) {
+            console.error("Session regeneration failed:", err);
+            return res.redirect("/");
+          }
+          
+          req.login(user, (err) => {
+            if (err) {
+              console.error("Login failed:", err);
+              return res.redirect("/");
+            }
+            res.redirect("/");
+          });
+        });
+      })(req, res, next);
+    });
+  }
+
+  // Kakao OAuth - only if enabled
+  if (KAKAO_ENABLED) {
+    app.get("/api/auth/kakao", (req, res, next) => {
+      const state = generateState();
+      (req.session as any).oauthState = state;
+      passport.authenticate("kakao", { state })(req, res, next);
+    });
+
+    app.get("/api/auth/kakao/callback", (req, res, next) => {
+      const sessionState = (req.session as any).oauthState;
+      const callbackState = req.query.state;
+
+      if (!sessionState || sessionState !== callbackState) {
+        return res.status(403).send("Invalid state parameter - CSRF protection");
+      }
+
+      delete (req.session as any).oauthState;
+
+      passport.authenticate("kakao", (err: any, user: any, info: any) => {
+        if (err) {
+          console.error("Authentication error:", err);
+          return res.redirect("/");
+        }
+        if (!user) {
+          return res.redirect("/");
+        }
+
+        req.session.regenerate((err) => {
+          if (err) {
+            console.error("Session regeneration failed:", err);
+            return res.redirect("/");
+          }
+          
+          req.login(user, (err) => {
+            if (err) {
+              console.error("Login failed:", err);
+              return res.redirect("/");
+            }
+            res.redirect("/");
+          });
+        });
+      })(req, res, next);
+    });
+  }
+
   app.post("/api/auth/logout", (req, res) => {
-    (req as any).session.destroy((err: any) => {
+    req.logout((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
       }
-      res.json({ success: true });
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ error: "Logout failed" });
+        }
+        res.json({ success: true });
+      });
     });
   });
   app.get("/api/categories", async (req, res) => {

@@ -34,6 +34,8 @@ Preferred communication style: Simple, everyday language.
 
 **Development Setup**: Vite middleware integration for HMR in development, with separate build process for production using esbuild to bundle the server.
 
+**Authentication**: OAuth-based authentication using Passport.js with Google and Kakao strategies. Session management via express-session with connect-pg-simple for PostgreSQL-backed session storage. OAuth providers are conditionally enabled based on environment variables, allowing graceful degradation when credentials are not configured.
+
 **Session Management**: Infrastructure present for connect-pg-simple session storage (PostgreSQL-backed sessions).
 
 ## Database Schema
@@ -41,9 +43,9 @@ Preferred communication style: Simple, everyday language.
 **ORM**: Drizzle ORM with PostgreSQL dialect, schema defined in `shared/schema.ts`.
 
 **Current Schema**: Comprehensive schema for civic engagement platform including:
-- Users: Authentication and user management (temporary user seeded: "temp-user-id")
+- Users: OAuth authentication with Google and Kakao support (fields: googleId, kakaoId, provider enum), plus user profile data (username, email, displayName, avatarUrl)
 - Categories: 11 predefined categories (교육, 교통, 환경, 안전, 복지, 문화, 경제, 보건, 주거, 행정, 기타)
-- Opinions: Citizen submissions with text/voice support, status workflow (pending/approved/rejected), and like counts
+- Opinions: Citizen submissions with text/voice support, status workflow (pending/approved/rejected/clustered), and like counts
 - Agendas: Discussion topics with voting periods, view counts, and status management
 - Votes: One vote per user per agenda with support for agree/disagree/neutral positions
 - Clusters: AI-generated opinion groupings with similarity scores

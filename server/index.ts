@@ -3,7 +3,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { attachUser } from "./auth";
+import { setupAuth } from "./auth";
 
 const app = express();
 const PgStore = connectPgSimple(session);
@@ -36,7 +36,7 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-app.use(attachUser);
+setupAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();

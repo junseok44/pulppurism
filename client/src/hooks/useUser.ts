@@ -26,17 +26,7 @@ export function useUser() {
       }
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async (username: string) => {
-      const response = await apiRequest("POST", "/api/auth/login", { username });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const logoutMutation = useMutation({
@@ -54,9 +44,7 @@ export function useUser() {
     user: user ?? null,
     isLoading,
     isAuthenticated: !!user,
-    login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    isLoggingIn: loginMutation.isPending,
     isLoggingOut: logoutMutation.isPending,
   };
 }

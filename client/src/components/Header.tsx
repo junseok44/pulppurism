@@ -1,17 +1,29 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { LogIn, LogOut, User } from "lucide-react";
+import { LogIn, LogOut } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Input } from "./ui/input";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { SiGoogle, SiKakaotalk } from "react-icons/si";
+
+interface AuthProviders {
+  google: boolean;
+  kakao: boolean;
+}
 
 export default function Header() {
-  const [location, setLocation] = useLocation();
-  const { user, login, logout, isLoggingIn, isLoggingOut } = useUser();
+  const [location] = useLocation();
+  const { user, logout, isLoggingOut } = useUser();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [username, setUsername] = useState("");
+  const [providers, setProviders] = useState<AuthProviders | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/providers")
+      .then(res => res.json())
+      .then(data => setProviders(data))
+      .catch(() => setProviders({ google: false, kakao: false }));
+  }, []);
 
   const navItems = [
     { path: "/", label: "안건" },
@@ -26,13 +38,15 @@ export default function Header() {
     return location.startsWith(path);
   };
 
-  const handleLogin = () => {
-    if (username.trim()) {
-      login(username.trim());
-      setShowLoginDialog(false);
-      setUsername("");
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
   };
+
+  const handleKakaoLogin = () => {
+    window.location.href = "/api/auth/kakao";
+  };
+
+  const hasAnyProvider = providers && (providers.google || providers.kakao);
 
   return (
     <>
@@ -102,41 +116,51 @@ export default function Header() {
         <DialogContent data-testid="dialog-login">
           <DialogHeader>
             <DialogTitle>로그인</DialogTitle>
+            <DialogDescription>
+              {hasAnyProvider 
+                ? "소셜 계정으로 간편하게 로그인하세요"
+                : "OAuth 인증 설정이 필요합니다"
+              }
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                사용자 이름
-              </label>
-              <Input
-                placeholder="사용자 이름을 입력하세요"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                disabled={isLoggingIn}
-                data-testid="input-username"
-              />
+          {hasAnyProvider ? (
+            <>
+              <div className="space-y-3">
+                {providers?.google && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    onClick={handleGoogleLogin}
+                    data-testid="button-google-login"
+                  >
+                    <SiGoogle className="w-5 h-5" />
+                    Google로 로그인
+                  </Button>
+                )}
+                {providers?.kakao && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    onClick={handleKakaoLogin}
+                    data-testid="button-kakao-login"
+                  >
+                    <SiKakaotalk className="w-5 h-5 text-yellow-500" />
+                    Kakao로 로그인
+                  </Button>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground text-center mt-4">
+                로그인하면 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              <p className="mb-3">OAuth 인증 키가 설정되지 않았습니다.</p>
+              <p className="text-xs">
+                관리자에게 문의하거나 환경 변수를 설정해주세요.
+              </p>
             </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowLoginDialog(false)}
-                disabled={isLoggingIn}
-                data-testid="button-cancel-login"
-              >
-                취소
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handleLogin}
-                disabled={!username.trim() || isLoggingIn}
-                data-testid="button-submit-login"
-              >
-                {isLoggingIn ? "로그인 중..." : "로그인"}
-              </Button>
-            </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
