@@ -8,67 +8,176 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import CommentThread from "@/components/CommentThread";
 import { Textarea } from "@/components/ui/textarea";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useUser } from "@/hooks/useUser";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+
+interface OpinionDetail {
+  id: string;
+  userId: string;
+  content: string;
+  likes: number;
+  createdAt: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  linkedAgenda: {
+    id: string;
+    title: string;
+    category: string;
+    status: string;
+    clusterId: string;
+    clusterName: string;
+  } | null;
+}
+
+interface CommentWithUser {
+  id: string;
+  opinionId: string;
+  userId: string;
+  content: string;
+  likes: number;
+  createdAt: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
 
 export default function OpinionDetailPage() {
+  const [, params] = useRoute("/opinion/:id");
+  const opinionId = params?.id;
   const [, setLocation] = useLocation();
-  const [liked, setLiked] = useState(true);
-  const [likes, setLikes] = useState(12);
   const [comment, setComment] = useState("");
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const { data: opinion, isLoading: opinionLoading } = useQuery<OpinionDetail>({
+    queryKey: [`/api/opinions/${opinionId}`],
+    enabled: !!opinionId,
+  });
+
+  const { data: comments = [], isLoading: commentsLoading } = useQuery<CommentWithUser[]>({
+    queryKey: [`/api/opinions/${opinionId}/comments`],
+    enabled: !!opinionId,
+  });
+
+  const { data: opinionLike } = useQuery<{ liked: boolean }>({
+    queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`],
+    enabled: !!opinionId && !!user,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      
+      if (opinionLike?.liked) {
+        return apiRequest("DELETE", `/api/opinions/${opinionId}/like`, { userId: user.id });
+      } else {
+        return apiRequest("POST", `/api/opinions/${opinionId}/like`, { userId: user.id });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "좋아요 처리에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!user) throw new Error("Not authenticated");
+      return apiRequest("POST", `/api/opinions/${opinionId}/comments`, {
+        userId: user.id,
+        content,
+      });
+    },
+    onSuccess: () => {
+      setComment("");
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+      toast({
+        title: "답글이 등록되었습니다",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "답글 등록에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLike = () => {
-    setLiked(!liked);
-    setLikes(liked ? likes - 1 : likes + 1);
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        variant: "destructive",
+      });
+      return;
+    }
+    likeMutation.mutate();
   };
-
-  // todo: remove mock functionality
-  const opinion = {
-    id: "1",
-    authorName: "김철수",
-    content:
-      "A초등학교 앞 도로가 너무 위험합니다. 아이들이 등하교할 때 차량 속도가 너무 빠르고, 횡단보도도 부족합니다. 과속방지턱과 신호등 설치가 시급합니다. 학부모로서 매일 불안한 마음으로 아이를 학교에 보내고 있습니다. 하루빨리 안전한 등하교 환경이 조성되길 바랍니다.",
-    timestamp: "2시간 전",
-    linkedAgenda: {
-      id: "1",
-      title: "A초등학교 앞 과속방지턱 설치 요청",
-      category: "교통",
-      status: "검토 중",
-      clusterId: "cluster-1",
-      clusterName: "초등학교 통학로 안전",
-    },
-  };
-
-  const comments = [
-    {
-      id: "1",
-      authorName: "박민수",
-      content: "저도 같은 문제를 겪고 있습니다. 빠른 조치 부탁드립니다.",
-      likeCount: 5,
-      isLiked: true,
-      timestamp: "1시간 전",
-    },
-    {
-      id: "2",
-      authorName: "최지영",
-      content: "좋은 의견이네요. 저도 동의합니다!",
-      likeCount: 3,
-      timestamp: "3시간 전",
-    },
-    {
-      id: "3",
-      authorName: "이영희",
-      content: "우리 동네도 같은 문제가 있어요. 과속방지턱이 꼭 필요합니다.",
-      likeCount: 7,
-      timestamp: "5시간 전",
-    },
-  ];
 
   const handleSubmitComment = () => {
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        variant: "destructive",
+      });
+      return;
+    }
     if (comment.trim()) {
-      console.log("Comment submitted:", comment);
-      setComment("");
+      commentMutation.mutate(comment.trim());
     }
   };
+
+  if (opinionLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-6 text-center">
+          의견을 불러오는 중...
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  if (!opinion) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-6 text-center">
+          의견을 찾을 수 없습니다
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  const formattedComments = comments.map((c) => ({
+    id: c.id,
+    authorName: c.displayName || c.username,
+    content: c.content,
+    likeCount: c.likes,
+    isLiked: false,
+    timestamp: formatDistanceToNow(new Date(c.createdAt), {
+      addSuffix: true,
+      locale: ko,
+    }),
+  }));
+
+  const authorName = opinion.displayName || opinion.username;
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -106,7 +215,7 @@ export default function OpinionDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setLocation(`/agenda/${opinion.linkedAgenda.id}`)}
+                  onClick={() => setLocation(`/agenda/${opinion.linkedAgenda!.id}`)}
                   className="flex-shrink-0"
                   data-testid="button-view-agenda"
                 >
@@ -120,22 +229,27 @@ export default function OpinionDetailPage() {
           <div className="space-y-4">
             <div className="flex gap-3">
               <Avatar className="w-12 h-12" data-testid="avatar-author">
-                <AvatarImage src="" />
-                <AvatarFallback>{opinion.authorName[0]}</AvatarFallback>
+                <AvatarImage src={opinion.avatarUrl || ""} />
+                <AvatarFallback>{authorName[0]}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium" data-testid="text-author">
-                      {opinion.authorName}
+                      {authorName}
                     </p>
                     <p className="text-sm text-muted-foreground" data-testid="text-time">
-                      {opinion.timestamp}
+                      {formatDistanceToNow(new Date(opinion.createdAt), {
+                        addSuffix: true,
+                        locale: ko,
+                      })}
                     </p>
                   </div>
-                  <Button size="icon" variant="ghost" data-testid="button-more">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
+                  {user?.id === opinion.userId && (
+                    <Button size="icon" variant="ghost" data-testid="button-more">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -150,21 +264,32 @@ export default function OpinionDetailPage() {
               <button
                 className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg"
                 onClick={handleLike}
+                disabled={likeMutation.isPending}
                 data-testid="button-like"
               >
                 <Heart
-                  className={`w-5 h-5 ${liked ? "fill-current text-primary" : ""}`}
+                  className={`w-5 h-5 ${opinionLike?.liked ? "fill-current text-primary" : ""}`}
                 />
-                <span className="font-medium">{likes}</span>
+                <span className="font-medium">{opinion.likes}</span>
               </button>
             </div>
           </div>
 
           <div className="border-t pt-6">
             <h3 className="font-semibold text-lg mb-4">
-              답글 {comments.length}개
+              답글 {formattedComments.length}개
             </h3>
-            <CommentThread comments={comments} />
+            {commentsLoading ? (
+              <div className="text-center py-4 text-muted-foreground">
+                답글을 불러오는 중...
+              </div>
+            ) : formattedComments.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                아직 답글이 없습니다. 첫 번째로 답글을 달아보세요!
+              </div>
+            ) : (
+              <CommentThread comments={formattedComments} />
+            )}
           </div>
 
           <div className="border-t pt-6">
@@ -176,14 +301,15 @@ export default function OpinionDetailPage() {
                 onChange={(e) => setComment(e.target.value)}
                 className="min-h-24"
                 data-testid="input-comment"
+                disabled={commentMutation.isPending}
               />
               <div className="flex justify-end">
                 <Button
                   onClick={handleSubmitComment}
-                  disabled={!comment.trim()}
+                  disabled={!comment.trim() || commentMutation.isPending}
                   data-testid="button-submit-comment"
                 >
-                  답글 달기
+                  {commentMutation.isPending ? "등록 중..." : "답글 달기"}
                 </Button>
               </div>
             </div>

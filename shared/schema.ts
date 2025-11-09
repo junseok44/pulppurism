@@ -136,6 +136,24 @@ export const agendaBookmarks = pgTable("agenda_bookmarks", {
   uniqueUserAgenda: unique().on(table.userId, table.agendaId),
 }));
 
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  opinionId: varchar("opinion_id").notNull().references(() => opinions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likes: integer("likes").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const commentLikes = pgTable("comment_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  commentId: varchar("comment_id").notNull().references(() => comments.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueUserComment: unique().on(table.userId, table.commentId),
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertOpinionSchema = createInsertSchema(opinions).omit({ id: true, createdAt: true, likes: true, status: true });
@@ -146,6 +164,8 @@ export const insertOpinionClusterSchema = createInsertSchema(opinionClusters).om
 export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, resolvedAt: true });
 export const insertOpinionLikeSchema = createInsertSchema(opinionLikes).omit({ id: true, createdAt: true });
 export const insertAgendaBookmarkSchema = createInsertSchema(agendaBookmarks).omit({ id: true, createdAt: true });
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true, likes: true });
+export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({ id: true, createdAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -167,3 +187,7 @@ export type InsertOpinionLike = z.infer<typeof insertOpinionLikeSchema>;
 export type OpinionLike = typeof opinionLikes.$inferSelect;
 export type InsertAgendaBookmark = z.infer<typeof insertAgendaBookmarkSchema>;
 export type AgendaBookmark = typeof agendaBookmarks.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Comment = typeof comments.$inferSelect;
+export type InsertCommentLike = z.infer<typeof insertCommentLikeSchema>;
+export type CommentLike = typeof commentLikes.$inferSelect;
