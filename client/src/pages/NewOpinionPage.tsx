@@ -9,13 +9,35 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useUser } from "@/hooks/useUser";
 import type { InsertOpinion } from "@shared/schema";
 
 export default function NewOpinionPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useUser();
   const [content, setContent] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 pt-20">
+          <Card className="p-12 text-center">
+            <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
+            <p className="text-muted-foreground mb-6">
+              의견을 제출하려면 로그인해주세요.
+            </p>
+            <Button onClick={() => setLocation("/")}>
+              홈으로 이동
+            </Button>
+          </Card>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
 
   const createOpinionMutation = useMutation({
     mutationFn: async (data: InsertOpinion) => {
@@ -51,7 +73,7 @@ export default function NewOpinionPage() {
 
     createOpinionMutation.mutate({
       content: content.trim(),
-      userId: "temp-user-id",
+      userId: user.id,
       type: "text",
     });
   };

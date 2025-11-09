@@ -1,14 +1,68 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema } from "@shared/schema";
+import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
 import { agendas, categories, clusters, opinionClusters, opinions } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
+import { requireAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth routes
+  app.get("/api/auth/me", (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    res.json(req.user);
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ error: "Username is required" });
+      }
+
+      // Find or create user
+      let [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (!user) {
+        [user] = await db
+          .insert(users)
+          .values({ username })
+          .returning();
+      }
+
+      // Set session
+      (req as any).session.userId = user.id;
+      
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    (req as any).session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.json({ success: true });
+    });
+  });
   app.get("/api/categories", async (req, res) => {
     const categories = await storage.getCategories();
     res.json(categories);

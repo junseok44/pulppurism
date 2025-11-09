@@ -15,13 +15,37 @@ import {
   LogOut
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useUser } from "@/hooks/useUser";
+import { useLocation } from "wouter";
 
 export default function MyPage() {
-  // todo: remove mock functionality
+  const { user, logout } = useUser();
+  const [, setLocation] = useLocation();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 pt-20">
+          <Card className="p-12 text-center">
+            <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
+            <p className="text-muted-foreground mb-6">
+              마이페이지를 이용하려면 로그인해주세요.
+            </p>
+            <Button onClick={() => setLocation("/")}>
+              홈으로 이동
+            </Button>
+          </Card>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
   const userProfile = {
-    name: "김철수",
-    email: "kimcs@example.com",
-    avatar: "",
+    name: user.displayName || user.username,
+    email: user.email || "",
+    avatar: user.avatarUrl || "",
   };
 
   const notifications = [
@@ -198,7 +222,14 @@ export default function MyPage() {
             </div>
           </Card>
 
-          <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-logout">
+          <Card 
+            className="p-4 hover-elevate active-elevate-2 cursor-pointer" 
+            data-testid="card-logout"
+            onClick={() => {
+              logout();
+              setLocation("/");
+            }}
+          >
             <div className="flex items-center gap-3">
               <LogOut className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">로그아웃</span>

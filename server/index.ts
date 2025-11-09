@@ -1,20 +1,42 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { attachUser } from "./auth";
 
 const app = express();
+const PgStore = connectPgSimple(session);
 
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
   }
 }
+
+app.use(session({
+  store: new PgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+  }),
+  secret: process.env.SESSION_SECRET || 'civic-engagement-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  },
+}));
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+app.use(attachUser);
 
 app.use((req, res, next) => {
   const start = Date.now();

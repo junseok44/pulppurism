@@ -6,7 +6,11 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: text("email"),
+  displayName: text("display_name"),
+  replitId: text("replit_id").unique(),
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const categoryEnum = pgEnum("category_type", [
