@@ -98,8 +98,8 @@ export function setupAuth(app: Express) {
   const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
   const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
 
-  const baseUrl = process.env.REPL_SLUG 
-    ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.replit.dev`
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
     : "http://localhost:5000";
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
