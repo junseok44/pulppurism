@@ -3,27 +3,24 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { LogIn, LogOut } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
-import { SiGoogle, SiKakaotalk } from "react-icons/si";
-
-interface AuthProviders {
-  google: boolean;
-  kakao: boolean;
-}
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Header() {
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useUser();
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [providers, setProviders] = useState<AuthProviders | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/providers")
-      .then(res => res.json())
-      .then(data => setProviders(data))
-      .catch(() => setProviders({ google: false, kakao: false }));
-  }, []);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const navItems = [
     { path: "/", label: "안건" },
@@ -38,15 +35,75 @@ export default function Header() {
     return location.startsWith(path);
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
+  const loginMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
+      return await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setShowAuthDialog(false);
+      setEmail("");
+      setPassword("");
+      toast({
+        title: "로그인 성공",
+        description: "환영합니다!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "로그인 실패",
+        description: error.message || "이메일 또는 비밀번호를 확인해주세요",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleKakaoLogin = () => {
-    window.location.href = "/api/auth/kakao";
-  };
+  const registerMutation = useMutation({
+    mutationFn: async (data: { username: string; email: string; password: string }) => {
+      return await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setShowAuthDialog(false);
+      setEmail("");
+      setPassword("");
+      setUsername("");
+      toast({
+        title: "회원가입 성공",
+        description: "환영합니다!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "회원가입 실패",
+        description: error.message || "다시 시도해주세요",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const hasAnyProvider = providers && (providers.google || providers.kakao);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLogin) {
+      loginMutation.mutate({ email, password });
+    } else {
+      if (!username.trim()) {
+        toast({
+          title: "입력 오류",
+          description: "사용자 이름을 입력해주세요",
+          variant: "destructive",
+        });
+        return;
+      }
+      registerMutation.mutate({ username, email, password });
+    }
+  };
 
   return (
     <>
@@ -101,7 +158,10 @@ export default function Header() {
               <Button 
                 variant="default" 
                 size="sm"
-                onClick={() => setShowLoginDialog(true)}
+                onClick={() => {
+                  setIsLogin(true);
+                  setShowAuthDialog(true);
+                }}
                 data-testid="button-login"
               >
                 <LogIn className="w-4 h-4 mr-2" />
@@ -112,55 +172,82 @@ export default function Header() {
         </div>
       </header>
 
-      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent data-testid="dialog-login">
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent data-testid="dialog-auth">
           <DialogHeader>
-            <DialogTitle>로그인</DialogTitle>
+            <DialogTitle>{isLogin ? "로그인" : "회원가입"}</DialogTitle>
             <DialogDescription>
-              {hasAnyProvider 
-                ? "소셜 계정으로 간편하게 로그인하세요"
-                : "OAuth 인증 설정이 필요합니다"
-              }
+              {isLogin ? "이메일과 비밀번호로 로그인하세요" : "새 계정을 만들어 주민참여 플랫폼을 시작하세요"}
             </DialogDescription>
           </DialogHeader>
-          {hasAnyProvider ? (
-            <>
-              <div className="space-y-3">
-                {providers?.google && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3"
-                    onClick={handleGoogleLogin}
-                    data-testid="button-google-login"
-                  >
-                    <SiGoogle className="w-5 h-5" />
-                    Google로 로그인
-                  </Button>
-                )}
-                {providers?.kakao && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3"
-                    onClick={handleKakaoLogin}
-                    data-testid="button-kakao-login"
-                  >
-                    <SiKakaotalk className="w-5 h-5 text-yellow-500" />
-                    Kakao로 로그인
-                  </Button>
-                )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="username">사용자 이름</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="홍길동"
+                  required={!isLogin}
+                  data-testid="input-username"
+                />
               </div>
-              <div className="text-sm text-muted-foreground text-center mt-4">
-                로그인하면 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              <p className="mb-3">OAuth 인증 키가 설정되지 않았습니다.</p>
-              <p className="text-xs">
-                관리자에게 문의하거나 환경 변수를 설정해주세요.
-              </p>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">이메일</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@email.com"
+                required
+                data-testid="input-email"
+              />
             </div>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="password">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="최소 6자 이상"
+                required
+                minLength={6}
+                data-testid="input-password"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loginMutation.isPending || registerMutation.isPending}
+              data-testid="button-submit-auth"
+            >
+              {loginMutation.isPending || registerMutation.isPending
+                ? "처리 중..."
+                : isLogin
+                ? "로그인"
+                : "회원가입"}
+            </Button>
+          </form>
+          <div className="text-sm text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setEmail("");
+                setPassword("");
+                setUsername("");
+              }}
+              className="text-primary hover:underline"
+              data-testid="button-toggle-auth"
+            >
+              {isLogin ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
