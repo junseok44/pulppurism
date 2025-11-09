@@ -253,14 +253,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/opinions", async (req, res) => {
-    const { limit, offset, status, categoryId } = req.query;
-    const opinions = await storage.getOpinions({
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
-      status: status as string,
-      categoryId: categoryId as string,
-    });
-    res.json(opinions);
+    try {
+      const { limit, offset, status, categoryId } = req.query;
+      
+      let query = db
+        .select({
+          id: opinions.id,
+          userId: opinions.userId,
+          type: opinions.type,
+          content: opinions.content,
+          voiceUrl: opinions.voiceUrl,
+          categoryId: opinions.categoryId,
+          status: opinions.status,
+          likes: opinions.likes,
+          createdAt: opinions.createdAt,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(opinions)
+        .leftJoin(users, eq(opinions.userId, users.id))
+        .orderBy(desc(opinions.createdAt));
+      
+      const conditions = [];
+      if (status) {
+        conditions.push(eq(opinions.status, status as any));
+      }
+      if (categoryId) {
+        conditions.push(eq(opinions.categoryId, categoryId as string));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string)) as any;
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string)) as any;
+      }
+      
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch opinions:", error);
+      res.status(500).json({ error: "Failed to fetch opinions" });
+    }
   });
 
   app.get("/api/opinions/:id", async (req, res) => {
