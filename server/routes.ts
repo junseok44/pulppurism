@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "passport";
 import { randomBytes } from "crypto";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, users } from "@shared/schema";
 import { z } from "zod";
@@ -127,6 +128,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })(req, res, next);
     });
   }
+
+  // Email/Password Authentication
+  const registerSchema = z.object({
+    username: z.string().min(3).max(50),
+    email: z.string().email(),
+    password: z.string().min(6),
+  });
+
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, data.email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      const newUsers = await db.insert(users).values({
+        username: data.username,
+        email: data.email,
+        password: hashedPassword,
+        provider: "local",
+      }).returning();
+
+      const user = newUsers[0];
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed after registration" });
+        }
+        res.status(201).json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+        });
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const data = loginSchema.parse(req.body);
+
+      const existingUsers = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, data.email))
+        .limit(1);
+
+      if (existingUsers.length === 0) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const user = existingUsers[0];
+
+      if (!user.password) {
+        return res.status(401).json({ error: "This account uses social login" });
+      }
+
+      const validPassword = await bcrypt.compare(data.password, user.password);
+
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+        });
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
 
   app.post("/api/auth/logout", (req, res) => {
     req.logout((err) => {
