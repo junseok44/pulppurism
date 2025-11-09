@@ -44,20 +44,48 @@ export default function NewOpinionPage() {
       const response = await apiRequest("POST", "/api/opinions", data);
       return response.json();
     },
+    onMutate: async (newOpinion) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/opinions"] });
+      
+      const previousOpinions = queryClient.getQueryData(["/api/opinions"]);
+      
+      const optimisticOpinion = {
+        id: `temp-${Date.now()}`,
+        userId: user!.id,
+        content: newOpinion.content,
+        likes: 0,
+        createdAt: new Date().toISOString(),
+        username: user!.username,
+        displayName: user!.displayName,
+        avatarUrl: user!.avatarUrl,
+      };
+      
+      queryClient.setQueryData(
+        ["/api/opinions"],
+        (old: any[]) => [optimisticOpinion, ...(old || [])]
+      );
+      
+      return { previousOpinions };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      setLocation("/opinions");
       toast({
         title: "의견이 제출되었습니다",
         description: "관리자 검토 후 안건으로 전환될 수 있습니다.",
       });
-      setLocation("/opinions");
     },
-    onError: () => {
+    onError: (error, variables, context) => {
+      if (context?.previousOpinions) {
+        queryClient.setQueryData(["/api/opinions"], context.previousOpinions);
+      }
       toast({
         variant: "destructive",
         title: "제출 실패",
         description: "의견 제출 중 오류가 발생했습니다. 다시 시도해주세요.",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
     },
   });
 

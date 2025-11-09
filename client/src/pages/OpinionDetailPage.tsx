@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MoreVertical, ArrowLeft, CheckCircle, ArrowRight } from "lucide-react";
+import { Heart, MoreVertical, ArrowLeft, CheckCircle, ArrowRight, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,28 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface OpinionDetail {
   id: string;
@@ -52,6 +74,9 @@ export default function OpinionDetailPage() {
   const opinionId = params?.id;
   const [, setLocation] = useLocation();
   const [comment, setComment] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editContent, setEditContent] = useState("");
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -65,7 +90,7 @@ export default function OpinionDetailPage() {
     enabled: !!opinionId,
   });
 
-  const { data: opinionLike } = useQuery<{ liked: boolean }>({
+  const { data: opinionLike, isLoading: likeStatusLoading } = useQuery<{ liked: boolean }>({
     queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`],
     enabled: !!opinionId && !!user,
   });
@@ -80,16 +105,42 @@ export default function OpinionDetailPage() {
         return apiRequest("POST", `/api/opinions/${opinionId}/like`, { userId: user.id });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`] });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}`] });
+      await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`] });
+      
+      const previousOpinion = queryClient.getQueryData<OpinionDetail>([`/api/opinions/${opinionId}`]);
+      const previousLike = queryClient.getQueryData<{ liked: boolean }>([`/api/opinions/${opinionId}/like?userId=${user?.id}`]);
+      
+      if (previousOpinion) {
+        queryClient.setQueryData<OpinionDetail>([`/api/opinions/${opinionId}`], {
+          ...previousOpinion,
+          likes: opinionLike?.liked ? previousOpinion.likes - 1 : previousOpinion.likes + 1,
+        });
+      }
+      
+      queryClient.setQueryData<{ liked: boolean }>([`/api/opinions/${opinionId}/like?userId=${user?.id}`], {
+        liked: !opinionLike?.liked,
+      });
+      
+      return { previousOpinion, previousLike };
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousOpinion) {
+        queryClient.setQueryData([`/api/opinions/${opinionId}`], context.previousOpinion);
+      }
+      if (context?.previousLike) {
+        queryClient.setQueryData([`/api/opinions/${opinionId}/like?userId=${user?.id}`], context.previousLike);
+      }
       toast({
         title: "오류가 발생했습니다",
         description: error.message || "좋아요 처리에 실패했습니다",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`] });
     },
   });
 
@@ -101,19 +152,48 @@ export default function OpinionDetailPage() {
         content,
       });
     },
+    onMutate: async (content: string) => {
+      await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+      
+      const previousComments = queryClient.getQueryData<CommentWithUser[]>([`/api/opinions/${opinionId}/comments`]);
+      
+      const optimisticComment: CommentWithUser = {
+        id: `temp-${Date.now()}`,
+        opinionId: opinionId!,
+        userId: user!.id,
+        content,
+        likes: 0,
+        createdAt: new Date().toISOString(),
+        username: user!.username,
+        displayName: user!.displayName,
+        avatarUrl: user!.avatarUrl,
+      };
+      
+      queryClient.setQueryData<CommentWithUser[]>(
+        [`/api/opinions/${opinionId}/comments`],
+        [...(previousComments || []), optimisticComment]
+      );
+      
+      return { previousComments };
+    },
     onSuccess: () => {
       setComment("");
-      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
       toast({
         title: "답글이 등록되었습니다",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData([`/api/opinions/${opinionId}/comments`], context.previousComments);
+      }
       toast({
         title: "오류가 발생했습니다",
         description: error.message || "답글 등록에 실패했습니다",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
     },
   });
 
@@ -128,6 +208,47 @@ export default function OpinionDetailPage() {
     likeMutation.mutate();
   };
 
+  const updateMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest("PATCH", `/api/opinions/${opinionId}`, { content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      setIsEditDialogOpen(false);
+      toast({
+        title: "의견이 수정되었습니다",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "의견 수정에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/opinions/${opinionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      toast({
+        title: "의견이 삭제되었습니다",
+      });
+      setLocation("/opinions");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "의견 삭제에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmitComment = () => {
     if (!user) {
       toast({
@@ -139,6 +260,25 @@ export default function OpinionDetailPage() {
     if (comment.trim()) {
       commentMutation.mutate(comment.trim());
     }
+  };
+
+  const handleEdit = () => {
+    setEditContent(opinion?.content || "");
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmEdit = () => {
+    if (editContent.trim()) {
+      updateMutation.mutate(editContent.trim());
+    }
+  };
+
+  const confirmDelete = () => {
+    deleteMutation.mutate();
   };
 
   if (opinionLoading) {
@@ -168,9 +308,8 @@ export default function OpinionDetailPage() {
   const formattedComments = comments.map((c) => ({
     id: c.id,
     authorName: c.displayName || c.username,
+    authorAvatar: c.avatarUrl || undefined,
     content: c.content,
-    likeCount: c.likes,
-    isLiked: false,
     timestamp: formatDistanceToNow(new Date(c.createdAt), {
       addSuffix: true,
       locale: ko,
@@ -246,9 +385,27 @@ export default function OpinionDetailPage() {
                     </p>
                   </div>
                   {user?.id === opinion.userId && (
-                    <Button size="icon" variant="ghost" data-testid="button-more">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost" data-testid="button-more">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleEdit} data-testid="menu-edit">
+                          <Pencil className="w-4 h-4 mr-2" />
+                          수정하기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={handleDelete} 
+                          className="text-destructive focus:text-destructive"
+                          data-testid="menu-delete"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          삭제하기
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               </div>
@@ -262,9 +419,9 @@ export default function OpinionDetailPage() {
 
             <div className="flex items-center gap-4 pl-15">
               <button
-                className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg"
+                className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleLike}
-                disabled={likeMutation.isPending}
+                disabled={!user || likeMutation.isPending || likeStatusLoading}
                 data-testid="button-like"
               >
                 <Heart
@@ -316,6 +473,61 @@ export default function OpinionDetailPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit">
+          <DialogHeader>
+            <DialogTitle>의견 수정</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="의견 내용을 입력하세요..."
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="min-h-48"
+              data-testid="input-edit-content"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                data-testid="button-cancel-edit"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={confirmEdit}
+                disabled={!editContent.trim() || updateMutation.isPending}
+                data-testid="button-confirm-edit"
+              >
+                {updateMutation.isPending ? "수정 중..." : "수정하기"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete">
+          <AlertDialogHeader>
+            <AlertDialogTitle>의견 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 의견을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <MobileNav />
     </div>
   );

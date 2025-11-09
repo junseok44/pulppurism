@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageSquare, MoreVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, MessageSquare } from "lucide-react";
 import { useState } from "react";
 
 interface OpinionCardProps {
@@ -26,7 +25,6 @@ export default function OpinionCard({
   commentCount,
   isLiked = false,
   timestamp,
-  isAuthor = false,
   onClick,
 }: OpinionCardProps) {
   const [liked, setLiked] = useState(isLiked);
@@ -50,24 +48,9 @@ export default function OpinionCard({
           <AvatarFallback>{authorName[0]}</AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-2">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-medium" data-testid={`text-author-${id}`}>{authorName}</p>
-              <p className="text-sm text-muted-foreground" data-testid={`text-time-${id}`}>{timestamp}</p>
-            </div>
-            {isAuthor && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("More options");
-                }}
-                data-testid={`button-more-${id}`}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            )}
+          <div>
+            <p className="font-medium" data-testid={`text-author-${id}`}>{authorName}</p>
+            <p className="text-sm text-muted-foreground" data-testid={`text-time-${id}`}>{timestamp}</p>
           </div>
           <p className="text-base line-clamp-3" data-testid={`text-content-${id}`}>{content}</p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
