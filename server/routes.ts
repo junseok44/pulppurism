@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/opinions", async (req, res) => {
     try {
-      const { limit, offset, status, categoryId } = req.query;
+      const { limit, offset } = req.query;
       
       let query = db
         .select({
@@ -263,8 +263,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: opinions.type,
           content: opinions.content,
           voiceUrl: opinions.voiceUrl,
-          categoryId: opinions.categoryId,
-          status: opinions.status,
           likes: opinions.likes,
           createdAt: opinions.createdAt,
           username: users.username,
@@ -274,18 +272,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(opinions)
         .leftJoin(users, eq(opinions.userId, users.id))
         .orderBy(desc(opinions.createdAt));
-      
-      const conditions = [];
-      if (status) {
-        conditions.push(eq(opinions.status, status as any));
-      }
-      if (categoryId) {
-        conditions.push(eq(opinions.categoryId, categoryId as string));
-      }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
       
       if (limit) {
         query = query.limit(parseInt(limit as string)) as any;
@@ -304,16 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/opinions/unclustered", async (req, res) => {
     try {
-      const { limit, offset, categoryId } = req.query;
-      
-      const conditions = [
-        eq(opinions.status, "approved"),
-        isNull(opinionClusters.id)
-      ];
-      
-      if (categoryId) {
-        conditions.push(eq(opinions.categoryId, categoryId as string));
-      }
+      const { limit, offset } = req.query;
       
       let query: any = db
         .select({
@@ -322,8 +299,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: opinions.type,
           content: opinions.content,
           voiceUrl: opinions.voiceUrl,
-          categoryId: opinions.categoryId,
-          status: opinions.status,
           likes: opinions.likes,
           createdAt: opinions.createdAt,
           username: users.username,
@@ -333,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(opinions)
         .leftJoin(users, eq(opinions.userId, users.id))
         .leftJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
-        .where(and(...conditions))
+        .where(isNull(opinionClusters.id))
         .orderBy(desc(opinions.createdAt));
       
       if (limit) {
@@ -360,8 +335,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: opinions.type,
           content: opinions.content,
           voiceUrl: opinions.voiceUrl,
-          categoryId: opinions.categoryId,
-          status: opinions.status,
           likes: opinions.likes,
           createdAt: opinions.createdAt,
           username: users.username,
@@ -726,10 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agendaOpinions = await db
         .select()
         .from(opinions)
-        .where(and(
-          inArray(opinions.id, opinionIds),
-          eq(opinions.status, "approved")
-        ))
+        .where(inArray(opinions.id, opinionIds))
         .orderBy(desc(opinions.likes));
 
       res.json(agendaOpinions);
@@ -909,8 +879,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: opinions.type,
           content: opinions.content,
           voiceUrl: opinions.voiceUrl,
-          categoryId: opinions.categoryId,
-          status: opinions.status,
           likes: opinions.likes,
           createdAt: opinions.createdAt,
           username: users.username,
@@ -1095,7 +1063,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user.id;
-      const categoriesList = await db.select().from(categories);
       
       const opinionTemplates = [
         { category: "교육", texts: [
@@ -1191,23 +1158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       const opinionsToInsert = [];
-      let count = 0;
 
       for (const template of opinionTemplates) {
-        const category = categoriesList.find(c => c.name === template.category);
-        if (!category) continue;
-
         for (const text of template.texts) {
-          if (count >= 100) break;
           opinionsToInsert.push({
             userId,
-            categoryId: category.id,
             content: text,
-            status: "approved" as const,
           });
-          count++;
         }
-        if (count >= 100) break;
       }
 
       await db.insert(opinions).values(opinionsToInsert);

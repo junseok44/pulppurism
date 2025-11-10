@@ -40,7 +40,6 @@ export const categories = pgTable("categories", {
 });
 
 export const opinionTypeEnum = pgEnum("opinion_type", ["text", "voice"]);
-export const opinionStatusEnum = pgEnum("opinion_status", ["pending", "approved", "rejected", "clustered"]);
 
 export const opinions = pgTable("opinions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -48,8 +47,6 @@ export const opinions = pgTable("opinions", {
   type: opinionTypeEnum("type").notNull().default("text"),
   content: text("content").notNull(),
   voiceUrl: text("voice_url"),
-  categoryId: varchar("category_id").references(() => categories.id),
-  status: opinionStatusEnum("status").notNull().default("pending"),
   likes: integer("likes").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -156,7 +153,7 @@ export const commentLikes = pgTable("comment_likes", {
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
-export const insertOpinionSchema = createInsertSchema(opinions).omit({ id: true, createdAt: true, likes: true, status: true });
+export const insertOpinionSchema = createInsertSchema(opinions).omit({ id: true, createdAt: true, likes: true });
 export const insertAgendaSchema = createInsertSchema(agendas).omit({ id: true, createdAt: true, updatedAt: true, voteCount: true, viewCount: true });
 export const insertVoteSchema = createInsertSchema(votes).omit({ id: true, createdAt: true });
 export const insertClusterSchema = createInsertSchema(clusters).omit({ id: true, createdAt: true });

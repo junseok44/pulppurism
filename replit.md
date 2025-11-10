@@ -6,17 +6,25 @@ The application is built as a full-stack TypeScript project with React on the fr
 
 # Recent Changes
 
-## November 10, 2025 - Admin Dashboard Integration with Real Data
+## November 10, 2025 - Schema Simplification and Admin Dashboard Completion
 
+**Schema Changes:**
+- Removed `categoryId` from opinions table - opinions no longer have categories, only agendas do
+- Removed `status` field from opinions table - all submitted opinions are automatically eligible for clustering
+- Simplified opinion workflow: submit → cluster → agenda (no approval/rejection workflow)
+- Unclustered opinions are identified by absence in `opinionClusters` table rather than status field
+
+**Admin Dashboard Migration:**
 Completed migration of all admin dashboard pages from mock data to live API integration:
 
 **Backend APIs Added:**
 - GET /api/stats/dashboard - Dashboard statistics (today/weekly new opinions/users, active agendas, pending reports, recent clusters)
 - GET /api/users - User list with filtering and pagination support
 - PATCH /api/users/:id - User profile updates
+- POST /api/dev/seed-opinions - Development tool to generate 70 test opinions for clustering tests
 
 **Frontend Pages Updated:**
-- AdminDashboardHome - Real-time statistics, recent clusters, and pending reports
+- AdminDashboardHome - Real-time statistics, recent clusters, pending reports, and test data generation button
 - ReportManagement - Opinion and agenda report handling with status updates
 - AllAgendasManagement - Agenda list with search, filtering, and deletion
 - CategoryManagement - Read-only category display with agenda counts
@@ -26,7 +34,7 @@ All pages now use React Query for server state management with proper loading st
 
 **Known Limitations:**
 - Comment-level reports not supported (schema limitation - backlog item)
-- Categories are read-only (11 predefined categories)
+- Categories are read-only (11 predefined categories) and only used for agendas, not opinions
 
 # User Preferences
 
@@ -68,13 +76,13 @@ Preferred communication style: Simple, everyday language.
 
 **Current Schema**: Comprehensive schema for civic engagement platform including:
 - Users: OAuth authentication with Google and Kakao support (fields: googleId, kakaoId, provider enum), plus user profile data (username, email, displayName, avatarUrl)
-- Categories: 11 predefined categories (교육, 교통, 환경, 안전, 복지, 문화, 경제, 보건, 주거, 행정, 기타)
-- Opinions: Citizen submissions with text/voice support, status workflow (pending/approved/rejected/clustered), and like counts
-- Agendas: Discussion topics with voting periods, view counts, and status management
+- Categories: 11 predefined categories (교육, 교통, 환경, 안전, 복지, 문화, 경제, 보건, 주거, 행정, 기타) - used for agendas only
+- Opinions: Citizen submissions with text/voice support and like counts - all opinions are automatically eligible for clustering
+- Agendas: Discussion topics with voting periods, view counts, category assignment, and status management
 - Votes: One vote per user per agenda with support for agree/disagree/neutral positions
-- Clusters: AI-generated opinion groupings with similarity scores
+- Clusters: AI-generated opinion groupings with similarity scores, can be linked to agendas
 - OpinionClusters: Many-to-many relationship between opinions and clusters
-- Reports: Content moderation system for flagging inappropriate content
+- Reports: Content moderation system for flagging inappropriate content (opinions and agendas only)
 - OpinionLikes: User likes on opinions with duplicate prevention
 - AgendaBookmarks: User bookmarks on agendas with duplicate prevention
 - Comments: Single-level comments on opinions with edit/delete support and author-only permissions
