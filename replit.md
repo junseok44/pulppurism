@@ -4,6 +4,30 @@ This is a Korean civic engagement platform (주민참여 플랫폼) that enables
 
 The application is built as a full-stack TypeScript project with React on the frontend and Express on the backend, using Material Design principles adapted for Korean audiences with accessibility and trust as core values.
 
+# Recent Changes
+
+## November 10, 2025 - Admin Dashboard Integration with Real Data
+
+Completed migration of all admin dashboard pages from mock data to live API integration:
+
+**Backend APIs Added:**
+- GET /api/stats/dashboard - Dashboard statistics (today/weekly new opinions/users, active agendas, pending reports, recent clusters)
+- GET /api/users - User list with filtering and pagination support
+- PATCH /api/users/:id - User profile updates
+
+**Frontend Pages Updated:**
+- AdminDashboardHome - Real-time statistics, recent clusters, and pending reports
+- ReportManagement - Opinion and agenda report handling with status updates
+- AllAgendasManagement - Agenda list with search, filtering, and deletion
+- CategoryManagement - Read-only category display with agenda counts
+- AdminUsersPage - User list with search and provider statistics
+
+All pages now use React Query for server state management with proper loading states, error handling, and cache invalidation.
+
+**Known Limitations:**
+- Comment-level reports not supported (schema limitation - backlog item)
+- Categories are read-only (11 predefined categories)
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
