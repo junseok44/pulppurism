@@ -4,12 +4,32 @@ import ClusterWorkbench from "@/components/admin/ClusterWorkbench";
 import ReportManagement from "@/components/admin/ReportManagement";
 import AllOpinionsManagement from "@/components/admin/AllOpinionsManagement";
 import { useLocation, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { Cluster, Opinion, Report } from "@shared/schema";
 
 export default function AdminOpinionsPage() {
   const [, setLocation] = useLocation();
   const [matchClusters] = useRoute("/admin/opinions/clusters");
   const [matchReports] = useRoute("/admin/opinions/reports");
   const [matchAll] = useRoute("/admin/opinions/all");
+
+  const { data: clusters = [] } = useQuery<Cluster[]>({
+    queryKey: ["/api/clusters"],
+  });
+
+  const { data: unclusteredOpinions = [] } = useQuery<Opinion[]>({
+    queryKey: ["/api/opinions/unclustered"],
+  });
+
+  const { data: reports = [] } = useQuery<Report[]>({
+    queryKey: ["/api/reports"],
+  });
+
+  const { data: allOpinions = [] } = useQuery<Opinion[]>({
+    queryKey: ["/api/opinions"],
+  });
+
+  const pendingReports = reports.filter((r) => r.status === "pending").length;
 
   if (matchClusters) {
     return <ClusterWorkbench />;
@@ -43,8 +63,8 @@ export default function AdminOpinionsPage() {
             의견 클러스터를 관리하고 안건을 생성합니다
           </p>
           <div className="flex gap-2">
-            <Badge variant="secondary">12개 클러스터</Badge>
-            <Badge variant="outline">5개 미분류</Badge>
+            <Badge variant="secondary">{clusters.length}개 클러스터</Badge>
+            <Badge variant="outline">{unclusteredOpinions.length}개 미분류</Badge>
           </div>
         </Card>
 
@@ -55,9 +75,13 @@ export default function AdminOpinionsPage() {
         >
           <h3 className="font-semibold text-lg mb-2">신고 관리</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            신고된 의견과 답글을 검토하고 조치합니다
+            신고된 의견을 검토하고 조치합니다
           </p>
-          <Badge variant="destructive">5건 대기 중</Badge>
+          {pendingReports > 0 ? (
+            <Badge variant="destructive">{pendingReports}건 대기 중</Badge>
+          ) : (
+            <Badge variant="secondary">처리 완료</Badge>
+          )}
         </Card>
 
         <Card
@@ -69,7 +93,7 @@ export default function AdminOpinionsPage() {
           <p className="text-sm text-muted-foreground mb-4">
             모든 의견을 검색하고 관리합니다
           </p>
-          <Badge variant="secondary">1,234개 의견</Badge>
+          <Badge variant="secondary">{allOpinions.length}개 의견</Badge>
         </Card>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,17 +11,68 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import { Upload, X, FileText } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { Loader2 } from "lucide-react";
+import type { Category } from "@shared/schema";
 
 export default function NewAgendaForm() {
-  const [files, setFiles] = useState<string[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const handleAddFile = () => {
-    setFiles([...files, `파일${files.length + 1}.pdf`]);
-  };
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
 
-  const handleRemoveFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 14);
+
+      const res = await apiRequest("POST", "/api/agendas", {
+        title,
+        description,
+        categoryId,
+        status: "active",
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
+      toast({
+        title: "안건 생성 완료",
+        description: "새로운 안건이 성공적으로 생성되었습니다.",
+      });
+      setLocation("/admin/agendas/all");
+    },
+    onError: () => {
+      toast({
+        title: "안건 생성 실패",
+        description: "안건 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !description || !categoryId) {
+      toast({
+        title: "입력 오류",
+        description: "모든 필수 항목을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createMutation.mutate();
   };
 
   return (
@@ -28,156 +80,85 @@ export default function NewAgendaForm() {
       <div>
         <h2 className="text-2xl font-bold mb-2">새 안건 생성</h2>
         <p className="text-muted-foreground">
-          새로운 안건을 생성하고 관련 정보를 입력합니다
+          새로운 안건을 생성합니다. 투표 기간은 14일로 자동 설정됩니다.
         </p>
       </div>
 
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              안건 제목 <span className="text-destructive">*</span>
-            </label>
-            <Input
-              placeholder="안건 제목을 입력하세요"
-              data-testid="input-title"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              카테고리 <span className="text-destructive">*</span>
-            </label>
-            <Select>
-              <SelectTrigger data-testid="select-category">
-                <SelectValue placeholder="카테고리를 선택하세요" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="care">돌봄</SelectItem>
-                <SelectItem value="medical">의료</SelectItem>
-                <SelectItem value="environment">환경</SelectItem>
-                <SelectItem value="education">교육</SelectItem>
-                <SelectItem value="life">생활</SelectItem>
-                <SelectItem value="traffic">교통</SelectItem>
-                <SelectItem value="economy">경제</SelectItem>
-                <SelectItem value="culture">문화</SelectItem>
-                <SelectItem value="politics">정치</SelectItem>
-                <SelectItem value="administration">행정</SelectItem>
-                <SelectItem value="welfare">복지</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              안건 개요 <span className="text-destructive">*</span>
-            </label>
-            <Textarea
-              placeholder="안건에 대한 설명을 입력하세요"
-              className="min-h-32"
-              data-testid="input-description"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">연결된 클러스터</label>
-            <Select>
-              <SelectTrigger data-testid="select-cluster">
-                <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cluster1">
-                  초등학교 통학로 안전 (15개 의견)
-                </SelectItem>
-                <SelectItem value="cluster2">
-                  도서관 운영 시간 연장 (12개 의견)
-                </SelectItem>
-                <SelectItem value="cluster3">
-                  공원 소음 문제 (8개 의견)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">상태</label>
-            <Select defaultValue="review">
-              <SelectTrigger data-testid="select-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="review">검토 중</SelectItem>
-                <SelectItem value="progress">진행 중</SelectItem>
-                <SelectItem value="completed">완료</SelectItem>
-                <SelectItem value="hold">보류</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">대표 이미지</label>
-            <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate cursor-pointer">
-              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                클릭하여 이미지 업로드
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">참고 자료</label>
+      <form onSubmit={handleSubmit}>
+        <Card className="p-6">
+          <div className="space-y-6">
             <div className="space-y-2">
-              <Button
-                variant="outline"
-                onClick={handleAddFile}
-                data-testid="button-add-file"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                파일 추가
-              </Button>
-              {files.length > 0 && (
-                <div className="space-y-2">
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                      data-testid={`file-${index}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">{file}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveFile(index)}
-                        data-testid={`button-remove-file-${index}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+              <Label htmlFor="title">
+                안건 제목 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="title"
+                placeholder="안건 제목을 입력하세요"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                data-testid="input-title"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">
+                카테고리 <span className="text-destructive">*</span>
+              </Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger data-testid="select-category">
+                  <SelectValue placeholder="카테고리를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                안건 설명 <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="안건에 대한 상세 설명을 입력하세요"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={10}
+                data-testid="textarea-description"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocation("/admin/agendas")}
+                data-testid="button-cancel"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                data-testid="button-submit"
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    생성 중...
+                  </>
+                ) : (
+                  "안건 생성"
+                )}
+              </Button>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">외부 링크</label>
-            <Input
-              placeholder="관련 웹사이트 URL을 입력하세요"
-              data-testid="input-link"
-            />
-          </div>
-        </div>
-      </Card>
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" data-testid="button-cancel">
-          취소
-        </Button>
-        <Button data-testid="button-submit">안건 생성</Button>
-      </div>
+        </Card>
+      </form>
     </div>
   );
 }
