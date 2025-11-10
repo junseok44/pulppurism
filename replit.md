@@ -21,7 +21,13 @@ Completed migration of all admin dashboard pages from mock data to live API inte
 - GET /api/stats/dashboard - Dashboard statistics (today/weekly new opinions/users, active agendas, pending reports, recent clusters)
 - GET /api/users - User list with filtering and pagination support
 - PATCH /api/users/:id - User profile updates
-- POST /api/dev/seed-opinions - Development tool to generate 70 test opinions for clustering tests
+- POST /api/dev/seed-opinions - Development tool to generate test opinions optimized for clustering tests
+
+**Test Data Generation:**
+- Creates 54 test opinions via POST /api/dev/seed-opinions
+- 6 clusterable groups with 6 similar opinions each (주차 문제, 놀이터 안전, 가로등, 쓰레기 분리수거, 버스 배차, 도서관 운영)
+- 18 standalone opinions on diverse topics (unclustered by design)
+- Optimized for realistic clustering algorithm testing
 
 **Frontend Pages Updated:**
 - AdminDashboardHome - Real-time statistics, recent clusters, pending reports, and test data generation button
