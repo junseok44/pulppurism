@@ -18,64 +18,156 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { AlertTriangle, Eye, EyeOff, Check, X, MessageSquare } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Report } from "@shared/schema";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+import { AlertTriangle, Eye, EyeOff, Check, X, MessageSquare, Loader2 } from "lucide-react";
 
 export default function ReportManagement() {
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [actionDialog, setActionDialog] = useState(false);
+  const [actionType, setActionType] = useState<"hide" | "approve" | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const { toast } = useToast();
 
-  // todo: remove mock functionality
-  const reports = [
-    {
-      id: "1",
-      type: "opinion",
-      targetAuthor: "김철수",
-      targetContent: "A초등학교 앞 도로가 너무 위험합니다...",
-      reportCount: 3,
-      reporters: ["이영희", "박민수", "최지영"],
-      reasons: ["부적절한 표현", "허위 정보", "스팸"],
-      status: "대기 중",
-      createdAt: "2024-01-15 10:30",
+  const { data: reports = [], isLoading } = useQuery<Report[]>({
+    queryKey: ["/api/reports"],
+  });
+
+  const updateReportMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiRequest("PATCH", `/api/reports/${id}`, { status, resolvedAt: new Date() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      toast({
+        title: "신고 처리 완료",
+        description: "신고가 성공적으로 처리되었습니다.",
+      });
+      setActionDialog(false);
+      setSelectedReport(null);
+      setActionType(null);
     },
-    {
-      id: "2",
-      type: "comment",
-      targetAuthor: "이영희",
-      targetContent: "이건 말도 안 되는 의견입니다.",
-      reportCount: 1,
-      reporters: ["박민수"],
-      reasons: ["부적절한 표현"],
-      status: "대기 중",
-      createdAt: "2024-01-15 09:15",
+    onError: () => {
+      toast({
+        title: "처리 실패",
+        description: "신고 처리에 실패했습니다.",
+        variant: "destructive",
+      });
     },
-    {
-      id: "3",
-      type: "opinion",
-      targetAuthor: "최지영",
-      targetContent: "공원 소음이 심합니다...",
-      reportCount: 5,
-      reporters: ["김철수", "이영희", "박민수", "정민호", "강서연"],
-      reasons: ["부적절한 표현", "명예훼손"],
-      status: "처리 완료",
-      action: "숨김",
-      createdAt: "2024-01-14 16:20",
+  });
+
+  const hideContentMutation = useMutation({
+    mutationFn: async (report: Report) => {
+      if (report.opinionId) {
+        await apiRequest("PATCH", `/api/opinions/${report.opinionId}`, {
+          status: "rejected",
+        });
+      } else if (report.agendaId) {
+        await apiRequest("PATCH", `/api/agendas/${report.agendaId}`, {
+          status: "closed",
+        });
+      }
+      return apiRequest("PATCH", `/api/reports/${report.id}`, {
+        status: "resolved",
+        resolvedAt: new Date(),
+      });
     },
-  ];
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
+      toast({
+        title: "콘텐츠 숨김 완료",
+        description: "신고된 콘텐츠가 숨김 처리되었습니다.",
+      });
+      setActionDialog(false);
+      setSelectedReport(null);
+      setActionType(null);
+    },
+    onError: () => {
+      toast({
+        title: "처리 실패",
+        description: "콘텐츠 숨김 처리에 실패했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const filteredReports = reports.filter((report) => {
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "pending" && report.status === "pending") ||
+      (statusFilter === "completed" &&
+        (report.status === "resolved" || report.status === "dismissed"));
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "opinion" && report.opinionId) ||
+      (typeFilter === "agenda" && report.agendaId);
+    return matchesStatus && matchesType;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "대기 중":
+      case "pending":
         return "destructive";
-      case "처리 완료":
+      case "reviewing":
+        return "default";
+      case "resolved":
+      case "dismissed":
         return "secondary";
       default:
         return "secondary";
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    return type === "opinion" ? "의견" : "답글";
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "대기 중";
+      case "reviewing":
+        return "검토 중";
+      case "resolved":
+        return "처리 완료";
+      case "dismissed":
+        return "기각";
+      default:
+        return status;
+    }
   };
+
+  const getTypeLabel = (report: Report) => {
+    return report.opinionId ? "의견" : "안건";
+  };
+
+  const handleAction = (report: Report, type: "hide" | "approve") => {
+    setSelectedReport(report);
+    setActionType(type);
+    if (type === "approve") {
+      updateReportMutation.mutate({ id: report.id, status: "dismissed" });
+    } else {
+      setActionDialog(true);
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (!selectedReport) return;
+    
+    if (actionType === "hide") {
+      hideContentMutation.mutate(selectedReport);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -83,11 +175,11 @@ export default function ReportManagement() {
         <div>
           <h2 className="text-2xl font-bold mb-2">신고 관리</h2>
           <p className="text-muted-foreground">
-            신고된 의견과 답글을 검토하고 조치합니다
+            신고된 의견과 안건을 검토하고 조치합니다
           </p>
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40" data-testid="select-status-filter">
               <SelectValue />
             </SelectTrigger>
@@ -97,114 +189,90 @@ export default function ReportManagement() {
               <SelectItem value="completed">처리 완료</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-40" data-testid="select-type-filter">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 유형</SelectItem>
               <SelectItem value="opinion">의견</SelectItem>
-              <SelectItem value="comment">답글</SelectItem>
+              <SelectItem value="agenda">안건</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="space-y-4">
-        {reports.map((report) => (
-          <Card
-            key={report.id}
-            className={`p-6 ${
-              report.status === "대기 중" ? "border-l-4 border-l-destructive" : ""
-            }`}
-            data-testid={`report-${report.id}`}
-          >
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-5 h-5 text-destructive" />
-                    <h3 className="font-semibold">
-                      {getTypeLabel(report.type)} 신고
-                    </h3>
-                    <Badge variant={getStatusColor(report.status)}>
-                      {report.status}
-                    </Badge>
-                    {report.status === "처리 완료" && report.action && (
-                      <Badge variant="outline">{report.action}</Badge>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      작성자: <span className="font-medium">{report.targetAuthor}</span>
-                    </p>
-                    <p className="text-sm">"{report.targetContent}"</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" />
-                        신고 {report.reportCount}건
-                      </span>
-                      <span>{report.createdAt}</span>
+        {filteredReports.length === 0 ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">신고 내역이 없습니다</p>
+          </Card>
+        ) : (
+          filteredReports.map((report) => (
+            <Card
+              key={report.id}
+              className={`p-6 ${
+                report.status === "pending" ? "border-l-4 border-l-destructive" : ""
+              }`}
+              data-testid={`report-${report.id}`}
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                      <h3 className="font-semibold">
+                        {getTypeLabel(report)} 신고
+                      </h3>
+                      <Badge variant={getStatusColor(report.status)}>
+                        {getStatusLabel(report.status)}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {report.reportType}
+                        </Badge>
+                      </div>
+                      <p className="text-sm">{report.description}</p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>
+                          {formatDistanceToNow(new Date(report.createdAt), {
+                            addSuffix: true,
+                            locale: ko,
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                {report.status === "대기 중" && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedReport(report.id);
-                        setActionDialog(true);
-                      }}
-                      data-testid={`button-hide-${report.id}`}
-                    >
-                      <EyeOff className="w-4 h-4 mr-2" />
-                      숨김
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid={`button-approve-${report.id}`}
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      정상
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t pt-4 space-y-2">
-                <h4 className="font-semibold text-sm">신고 사유</h4>
-                <div className="flex flex-wrap gap-2">
-                  {report.reasons.map((reason, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {reason}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">
-                    신고자: {report.reporters.join(", ")}
-                  </p>
+                  {report.status === "pending" && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAction(report, "hide")}
+                        data-testid={`button-hide-${report.id}`}
+                      >
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        숨김
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAction(report, "approve")}
+                        disabled={updateReportMutation.isPending}
+                        data-testid={`button-approve-${report.id}`}
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        정상
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" data-testid={`button-view-detail-${report.id}`}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  원문 보기
-                </Button>
-                {report.type === "comment" && (
-                  <Button variant="outline" size="sm" data-testid={`button-view-context-${report.id}`}>
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    맥락 보기
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
       </div>
 
       <Dialog open={actionDialog} onOpenChange={setActionDialog}>
@@ -216,24 +284,27 @@ export default function ReportManagement() {
               표시되지 않습니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">처리 사유 (선택)</label>
-              <Textarea
-                placeholder="처리 사유를 입력하세요"
-                data-testid="input-action-reason"
-              />
-            </div>
-          </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setActionDialog(false)}
+              onClick={() => {
+                setActionDialog(false);
+                setSelectedReport(null);
+                setActionType(null);
+              }}
               data-testid="button-cancel-action"
             >
               취소
             </Button>
-            <Button variant="destructive" data-testid="button-confirm-action">
+            <Button
+              variant="destructive"
+              onClick={handleConfirmAction}
+              disabled={hideContentMutation.isPending}
+              data-testid="button-confirm-action"
+            >
+              {hideContentMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               숨김 처리
             </Button>
           </DialogFooter>

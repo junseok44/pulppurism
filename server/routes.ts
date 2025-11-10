@@ -983,6 +983,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/stats/dashboard", async (req, res) => {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - 7);
+
+      const [
+        todayOpinions,
+        weekOpinions,
+        todayUsers,
+        weekUsers,
+        activeAgendas,
+        pendingReports,
+        recentClusters,
+      ] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(opinions)
+          .where(sql`${opinions.createdAt} >= ${todayStart}`),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(opinions)
+          .where(sql`${opinions.createdAt} >= ${weekStart}`),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(users)
+          .where(sql`${users.createdAt} >= ${todayStart}`),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(users)
+          .where(sql`${users.createdAt} >= ${weekStart}`),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(agendas)
+          .where(eq(agendas.status, "active")),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(sql`(SELECT DISTINCT target_id FROM reports WHERE status = 'pending') as distinct_reports`),
+        db.select({
+          id: clusters.id,
+          title: clusters.title,
+          summary: clusters.summary,
+          opinionCount: clusters.opinionCount,
+          similarity: clusters.similarity,
+          createdAt: clusters.createdAt,
+        })
+          .from(clusters)
+          .orderBy(desc(clusters.createdAt))
+          .limit(5),
+      ]);
+
+      res.json({
+        today: {
+          newOpinions: todayOpinions[0]?.count || 0,
+          newUsers: todayUsers[0]?.count || 0,
+        },
+        week: {
+          newOpinions: weekOpinions[0]?.count || 0,
+          newUsers: weekUsers[0]?.count || 0,
+        },
+        activeAgendas: activeAgendas[0]?.count || 0,
+        pendingReports: pendingReports[0]?.count || 0,
+        recentClusters,
+      });
+    } catch (error) {
+      console.error("Failed to fetch dashboard stats:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/users", async (req, res) => {
+    try {
+      const { limit, offset, search } = req.query;
+      
+      let query = db
+        .select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+          provider: users.provider,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt));
+
+      if (search) {
+        query = query.where(
+          sql`${users.username} ILIKE ${'%' + search + '%'} OR ${users.displayName} ILIKE ${'%' + search + '%'} OR ${users.email} ILIKE ${'%' + search + '%'}`
+        ) as any;
+      }
+
+      if (limit) {
+        query = query.limit(parseInt(limit as string)) as any;
+      }
+
+      if (offset) {
+        query = query.offset(parseInt(offset as string)) as any;
+      }
+
+      const usersList = await query;
+      res.json(usersList);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const schema = z.object({
+        displayName: z.string().optional(),
+        avatarUrl: z.string().optional(),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const [updatedUser] = await db
+        .update(users)
+        .set(data)
+        .where(eq(users.id, req.params.id))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Failed to update user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
