@@ -101,7 +101,8 @@ export interface IStorage {
   getCommentsByOpinion(opinionId: string): Promise<Comment[]>;
   getComment(id: string): Promise<Comment | undefined>;
   createComment(comment: InsertComment): Promise<Comment>;
-  deleteComment(id: string): Promise<boolean>;
+  updateComment(id: string, userId: string, data: { content: string }): Promise<Comment | undefined>;
+  deleteComment(id: string, userId: string): Promise<boolean>;
   incrementCommentLikes(id: string): Promise<void>;
   decrementCommentLikes(id: string): Promise<void>;
 
@@ -433,8 +434,17 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async deleteComment(id: string): Promise<boolean> {
-    const result = await db.delete(comments).where(eq(comments.id, id));
+  async updateComment(id: string, userId: string, data: { content: string }): Promise<Comment | undefined> {
+    const result = await db.update(comments)
+      .set({ content: data.content })
+      .where(and(eq(comments.id, id), eq(comments.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteComment(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(comments)
+      .where(and(eq(comments.id, id), eq(comments.userId, userId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
