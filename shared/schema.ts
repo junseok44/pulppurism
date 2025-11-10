@@ -165,6 +165,7 @@ export const insertReportSchema = createInsertSchema(reports).omit({ id: true, c
 export const insertOpinionLikeSchema = createInsertSchema(opinionLikes).omit({ id: true, createdAt: true });
 export const insertAgendaBookmarkSchema = createInsertSchema(agendaBookmarks).omit({ id: true, createdAt: true });
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true, likes: true });
+export const updateCommentSchema = insertCommentSchema.pick({ content: true });
 export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({ id: true, createdAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -188,6 +189,7 @@ export type OpinionLike = typeof opinionLikes.$inferSelect;
 export type InsertAgendaBookmark = z.infer<typeof insertAgendaBookmarkSchema>;
 export type AgendaBookmark = typeof agendaBookmarks.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type UpdateComment = z.infer<typeof updateCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertCommentLike = z.infer<typeof insertCommentLikeSchema>;
 export type CommentLike = typeof commentLikes.$inferSelect;
