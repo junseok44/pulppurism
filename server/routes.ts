@@ -302,6 +302,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/opinions/unclustered", async (req, res) => {
+    try {
+      const { limit, offset, categoryId } = req.query;
+      
+      const unclusteredOpinions = await storage.getUnclusteredOpinions({
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+        categoryId: categoryId as string | undefined,
+      });
+      
+      const opinionsWithUserData = await Promise.all(
+        unclusteredOpinions.map(async (opinion) => {
+          const user = await storage.getUser(opinion.userId);
+          return {
+            ...opinion,
+            username: user?.username || "Unknown",
+            displayName: user?.displayName || null,
+            avatarUrl: user?.avatarUrl || null,
+          };
+        })
+      );
+      
+      res.json(opinionsWithUserData);
+    } catch (error) {
+      console.error("Failed to fetch unclustered opinions:", error);
+      res.status(500).json({ error: "Failed to fetch unclustered opinions" });
+    }
+  });
+
   app.get("/api/opinions/:id", async (req, res) => {
     try {
       const opinionData = await db

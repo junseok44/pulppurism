@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   users,
@@ -49,6 +49,7 @@ export interface IStorage {
   getCategory(id: string): Promise<Category | undefined>;
 
   getOpinions(options?: { limit?: number; offset?: number; status?: string; categoryId?: string }): Promise<Opinion[]>;
+  getUnclusteredOpinions(options?: { limit?: number; offset?: number; categoryId?: string }): Promise<Opinion[]>;
   getOpinion(id: string): Promise<Opinion | undefined>;
   getOpinionsByUser(userId: string): Promise<Opinion[]>;
   createOpinion(opinion: InsertOpinion): Promise<Opinion>;
@@ -171,6 +172,43 @@ export class DatabaseStorage implements IStorage {
 
   async getOpinionsByUser(userId: string): Promise<Opinion[]> {
     return db.select().from(opinions).where(eq(opinions.userId, userId)).orderBy(desc(opinions.createdAt));
+  }
+
+  async getUnclusteredOpinions(options?: { limit?: number; offset?: number; categoryId?: string }): Promise<Opinion[]> {
+    const conditions = [
+      eq(opinions.status, "approved"),
+      isNull(opinionClusters.id)
+    ];
+    
+    if (options?.categoryId) {
+      conditions.push(eq(opinions.categoryId, options.categoryId));
+    }
+    
+    let query: any = db
+      .select({
+        id: opinions.id,
+        userId: opinions.userId,
+        type: opinions.type,
+        content: opinions.content,
+        voiceUrl: opinions.voiceUrl,
+        categoryId: opinions.categoryId,
+        status: opinions.status,
+        likes: opinions.likes,
+        createdAt: opinions.createdAt,
+      })
+      .from(opinions)
+      .leftJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
+      .where(and(...conditions))
+      .orderBy(desc(opinions.createdAt));
+    
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options?.offset) {
+      query = query.offset(options.offset);
+    }
+    
+    return query;
   }
 
   async createOpinion(opinion: InsertOpinion): Promise<Opinion> {
