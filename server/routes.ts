@@ -1015,7 +1015,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from(agendas)
           .where(eq(agendas.status, "active")),
         db.select({ count: sql<number>`count(*)::int` })
-          .from(sql`(SELECT DISTINCT target_id FROM reports WHERE status = 'pending') as distinct_reports`),
+          .from(reports)
+          .where(eq(reports.status, "pending")),
         db.select({
           id: clusters.id,
           title: clusters.title,
