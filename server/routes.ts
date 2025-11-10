@@ -839,14 +839,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clusters", async (req, res) => {
     try {
-      const data = insertClusterSchema.parse(req.body);
-      const cluster = await storage.createCluster(data);
+      const schema = z.object({
+        title: z.string().min(1),
+        summary: z.string().min(1),
+        opinionIds: z.array(z.string()).min(1),
+      });
+
+      const { title, summary, opinionIds } = schema.parse(req.body);
+
+      const cluster = await storage.createCluster({
+        title,
+        summary,
+        opinionCount: opinionIds.length,
+        similarity: null,
+        agendaId: null,
+      });
+
+      for (const opinionId of opinionIds) {
+        await storage.createOpinionCluster({
+          opinionId,
+          clusterId: cluster.id,
+        });
+      }
+
       res.status(201).json(cluster);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to create cluster" });
+    }
+  });
+
+  app.post("/api/clusters/:id/opinions", async (req, res) => {
+    try {
+      const schema = z.object({
+        opinionIds: z.array(z.string()).min(1),
+      });
+
+      const { opinionIds } = schema.parse(req.body);
+
+      for (const opinionId of opinionIds) {
+        await storage.createOpinionCluster({
+          opinionId,
+          clusterId: req.params.id,
+        });
+      }
+
+      const [updatedCluster] = await db
+        .update(clusters)
+        .set({ opinionCount: sql`opinion_count + ${opinionIds.length}` })
+        .where(eq(clusters.id, req.params.id))
+        .returning();
+
+      res.json(updatedCluster);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to add opinions to cluster" });
     }
   });
 
