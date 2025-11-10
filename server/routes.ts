@@ -4,7 +4,7 @@ import passport from "passport";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, insertCommentSchema, users, comments as dbComments } from "@shared/schema";
+import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, insertCommentSchema, updateCommentSchema, users, comments as dbComments } from "@shared/schema";
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
@@ -491,6 +491,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Failed to create comment:", error);
       res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  app.patch("/api/comments/:id", requireAuth, async (req, res) => {
+    try {
+      const data = updateCommentSchema.parse(req.body);
+      const userId = req.user!.id;
+      
+      const comment = await storage.updateComment(req.params.id, userId, data);
+      if (!comment) {
+        return res.status(404).json({ error: "Comment not found or unauthorized" });
+      }
+      res.json(comment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Failed to update comment:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/comments/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const success = await storage.deleteComment(req.params.id, userId);
+      if (!success) {
+        return res.status(404).json({ error: "Comment not found or unauthorized" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
     }
   });
 
