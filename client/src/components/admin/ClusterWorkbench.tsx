@@ -29,7 +29,7 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: opinions = [], isLoading } = useQuery<OpinionWithUser[]>({
-    queryKey: [`/api/clusters/${cluster.id}/opinions`],
+    queryKey: ["/api/clusters", cluster.id, "opinions"],
     enabled: isExpanded,
   });
 
@@ -148,10 +148,8 @@ export default function ClusterWorkbench() {
 
   const runClusteringMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/clusters/generate", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
+      const res = await apiRequest("POST", "/api/clusters/generate", {});
+      return res.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });

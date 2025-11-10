@@ -9,7 +9,7 @@ import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
 import { agendas, categories, clusters, opinionClusters, opinions } from "@shared/schema";
-import { eq, and, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -306,25 +306,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit, offset, categoryId } = req.query;
       
-      const unclusteredOpinions = await storage.getUnclusteredOpinions({
-        limit: limit ? parseInt(limit as string) : undefined,
-        offset: offset ? parseInt(offset as string) : undefined,
-        categoryId: categoryId as string | undefined,
-      });
+      const conditions = [
+        eq(opinions.status, "approved"),
+        isNull(opinionClusters.id)
+      ];
       
-      const opinionsWithUserData = await Promise.all(
-        unclusteredOpinions.map(async (opinion) => {
-          const user = await storage.getUser(opinion.userId);
-          return {
-            ...opinion,
-            username: user?.username || "Unknown",
-            displayName: user?.displayName || null,
-            avatarUrl: user?.avatarUrl || null,
-          };
+      if (categoryId) {
+        conditions.push(eq(opinions.categoryId, categoryId as string));
+      }
+      
+      let query: any = db
+        .select({
+          id: opinions.id,
+          userId: opinions.userId,
+          type: opinions.type,
+          content: opinions.content,
+          voiceUrl: opinions.voiceUrl,
+          categoryId: opinions.categoryId,
+          status: opinions.status,
+          likes: opinions.likes,
+          createdAt: opinions.createdAt,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
         })
-      );
+        .from(opinions)
+        .leftJoin(users, eq(opinions.userId, users.id))
+        .leftJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
+        .where(and(...conditions))
+        .orderBy(desc(opinions.createdAt));
       
-      res.json(opinionsWithUserData);
+      if (limit) {
+        query = query.limit(parseInt(limit as string));
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string));
+      }
+      
+      const result = await query;
+      res.json(result);
     } catch (error) {
       console.error("Failed to fetch unclustered opinions:", error);
       res.status(500).json({ error: "Failed to fetch unclustered opinions" });
@@ -882,13 +902,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/clusters/:id/opinions", async (req, res) => {
     try {
-      const opinionClusters = await storage.getOpinionClustersByCluster(req.params.id);
-      const opinionIds = opinionClusters.map(oc => oc.opinionId);
-      
-      if (opinionIds.length === 0) {
-        return res.json([]);
-      }
-      
       const opinionsWithUsers = await db
         .select({
           id: opinions.id,
@@ -904,9 +917,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           displayName: users.displayName,
           avatarUrl: users.avatarUrl,
         })
-        .from(opinions)
+        .from(opinionClusters)
+        .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
         .leftJoin(users, eq(opinions.userId, users.id))
-        .where(sql`${opinions.id} IN (${sql.raw(opinionIds.map(id => `'${id}'`).join(', '))})`)
+        .where(eq(opinionClusters.clusterId, req.params.id))
         .orderBy(desc(opinions.createdAt));
       
       res.json(opinionsWithUsers);
