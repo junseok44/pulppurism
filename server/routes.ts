@@ -9,7 +9,7 @@ import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
 import { agendas, categories, clusters, opinionClusters, opinions } from "@shared/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
