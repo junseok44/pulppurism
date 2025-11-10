@@ -77,6 +77,10 @@ export default function OpinionDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
+  const [isCommentEditDialogOpen, setIsCommentEditDialogOpen] = useState(false);
+  const [isCommentDeleteDialogOpen, setIsCommentDeleteDialogOpen] = useState(false);
+  const [editingComment, setEditingComment] = useState<CommentWithUser | null>(null);
+  const [commentEditContent, setCommentEditContent] = useState("");
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -165,8 +169,8 @@ export default function OpinionDetailPage() {
         likes: 0,
         createdAt: new Date().toISOString(),
         username: user!.username,
-        displayName: user!.displayName,
-        avatarUrl: user!.avatarUrl,
+        displayName: user!.displayName || null,
+        avatarUrl: user!.avatarUrl || null,
       };
       
       queryClient.setQueryData<CommentWithUser[]>(
@@ -189,6 +193,82 @@ export default function OpinionDetailPage() {
       toast({
         title: "오류가 발생했습니다",
         description: error.message || "답글 등록에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+    },
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      return apiRequest("PATCH", `/api/comments/${id}`, { content });
+    },
+    onMutate: async ({ id, content }) => {
+      await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+      
+      const previousComments = queryClient.getQueryData<CommentWithUser[]>([`/api/opinions/${opinionId}/comments`]);
+      
+      queryClient.setQueryData<CommentWithUser[]>(
+        [`/api/opinions/${opinionId}/comments`],
+        (old) => old?.map((c) => c.id === id ? { ...c, content } : c) || []
+      );
+      
+      return { previousComments };
+    },
+    onSuccess: () => {
+      setIsCommentEditDialogOpen(false);
+      setEditingComment(null);
+      toast({
+        title: "답글이 수정되었습니다",
+      });
+    },
+    onError: (error: any, variables, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData([`/api/opinions/${opinionId}/comments`], context.previousComments);
+      }
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "답글 수정에 실패했습니다",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/comments/${id}`);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}/comments`] });
+      
+      const previousComments = queryClient.getQueryData<CommentWithUser[]>([`/api/opinions/${opinionId}/comments`]);
+      
+      queryClient.setQueryData<CommentWithUser[]>(
+        [`/api/opinions/${opinionId}/comments`],
+        (old) => old?.filter((c) => c.id !== id) || []
+      );
+      
+      return { previousComments };
+    },
+    onSuccess: () => {
+      setIsCommentDeleteDialogOpen(false);
+      setEditingComment(null);
+      toast({
+        title: "답글이 삭제되었습니다",
+      });
+    },
+    onError: (error: any, variables, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData([`/api/opinions/${opinionId}/comments`], context.previousComments);
+      }
+      toast({
+        title: "오류가 발생했습니다",
+        description: error.message || "답글 삭제에 실패했습니다",
         variant: "destructive",
       });
     },
@@ -262,6 +342,32 @@ export default function OpinionDetailPage() {
     }
   };
 
+  const handleEditComment = (comment: CommentWithUser) => {
+    setEditingComment(comment);
+    setCommentEditContent(comment.content);
+    setIsCommentEditDialogOpen(true);
+  };
+
+  const handleDeleteComment = (comment: CommentWithUser) => {
+    setEditingComment(comment);
+    setIsCommentDeleteDialogOpen(true);
+  };
+
+  const confirmEditComment = () => {
+    if (editingComment && commentEditContent.trim()) {
+      updateCommentMutation.mutate({
+        id: editingComment.id,
+        content: commentEditContent.trim(),
+      });
+    }
+  };
+
+  const confirmDeleteComment = () => {
+    if (editingComment) {
+      deleteCommentMutation.mutate(editingComment.id);
+    }
+  };
+
   const handleEdit = () => {
     setEditContent(opinion?.content || "");
     setIsEditDialogOpen(true);
@@ -305,16 +411,6 @@ export default function OpinionDetailPage() {
     );
   }
 
-  const formattedComments = comments.map((c) => ({
-    id: c.id,
-    authorName: c.displayName || c.username,
-    authorAvatar: c.avatarUrl || undefined,
-    content: c.content,
-    timestamp: formatDistanceToNow(new Date(c.createdAt), {
-      addSuffix: true,
-      locale: ko,
-    }),
-  }));
 
   const authorName = opinion.displayName || opinion.username;
 
@@ -434,18 +530,23 @@ export default function OpinionDetailPage() {
 
           <div className="border-t pt-6">
             <h3 className="font-semibold text-lg mb-4">
-              답글 {formattedComments.length}개
+              답글 {comments.length}개
             </h3>
             {commentsLoading ? (
               <div className="text-center py-4 text-muted-foreground">
                 답글을 불러오는 중...
               </div>
-            ) : formattedComments.length === 0 ? (
+            ) : comments.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 아직 답글이 없습니다. 첫 번째로 답글을 달아보세요!
               </div>
             ) : (
-              <CommentThread comments={formattedComments} />
+              <CommentThread 
+                comments={comments}
+                currentUserId={user?.id}
+                onEdit={handleEditComment}
+                onDelete={handleDeleteComment}
+              />
             )}
           </div>
 
@@ -523,6 +624,60 @@ export default function OpinionDetailPage() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isCommentEditDialogOpen} onOpenChange={setIsCommentEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-comment">
+          <DialogHeader>
+            <DialogTitle>답글 수정</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="답글 내용을 입력하세요..."
+              value={commentEditContent}
+              onChange={(e) => setCommentEditContent(e.target.value)}
+              className="min-h-32"
+              data-testid="input-edit-comment-content"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsCommentEditDialogOpen(false)}
+                data-testid="button-cancel-edit-comment"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={confirmEditComment}
+                disabled={!commentEditContent.trim() || updateCommentMutation.isPending}
+                data-testid="button-confirm-edit-comment"
+              >
+                {updateCommentMutation.isPending ? "수정 중..." : "수정하기"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isCommentDeleteDialogOpen} onOpenChange={setIsCommentDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-comment">
+          <AlertDialogHeader>
+            <AlertDialogTitle>답글 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 답글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-comment">취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteComment}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-comment"
+            >
+              {deleteCommentMutation.isPending ? "삭제 중..." : "삭제"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
