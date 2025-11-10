@@ -72,17 +72,14 @@ async function generateClusterTitle(opinions: Opinion[]): Promise<{ title: strin
   };
 }
 
-export async function clusterOpinions(categoryId?: string): Promise<{
+export async function clusterOpinions(): Promise<{
   clustersCreated: number;
   opinionsProcessed: number;
 }> {
   const similarityThreshold = 0.75;
   const minClusterSize = 2;
   
-  const opinions = await storage.getOpinions({
-    status: "approved",
-    categoryId,
-  });
+  const opinions = await storage.getUnclusteredOpinions();
   
   if (opinions.length < minClusterSize) {
     return { clustersCreated: 0, opinionsProcessed: 0 };
@@ -137,12 +134,6 @@ export async function clusterOpinions(categoryId?: string): Promise<{
   for (const cluster of clusters) {
     const opinions = cluster.map(c => c.opinion);
     
-    const categoryIds = new Set(opinions.map(op => op.categoryId).filter(Boolean));
-    if (categoryIds.size > 1) {
-      console.warn(`Skipping cluster with mixed categories: ${Array.from(categoryIds).join(", ")}`);
-      continue;
-    }
-    
     const { title, summary } = await generateClusterTitle(opinions);
     
     const avgSimilarity = cluster.reduce((sum, item, idx) => {
@@ -150,15 +141,12 @@ export async function clusterOpinions(categoryId?: string): Promise<{
       return sum + cosineSimilarity(cluster[0].embedding, item.embedding);
     }, 0) / Math.max(1, cluster.length - 1);
     
-    const firstOpinion = opinions[0];
-    
     const createdCluster = await storage.createCluster({
       title,
       summary,
-      categoryId: firstOpinion.categoryId,
       opinionCount: cluster.length,
       similarity: Math.round(avgSimilarity * 100),
-      status: "pending",
+      agendaId: null,
     });
     
     for (const item of cluster) {

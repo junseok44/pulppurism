@@ -900,12 +900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clusters/generate", async (req, res) => {
     try {
-      const schema = z.object({
-        categoryId: z.string().optional(),
-      });
-      
-      const { categoryId } = schema.parse(req.body);
-      const result = await clusterOpinions(categoryId);
+      const result = await clusterOpinions();
       res.json(result);
     } catch (error) {
       if (error instanceof z.ZodError) {

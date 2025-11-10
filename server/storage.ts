@@ -48,8 +48,8 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategory(id: string): Promise<Category | undefined>;
 
-  getOpinions(options?: { limit?: number; offset?: number; status?: string; categoryId?: string }): Promise<Opinion[]>;
-  getUnclusteredOpinions(options?: { limit?: number; offset?: number; categoryId?: string }): Promise<Opinion[]>;
+  getOpinions(options?: { limit?: number; offset?: number }): Promise<Opinion[]>;
+  getUnclusteredOpinions(options?: { limit?: number; offset?: number }): Promise<Opinion[]>;
   getOpinion(id: string): Promise<Opinion | undefined>;
   getOpinionsByUser(userId: string): Promise<Opinion[]>;
   createOpinion(opinion: InsertOpinion): Promise<Opinion>;
@@ -137,23 +137,8 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getOpinions(options?: { limit?: number; offset?: number; status?: string; categoryId?: string }): Promise<Opinion[]> {
-    const conditions = [];
-    
-    if (options?.status) {
-      conditions.push(eq(opinions.status, options.status as any));
-    }
-    if (options?.categoryId) {
-      conditions.push(eq(opinions.categoryId, options.categoryId));
-    }
-    
-    let query: any = db.select().from(opinions);
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    query = query.orderBy(desc(opinions.createdAt));
+  async getOpinions(options?: { limit?: number; offset?: number }): Promise<Opinion[]> {
+    let query: any = db.select().from(opinions).orderBy(desc(opinions.createdAt));
     
     if (options?.limit) {
       query = query.limit(options.limit);
@@ -174,16 +159,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(opinions).where(eq(opinions.userId, userId)).orderBy(desc(opinions.createdAt));
   }
 
-  async getUnclusteredOpinions(options?: { limit?: number; offset?: number; categoryId?: string }): Promise<Opinion[]> {
-    const conditions = [
-      eq(opinions.status, "approved"),
-      isNull(opinionClusters.id)
-    ];
-    
-    if (options?.categoryId) {
-      conditions.push(eq(opinions.categoryId, options.categoryId));
-    }
-    
+  async getUnclusteredOpinions(options?: { limit?: number; offset?: number }): Promise<Opinion[]> {
     let query: any = db
       .select({
         id: opinions.id,
@@ -191,14 +167,12 @@ export class DatabaseStorage implements IStorage {
         type: opinions.type,
         content: opinions.content,
         voiceUrl: opinions.voiceUrl,
-        categoryId: opinions.categoryId,
-        status: opinions.status,
         likes: opinions.likes,
         createdAt: opinions.createdAt,
       })
       .from(opinions)
       .leftJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
-      .where(and(...conditions))
+      .where(isNull(opinionClusters.id))
       .orderBy(desc(opinions.createdAt));
     
     if (options?.limit) {
