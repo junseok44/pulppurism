@@ -1056,10 +1056,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/dev/seed-opinions", requireAuth, async (req, res) => {
+  app.post("/api/dev/seed-opinions", async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "로그인이 필요합니다" });
       }
 
       const userId = req.user.id;
