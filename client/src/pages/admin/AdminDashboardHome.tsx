@@ -10,9 +10,12 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
+  Database,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Report } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -40,6 +43,7 @@ type DashboardStats = {
 
 export default function AdminDashboardHome() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/stats/dashboard"],
@@ -47,6 +51,26 @@ export default function AdminDashboardHome() {
 
   const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
     queryKey: ["/api/reports"],
+  });
+
+  const seedOpinionsMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/dev/seed-opinions"),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions/unclustered"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/dashboard"] });
+      toast({
+        title: "의견 생성 완료",
+        description: data.message || "100개의 의견이 생성되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "의견 생성 실패",
+        description: "의견 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
   });
 
   const pendingReports = reports.filter((r) => r.status === "pending");
@@ -69,11 +93,31 @@ export default function AdminDashboardHome() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">대시보드</h1>
-        <p className="text-muted-foreground">
-          주민참여 플랫폼의 주요 지표와 활동을 한눈에 확인하세요
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">대시보드</h1>
+          <p className="text-muted-foreground">
+            주민참여 플랫폼의 주요 지표와 활동을 한눈에 확인하세요
+          </p>
+        </div>
+        <Button
+          onClick={() => seedOpinionsMutation.mutate()}
+          disabled={seedOpinionsMutation.isPending}
+          variant="outline"
+          data-testid="button-seed-opinions"
+        >
+          {seedOpinionsMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              생성 중...
+            </>
+          ) : (
+            <>
+              <Database className="w-4 h-4 mr-2" />
+              테스트 의견 100개 생성
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

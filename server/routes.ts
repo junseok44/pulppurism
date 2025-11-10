@@ -1088,6 +1088,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/dev/seed-opinions", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userId = req.user.id;
+      const categoriesList = await db.select().from(categories);
+      
+      const opinionTemplates = [
+        { category: "교육", texts: [
+          "학교 급식의 질을 개선해주세요. 아이들이 더 건강한 식사를 할 수 있도록 유기농 식재료 사용을 늘려야 합니다.",
+          "방과후 프로그램을 더 다양하게 운영해주세요. 코딩, 로봇, AI 등 미래 기술 교육이 필요합니다.",
+          "학교 도서관 장서를 확충하고 전자책도 대여할 수 있으면 좋겠습니다.",
+          "체육시설이 부족합니다. 실내 체육관을 증설해주세요.",
+          "학생들을 위한 진로상담 프로그램이 필요합니다.",
+          "학교 주변 통학로가 위험합니다. 횡단보도와 신호등을 설치해주세요.",
+          "교실 냉난방 시설 개선이 필요합니다. 여름에 너무 덥습니다.",
+        ]},
+        { category: "교통", texts: [
+          "버스 배차 간격을 줄여주세요. 출퇴근 시간 대기가 너무 깁니다.",
+          "지하철역에서 집까지 마을버스를 신설해주세요.",
+          "자전거 도로를 확충하고 안전하게 정비해주세요.",
+          "주차장이 부족합니다. 공영주차장을 건설해주세요.",
+          "어린이보호구역 과속단속 카메라를 설치해주세요.",
+          "심야버스 노선을 추가로 개설해주세요.",
+          "전기차 충전소를 더 많이 설치해주세요.",
+        ]},
+        { category: "환경", texts: [
+          "재활용 분리수거함을 더 많이 설치해주세요.",
+          "공원에 나무를 더 많이 심어 녹지공간을 확대해주세요.",
+          "일회용품 사용을 줄이기 위한 캠페인을 진행해주세요.",
+          "미세먼지가 심한 날 야외활동 자제 알림을 보내주세요.",
+          "쓰레기 불법투기 단속을 강화해주세요.",
+          "태양광 패널 설치를 지원해주세요.",
+          "플라스틱 프리 매장을 늘려주세요.",
+        ]},
+        { category: "안전", texts: [
+          "CCTV를 추가 설치하여 주민 안전을 강화해주세요.",
+          "가로등이 어두워 밤길이 무섭습니다. LED 가로등으로 교체해주세요.",
+          "어린이 놀이터 안전점검을 정기적으로 실시해주세요.",
+          "재난 대비 훈련을 정기적으로 실시해주세요.",
+          "소방도로 불법주차 단속을 강화해주세요.",
+          "독거노인 안전확인 시스템을 구축해주세요.",
+          "방범대 순찰을 강화해주세요.",
+        ]},
+        { category: "복지", texts: [
+          "독거노인을 위한 무료 급식 서비스를 확대해주세요.",
+          "청년 주거지원 프로그램을 확대해주세요.",
+          "어린이집 대기시간이 너무 깁니다. 국공립 어린이집을 증설해주세요.",
+          "장애인 편의시설을 확충해주세요.",
+          "다문화가정 지원 프로그램을 확대해주세요.",
+          "저소득층 의료비 지원을 확대해주세요.",
+          "노인일자리 사업을 확대해주세요.",
+        ]},
+        { category: "문화", texts: [
+          "도서관 운영시간을 연장해주세요. 직장인도 이용할 수 있게 해주세요.",
+          "문화센터에서 다양한 강좌를 개설해주세요.",
+          "야외 공연장을 만들어 주민들이 문화를 즐길 수 있게 해주세요.",
+          "영화관이 없어 불편합니다. 작은 영화관이라도 만들어주세요.",
+          "전통시장 활성화를 위한 문화축제를 열어주세요.",
+          "청소년 문화공간을 만들어주세요.",
+          "무료 음악회를 정기적으로 개최해주세요.",
+        ]},
+        { category: "경제", texts: [
+          "소상공인 지원금을 확대해주세요.",
+          "청년 창업 지원 프로그램을 만들어주세요.",
+          "전통시장 상품권 할인율을 높여주세요.",
+          "지역화폐 사용처를 확대해주세요.",
+          "중소기업 일자리 박람회를 개최해주세요.",
+          "프리랜서 지원 정책을 만들어주세요.",
+          "농산물 직거래 장터를 확대해주세요.",
+        ]},
+        { category: "보건", texts: [
+          "보건소 진료시간을 연장해주세요.",
+          "독감 예방접종을 무료로 제공해주세요.",
+          "정신건강 상담센터를 설치해주세요.",
+          "응급의료센터를 확충해주세요.",
+          "건강검진 항목을 확대해주세요.",
+          "금연구역을 확대하고 단속을 강화해주세요.",
+          "공공 체육시설을 확충해주세요.",
+        ]},
+        { category: "주거", texts: [
+          "공공임대주택을 더 많이 공급해주세요.",
+          "빈집 정비사업을 확대해주세요.",
+          "노후 주택 리모델링 지원금을 확대해주세요.",
+          "주거환경개선사업을 추진해주세요.",
+          "신혼부부 전세자금 대출을 지원해주세요.",
+          "다가구주택 안전점검을 강화해주세요.",
+          "주택 에너지 효율 개선 지원금을 확대해주세요.",
+        ]},
+        { category: "행정", texts: [
+          "민원처리 기간을 단축해주세요.",
+          "온라인 민원 서비스를 확대해주세요.",
+          "주민참여예산제도를 확대해주세요.",
+          "구청 야간 민원실을 운영해주세요.",
+          "행정정보 공개를 확대해주세요.",
+          "주민 의견수렴 절차를 강화해주세요.",
+          "무인민원발급기를 더 많이 설치해주세요.",
+        ]},
+      ];
+
+      const opinionsToInsert = [];
+      let count = 0;
+
+      for (const template of opinionTemplates) {
+        const category = categoriesList.find(c => c.name === template.category);
+        if (!category) continue;
+
+        for (const text of template.texts) {
+          if (count >= 100) break;
+          opinionsToInsert.push({
+            userId,
+            categoryId: category.id,
+            content: text,
+            status: "approved" as const,
+          });
+          count++;
+        }
+        if (count >= 100) break;
+      }
+
+      await db.insert(opinions).values(opinionsToInsert);
+
+      res.json({ 
+        success: true, 
+        count: opinionsToInsert.length,
+        message: `${opinionsToInsert.length}개의 의견이 생성되었습니다.`
+      });
+    } catch (error) {
+      console.error("Failed to seed opinions:", error);
+      res.status(500).json({ error: "Failed to seed opinions" });
+    }
+  });
+
   app.patch("/api/users/:id", async (req, res) => {
     try {
       const schema = z.object({
