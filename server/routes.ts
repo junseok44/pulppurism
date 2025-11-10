@@ -881,8 +881,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/clusters/:id/opinions", async (req, res) => {
-    const opinionClusters = await storage.getOpinionClustersByCluster(req.params.id);
-    res.json(opinionClusters);
+    try {
+      const opinionClusters = await storage.getOpinionClustersByCluster(req.params.id);
+      const opinionIds = opinionClusters.map(oc => oc.opinionId);
+      
+      if (opinionIds.length === 0) {
+        return res.json([]);
+      }
+      
+      const opinionsWithUsers = await db
+        .select({
+          id: opinions.id,
+          userId: opinions.userId,
+          type: opinions.type,
+          content: opinions.content,
+          voiceUrl: opinions.voiceUrl,
+          categoryId: opinions.categoryId,
+          status: opinions.status,
+          likes: opinions.likes,
+          createdAt: opinions.createdAt,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(opinions)
+        .leftJoin(users, eq(opinions.userId, users.id))
+        .where(sql`${opinions.id} IN (${sql.raw(opinionIds.map(id => `'${id}'`).join(', '))})`)
+        .orderBy(desc(opinions.createdAt));
+      
+      res.json(opinionsWithUsers);
+    } catch (error) {
+      console.error("Failed to fetch cluster opinions:", error);
+      res.status(500).json({ error: "Failed to fetch cluster opinions" });
+    }
   });
 
   app.post("/api/clusters/generate", async (req, res) => {
