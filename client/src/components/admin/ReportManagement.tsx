@@ -62,10 +62,10 @@ export default function ReportManagement() {
 
   const hideContentMutation = useMutation({
     mutationFn: async (report: Report) => {
-      if (report.opinionId) {
-        await apiRequest("PATCH", `/api/opinions/${report.opinionId}`, {
-          status: "rejected",
-        });
+      if (report.commentId) {
+        await apiRequest("DELETE", `/api/comments/${report.commentId}`);
+      } else if (report.opinionId) {
+        await apiRequest("DELETE", `/api/opinions/${report.opinionId}`);
       } else if (report.agendaId) {
         await apiRequest("PATCH", `/api/agendas/${report.agendaId}`, {
           status: "closed",
@@ -81,8 +81,8 @@ export default function ReportManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
       toast({
-        title: "콘텐츠 숨김 완료",
-        description: "신고된 콘텐츠가 숨김 처리되었습니다.",
+        title: "콘텐츠 삭제 완료",
+        description: "신고된 콘텐츠가 삭제되었습니다.",
       });
       setActionDialog(false);
       setSelectedReport(null);
@@ -91,7 +91,7 @@ export default function ReportManagement() {
     onError: () => {
       toast({
         title: "처리 실패",
-        description: "콘텐츠 숨김 처리에 실패했습니다.",
+        description: "콘텐츠 삭제 처리에 실패했습니다.",
         variant: "destructive",
       });
     },
@@ -106,7 +106,8 @@ export default function ReportManagement() {
     const matchesType =
       typeFilter === "all" ||
       (typeFilter === "opinion" && report.opinionId) ||
-      (typeFilter === "agenda" && report.agendaId);
+      (typeFilter === "agenda" && report.agendaId) ||
+      (typeFilter === "comment" && report.commentId);
     return matchesStatus && matchesType;
   });
 
@@ -140,7 +141,9 @@ export default function ReportManagement() {
   };
 
   const getTypeLabel = (report: Report) => {
-    return report.opinionId ? "의견" : "안건";
+    if (report.commentId) return "답글";
+    if (report.opinionId) return "의견";
+    return "안건";
   };
 
   const handleAction = (report: Report, type: "hide" | "approve") => {
@@ -175,7 +178,7 @@ export default function ReportManagement() {
         <div>
           <h2 className="text-2xl font-bold mb-2">신고 관리</h2>
           <p className="text-muted-foreground">
-            신고된 의견과 안건을 검토하고 조치합니다
+            신고된 의견, 답글, 안건을 검토하고 조치합니다
           </p>
         </div>
         <div className="flex gap-2">
@@ -196,6 +199,7 @@ export default function ReportManagement() {
             <SelectContent>
               <SelectItem value="all">전체 유형</SelectItem>
               <SelectItem value="opinion">의견</SelectItem>
+              <SelectItem value="comment">답글</SelectItem>
               <SelectItem value="agenda">안건</SelectItem>
             </SelectContent>
           </Select>

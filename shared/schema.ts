@@ -108,6 +108,7 @@ export const reports = pgTable("reports", {
   reporterId: varchar("reporter_id").notNull().references(() => users.id),
   opinionId: varchar("opinion_id").references(() => opinions.id),
   agendaId: varchar("agenda_id").references(() => agendas.id),
+  commentId: varchar("comment_id").references(() => comments.id),
   reportType: reportTypeEnum("report_type").notNull(),
   description: text("description").notNull(),
   status: reportStatusEnum("status").notNull().default("pending"),

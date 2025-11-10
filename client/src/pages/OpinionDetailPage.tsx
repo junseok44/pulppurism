@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MoreVertical, ArrowLeft, CheckCircle, ArrowRight, Pencil, Trash2 } from "lucide-react";
+import { Heart, MoreVertical, ArrowLeft, CheckCircle, ArrowRight, Pencil, Trash2, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface OpinionDetail {
   id: string;
@@ -81,6 +85,10 @@ export default function OpinionDetailPage() {
   const [isCommentDeleteDialogOpen, setIsCommentDeleteDialogOpen] = useState(false);
   const [editingComment, setEditingComment] = useState<CommentWithUser | null>(null);
   const [commentEditContent, setCommentEditContent] = useState("");
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportType, setReportType] = useState<string>("spam");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportingComment, setReportingComment] = useState<CommentWithUser | null>(null);
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -277,6 +285,36 @@ export default function OpinionDetailPage() {
     },
   });
 
+  const reportMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      return apiRequest("POST", "/api/reports", {
+        reporterId: user.id,
+        opinionId: reportingComment ? undefined : opinionId,
+        commentId: reportingComment ? reportingComment.id : undefined,
+        reportType,
+        description: reportDescription,
+      });
+    },
+    onSuccess: () => {
+      setIsReportDialogOpen(false);
+      setReportType("spam");
+      setReportDescription("");
+      setReportingComment(null);
+      toast({
+        title: "신고가 접수되었습니다",
+        description: "관리자가 검토 후 조치하겠습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "신고 실패",
+        description: "신고 접수 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLike = () => {
     if (!user) {
       toast({
@@ -351,6 +389,11 @@ export default function OpinionDetailPage() {
   const handleDeleteComment = (comment: CommentWithUser) => {
     setEditingComment(comment);
     setIsCommentDeleteDialogOpen(true);
+  };
+
+  const handleReportComment = (comment: CommentWithUser) => {
+    setReportingComment(comment);
+    setIsReportDialogOpen(true);
   };
 
   const confirmEditComment = () => {
@@ -480,7 +523,7 @@ export default function OpinionDetailPage() {
                       })}
                     </p>
                   </div>
-                  {user?.id === opinion.userId && (
+                  {user && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button size="icon" variant="ghost" data-testid="button-more">
@@ -488,18 +531,30 @@ export default function OpinionDetailPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleEdit} data-testid="menu-edit">
-                          <Pencil className="w-4 h-4 mr-2" />
-                          수정하기
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={handleDelete} 
-                          className="text-destructive focus:text-destructive"
-                          data-testid="menu-delete"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          삭제하기
-                        </DropdownMenuItem>
+                        {user.id === opinion.userId ? (
+                          <>
+                            <DropdownMenuItem onClick={handleEdit} data-testid="menu-edit">
+                              <Pencil className="w-4 h-4 mr-2" />
+                              수정하기
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={handleDelete} 
+                              className="text-destructive focus:text-destructive"
+                              data-testid="menu-delete"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              삭제하기
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem 
+                            onClick={() => setIsReportDialogOpen(true)} 
+                            data-testid="menu-report"
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            신고하기
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -546,6 +601,7 @@ export default function OpinionDetailPage() {
                 currentUserId={user?.id}
                 onEdit={handleEditComment}
                 onDelete={handleDeleteComment}
+                onReport={handleReportComment}
               />
             )}
           </div>
@@ -682,6 +738,61 @@ export default function OpinionDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent data-testid="dialog-report">
+          <DialogHeader>
+            <DialogTitle>{reportingComment ? "답글" : "의견"} 신고</DialogTitle>
+            <DialogDescription>
+              부적절한 내용을 신고해주세요. 관리자가 검토 후 조치하겠습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="report-type">신고 사유</Label>
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger data-testid="select-report-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="spam">스팸</SelectItem>
+                  <SelectItem value="inappropriate">부적절한 내용</SelectItem>
+                  <SelectItem value="offensive">욕설/비방</SelectItem>
+                  <SelectItem value="misleading">허위 정보</SelectItem>
+                  <SelectItem value="other">기타</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="report-description">상세 설명</Label>
+              <Textarea
+                id="report-description"
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="신고 사유를 자세히 설명해주세요"
+                rows={4}
+                data-testid="textarea-report-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsReportDialogOpen(false)}
+              data-testid="button-cancel-report"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={() => reportMutation.mutate()}
+              disabled={!reportDescription.trim() || reportMutation.isPending}
+              data-testid="button-submit-report"
+            >
+              신고하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <MobileNav />
     </div>

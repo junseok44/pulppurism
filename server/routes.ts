@@ -901,6 +901,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/clusters/:clusterId/opinions/:opinionId", requireAuth, async (req, res) => {
+    try {
+      const { clusterId, opinionId } = req.params;
+
+      await db
+        .delete(opinionClusters)
+        .where(
+          and(
+            eq(opinionClusters.clusterId, clusterId),
+            eq(opinionClusters.opinionId, opinionId)
+          )
+        );
+
+      await db
+        .update(clusters)
+        .set({ opinionCount: sql`GREATEST(opinion_count - 1, 0)` })
+        .where(eq(clusters.id, clusterId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to remove opinion from cluster:", error);
+      res.status(500).json({ error: "Failed to remove opinion from cluster" });
+    }
+  });
+
   app.patch("/api/clusters/:id", async (req, res) => {
     try {
       const cluster = await storage.updateCluster(req.params.id, req.body);

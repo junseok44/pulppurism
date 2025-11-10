@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Flag } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,9 +25,10 @@ interface CommentThreadProps {
   currentUserId?: string;
   onEdit?: (comment: CommentThreadComment) => void;
   onDelete?: (comment: CommentThreadComment) => void;
+  onReport?: (comment: CommentThreadComment) => void;
 }
 
-export default function CommentThread({ comments, currentUserId, onEdit, onDelete }: CommentThreadProps) {
+export default function CommentThread({ comments, currentUserId, onEdit, onDelete, onReport }: CommentThreadProps) {
   return (
     <div className="space-y-4" data-testid="comment-thread">
       {comments.map((comment) => (
@@ -37,6 +38,7 @@ export default function CommentThread({ comments, currentUserId, onEdit, onDelet
           currentUserId={currentUserId}
           onEdit={onEdit}
           onDelete={onDelete}
+          onReport={onReport}
         />
       ))}
     </div>
@@ -48,11 +50,13 @@ interface CommentItemProps {
   currentUserId?: string;
   onEdit?: (comment: CommentThreadComment) => void;
   onDelete?: (comment: CommentThreadComment) => void;
+  onReport?: (comment: CommentThreadComment) => void;
 }
 
-function CommentItem({ comment, currentUserId, onEdit, onDelete }: CommentItemProps) {
+function CommentItem({ comment, currentUserId, onEdit, onDelete, onReport }: CommentItemProps) {
   const isAuthor = currentUserId === comment.userId;
   const displayName = comment.displayName || comment.username;
+  const hasMenu = currentUserId && (isAuthor ? (onEdit || onDelete) : onReport);
   
   return (
     <div className="flex gap-3" data-testid={`comment-${comment.id}`}>
@@ -68,7 +72,7 @@ function CommentItem({ comment, currentUserId, onEdit, onDelete }: CommentItemPr
               {new Date(comment.createdAt).toLocaleDateString('ko-KR')}
             </p>
           </div>
-          {isAuthor && (onEdit || onDelete) && (
+          {hasMenu && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -81,15 +85,26 @@ function CommentItem({ comment, currentUserId, onEdit, onDelete }: CommentItemPr
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(comment)} data-testid={`button-edit-${comment.id}`}>
-                    수정
-                  </DropdownMenuItem>
-                )}
-                {onDelete && (
-                  <DropdownMenuItem onClick={() => onDelete(comment)} data-testid={`button-delete-${comment.id}`}>
-                    삭제
-                  </DropdownMenuItem>
+                {isAuthor ? (
+                  <>
+                    {onEdit && (
+                      <DropdownMenuItem onClick={() => onEdit(comment)} data-testid={`button-edit-${comment.id}`}>
+                        수정
+                      </DropdownMenuItem>
+                    )}
+                    {onDelete && (
+                      <DropdownMenuItem onClick={() => onDelete(comment)} data-testid={`button-delete-${comment.id}`}>
+                        삭제
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                ) : (
+                  onReport && (
+                    <DropdownMenuItem onClick={() => onReport(comment)} data-testid={`button-report-${comment.id}`}>
+                      <Flag className="h-4 w-4 mr-2" />
+                      신고하기
+                    </DropdownMenuItem>
+                  )
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

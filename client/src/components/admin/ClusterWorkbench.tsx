@@ -24,6 +24,7 @@ import {
   Plus,
   FileText,
   Link2,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -50,18 +51,55 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
     queryKey: ["/api/categories"],
   });
 
+  const removeOpinionMutation = useMutation({
+    mutationFn: async (opinionId: string) => {
+      return apiRequest("DELETE", `/api/clusters/${cluster.id}/opinions/${opinionId}`);
+    },
+    onMutate: async (opinionId) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/clusters", cluster.id, "opinions"] });
+      const previousOpinions = queryClient.getQueryData(["/api/clusters", cluster.id, "opinions"]);
+      
+      queryClient.setQueryData(["/api/clusters", cluster.id, "opinions"], (old: any) => {
+        if (!old) return old;
+        return old.filter((op: any) => op.id !== opinionId);
+      });
+      
+      return { previousOpinions };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clusters", cluster.id, "opinions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions/unclustered"] });
+      toast({
+        title: "의견 제외 완료",
+        description: "의견이 클러스터에서 제외되었습니다.",
+      });
+    },
+    onError: (_error, _opinionId, context) => {
+      if (context?.previousOpinions) {
+        queryClient.setQueryData(["/api/clusters", cluster.id, "opinions"], context.previousOpinions);
+      }
+      toast({
+        title: "의견 제외 실패",
+        description: "의견 제외 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createAgendaMutation = useMutation({
     mutationFn: async () => {
-      const votingStartDate = new Date();
-      const votingEndDate = new Date();
-      votingEndDate.setDate(votingEndDate.getDate() + 14);
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 14);
 
       const res = await apiRequest("POST", "/api/agendas", {
         title: agendaTitle,
         description: agendaDescription,
         categoryId: selectedCategory,
-        votingStartDate: votingStartDate.toISOString(),
-        votingEndDate: votingEndDate.toISOString(),
+        status: "active",
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       });
       const agenda = await res.json();
 
@@ -189,6 +227,16 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                           <span>좋아요 {opinion.likes}</span>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeOpinionMutation.mutate(opinion.id)}
+                        disabled={removeOpinionMutation.isPending}
+                        data-testid={`button-remove-${opinion.id}`}
+                        title="클러스터에서 제외"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
                   </Card>
                 ))}
