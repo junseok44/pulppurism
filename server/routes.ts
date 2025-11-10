@@ -8,7 +8,7 @@ import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReport
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
-import { agendas, categories, clusters, opinionClusters, opinions } from "@shared/schema";
+import { agendas, categories, clusters, opinionClusters, opinions, reports } from "@shared/schema";
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
 
