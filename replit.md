@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 **Database ORM**: Drizzle ORM configured for PostgreSQL with Neon serverless adapter for connection pooling.
 
-**API Pattern**: RESTful API structure with routes prefixed under `/api`. The storage interface pattern separates data access logic, using database-backed storage (DatabaseStorage) with PostgreSQL via Drizzle ORM.
+**API Pattern**: RESTful API structure with routes prefixed under `/api`. The storage interface pattern separates data access logic, using database-backed storage (DatabaseStorage) with PostgreSQL via Drizzle ORM. Query optimization uses JOIN operations to prevent N+1 query problems, with user data eagerly loaded in single database queries.
 
 **Development Setup**: Vite middleware integration for HMR in development, with separate build process for production using esbuild to bundle the server.
 
@@ -53,6 +53,7 @@ Preferred communication style: Simple, everyday language.
 - Reports: Content moderation system for flagging inappropriate content
 - OpinionLikes: User likes on opinions with duplicate prevention
 - AgendaBookmarks: User bookmarks on agendas with duplicate prevention
+- Comments: Single-level comments on opinions with edit/delete support and author-only permissions
 
 Schema uses Drizzle's type inference for compile-time safety, Zod integration for validation, and composite unique constraints to prevent duplicate votes/likes/bookmarks.
 
