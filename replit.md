@@ -3,6 +3,11 @@
 This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
 ## Recent Updates (2024-11-11)
+- **Speech-to-Text Integration**: Implemented voice input for opinion submission using OpenAI Whisper API
+  - Users can record audio directly in the browser using MediaRecorder API
+  - Recorded audio is automatically transcribed to Korean text
+  - Transcribed text appears in the text input field for review and editing
+  - Supports pause/resume during recording
 - **Agenda Status Simplification**: Reduced agenda status from 5 states to 3 streamlined states:
   - `voting`: 투표중 (Voting in progress)
   - `reviewing`: 검토중 (Under review)
@@ -81,8 +86,9 @@ Preferred communication style: Simple, everyday language.
 
 ## AI Integration
 
-**OpenAI**: Used for opinion clustering:
-- `text-embedding-3-small` for semantic similarity.
-- `gpt-4o-mini` for cluster title and summary generation.
-- Cosine similarity matching for grouping opinions.
-- Automatic cluster generation via `/api/clusters/generate` endpoint.
+**OpenAI**: Used for opinion clustering and speech-to-text:
+- **Whisper API** (`whisper-1` model): Transcribes voice recordings to Korean text via `/api/opinions/transcribe` endpoint
+- **Embeddings** (`text-embedding-3-small`): Generates semantic embeddings for opinion clustering
+- **Chat Completions** (`gpt-4o-mini`): Generates cluster titles and summaries
+- Cosine similarity matching for grouping opinions
+- Automatic cluster generation via `/api/clusters/generate` endpoint
