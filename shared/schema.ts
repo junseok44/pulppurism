@@ -155,7 +155,12 @@ export const commentLikes = pgTable("comment_likes", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertOpinionSchema = createInsertSchema(opinions).omit({ id: true, createdAt: true, likes: true });
-export const insertAgendaSchema = createInsertSchema(agendas).omit({ id: true, createdAt: true, updatedAt: true, voteCount: true, viewCount: true });
+export const insertAgendaSchema = createInsertSchema(agendas)
+  .omit({ id: true, createdAt: true, updatedAt: true, voteCount: true, viewCount: true })
+  .extend({
+    startDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+    endDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+  });
 export const insertVoteSchema = createInsertSchema(votes).omit({ id: true, createdAt: true });
 export const insertClusterSchema = createInsertSchema(clusters).omit({ id: true, createdAt: true });
 export const insertOpinionClusterSchema = createInsertSchema(opinionClusters).omit({ id: true, createdAt: true });
