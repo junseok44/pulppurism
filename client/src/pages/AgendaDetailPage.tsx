@@ -615,12 +615,13 @@ export default function AgendaDetailPage() {
               <Label>참고 링크</Label>
               <div className="space-y-2">
                 {editedReferenceLinks.map((link, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                  <div key={index} className="flex items-center gap-2 min-w-0">
                     <div className="flex-1 min-w-0">
                       <Input
                         value={link}
                         readOnly
-                        className="w-full truncate"
+                        className="w-full"
+                        style={{ textOverflow: 'ellipsis' }}
                         title={link}
                         data-testid={`input-reference-link-${index}`}
                       />
@@ -660,10 +661,10 @@ export default function AgendaDetailPage() {
               <Label>첨부 파일</Label>
               <div className="space-y-2">
                 {editedReferenceFiles.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-2 p-2 border rounded-md">
+                  <div key={index} className="flex items-center gap-2 min-w-0">
+                    <div className="flex-1 min-w-0 flex items-center gap-2 p-2 border rounded-md overflow-hidden">
                       <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm truncate" title={file.split('/').pop() || file}>{file.split('/').pop() || file}</span>
+                      <span className="text-sm truncate min-w-0 flex-1 block" title={file.split('/').pop() || file}>{file.split('/').pop() || file}</span>
                     </div>
                     <Button
                       size="icon"
