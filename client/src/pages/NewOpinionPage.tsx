@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Mic, StopCircle, Play, Pause, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,15 @@ export default function NewOpinionPage() {
   const [inputMode, setInputMode] = useState<"text" | "voice">("text");
   
   const voiceRecorder = useVoiceRecorder();
+
+  useEffect(() => {
+    return () => {
+      if (voiceRecorder.audioUrl) {
+        URL.revokeObjectURL(voiceRecorder.audioUrl);
+      }
+      voiceRecorder.clearRecording();
+    };
+  }, []);
 
   if (!user) {
     return (
@@ -48,9 +57,16 @@ export default function NewOpinionPage() {
       const formData = new FormData();
       formData.append("audio", audioBlob, "voice-recording.webm");
       
-      const response = await apiRequest("POST", "/api/opinions/voice-upload", formData, {
-        headers: {},
+      const response = await fetch("/api/opinions/voice-upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
       });
+      
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
@@ -155,6 +171,15 @@ export default function NewOpinionPage() {
   };
 
   const handleStartRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        variant: "destructive",
+        title: "지원되지 않는 브라우저",
+        description: "이 브라우저는 음성 녹음을 지원하지 않습니다.",
+      });
+      return;
+    }
+
     try {
       setInputMode("voice");
       await voiceRecorder.startRecording();
