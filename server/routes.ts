@@ -11,10 +11,15 @@ import { db } from "./db";
 import { agendas, categories, clusters, opinionClusters, opinions, reports, opinionLikes, agendaBookmarks } from "@shared/schema";
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
+import multer from "multer";
+import { Client } from "@replit/object-storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const GOOGLE_ENABLED = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const KAKAO_ENABLED = !!process.env.KAKAO_CLIENT_ID;
+  
+  const upload = multer({ storage: multer.memoryStorage() });
+  const objectStorage = new Client();
 
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
@@ -978,8 +983,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/agendas/:id", async (req, res) => {
+  app.patch("/api/agendas/:id", requireAuth, async (req, res) => {
     try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
       const data = updateAgendaSchema.parse(req.body);
       const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
@@ -991,6 +1000,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to update agenda" });
+    }
+  });
+
+  app.post("/api/agendas/:id/files", requireAuth, upload.single("file"), async (req, res) => {
+    try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      const agendaId = req.params.id;
+      const agenda = await storage.getAgenda(agendaId);
+      if (!agenda) {
+        return res.status(404).json({ error: "Agenda not found" });
+      }
+
+      const timestamp = Date.now();
+      const filename = `agendas/${agendaId}/${timestamp}-${req.file.originalname}`;
+      
+      await objectStorage.uploadFromBytes(filename, req.file.buffer);
+      
+      const publicUrl = `/public/${filename}`;
+      
+      const currentFiles = agenda.referenceFiles || [];
+      const updatedAgenda = await storage.updateAgenda(agendaId, {
+        referenceFiles: [...currentFiles, publicUrl],
+      });
+
+      res.json({ 
+        success: true, 
+        fileUrl: publicUrl,
+        agenda: updatedAgenda
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: "Failed to upload file" });
     }
   });
 
