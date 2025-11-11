@@ -37,18 +37,24 @@ export default function NewAgendaForm() {
     queryKey: ["/api/clusters"],
   });
 
-  const { data: selectedCluster } = useQuery<Cluster>({
+  const { data: selectedCluster, isLoading: clusterLoading } = useQuery<Cluster>({
     queryKey: ["/api/clusters", urlClusterId],
     enabled: !!urlClusterId,
   });
 
   useEffect(() => {
+    console.log("URL Cluster ID:", urlClusterId);
+    console.log("Selected Cluster:", selectedCluster);
+    console.log("Cluster Loading:", clusterLoading);
+    
     if (selectedCluster) {
+      console.log("Setting title to:", selectedCluster.title);
+      console.log("Setting description to:", selectedCluster.summary);
       setTitle(selectedCluster.title);
       setDescription(selectedCluster.summary);
       setClusterId(selectedCluster.id);
     }
-  }, [selectedCluster]);
+  }, [selectedCluster, urlClusterId, clusterLoading]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -66,7 +72,7 @@ export default function NewAgendaForm() {
       });
       const agenda = await res.json();
 
-      if (clusterId) {
+      if (clusterId && clusterId !== "none") {
         await apiRequest("PATCH", `/api/clusters/${clusterId}`, {
           agendaId: agenda.id,
         });
@@ -111,6 +117,7 @@ export default function NewAgendaForm() {
         <h2 className="text-2xl font-bold mb-2">새 안건 생성</h2>
         <p className="text-muted-foreground">
           새로운 안건을 생성합니다. 투표 기간은 14일로 자동 설정됩니다.
+          {urlClusterId && ` (클러스터: ${urlClusterId})`}
         </p>
       </div>
 
@@ -134,11 +141,12 @@ export default function NewAgendaForm() {
               <Label htmlFor="cluster">
                 클러스터 선택 (선택사항)
               </Label>
-              <Select value={clusterId} onValueChange={setClusterId}>
+              <Select value={clusterId || undefined} onValueChange={(val) => setClusterId(val || "")}>
                 <SelectTrigger data-testid="select-cluster">
                   <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">클러스터 없음</SelectItem>
                   {clusters
                     .filter(c => !c.agendaId)
                     .map((cluster) => (
