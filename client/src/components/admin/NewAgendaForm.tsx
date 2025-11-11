@@ -10,24 +10,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
-import type { Category } from "@shared/schema";
+import type { Category, Cluster } from "@shared/schema";
 
 export default function NewAgendaForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [, setLocation] = useLocation();
+  const [clusterId, setClusterId] = useState("");
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlClusterId = urlParams.get('clusterId');
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  const { data: clusters = [] } = useQuery<Cluster[]>({
+    queryKey: ["/api/clusters"],
+  });
+
+  const { data: selectedCluster } = useQuery<Cluster>({
+    queryKey: ["/api/clusters", urlClusterId],
+    enabled: !!urlClusterId,
+  });
+
+  useEffect(() => {
+    if (selectedCluster) {
+      setTitle(selectedCluster.title);
+      setDescription(selectedCluster.summary);
+      setClusterId(selectedCluster.id);
+    }
+  }, [selectedCluster]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -43,10 +64,19 @@ export default function NewAgendaForm() {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });
-      return res.json();
+      const agenda = await res.json();
+
+      if (clusterId) {
+        await apiRequest("PATCH", `/api/clusters/${clusterId}`, {
+          agendaId: agenda.id,
+        });
+      }
+
+      return agenda;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });
       toast({
         title: "안건 생성 완료",
         description: "새로운 안건이 성공적으로 생성되었습니다.",
@@ -98,6 +128,26 @@ export default function NewAgendaForm() {
                 onChange={(e) => setTitle(e.target.value)}
                 data-testid="input-title"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cluster">
+                클러스터 선택 (선택사항)
+              </Label>
+              <Select value={clusterId} onValueChange={setClusterId}>
+                <SelectTrigger data-testid="select-cluster">
+                  <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clusters
+                    .filter(c => !c.agendaId)
+                    .map((cluster) => (
+                      <SelectItem key={cluster.id} value={cluster.id}>
+                        {cluster.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

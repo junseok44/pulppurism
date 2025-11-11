@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 type OpinionWithUser = Opinion & {
   username: string;
@@ -36,19 +37,12 @@ type OpinionWithUser = Opinion & {
 
 function ClusterCard({ cluster }: { cluster: Cluster }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showAgendaDialog, setShowAgendaDialog] = useState(false);
-  const [agendaTitle, setAgendaTitle] = useState(cluster.title);
-  const [agendaDescription, setAgendaDescription] = useState(cluster.summary);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: opinions = [], isLoading } = useQuery<OpinionWithUser[]>({
     queryKey: ["/api/clusters", cluster.id, "opinions"],
     enabled: isExpanded,
-  });
-
-  const { data: categories = [] } = useQuery<any[]>({
-    queryKey: ["/api/categories"],
   });
 
   const removeOpinionMutation = useMutation({
@@ -87,45 +81,6 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
     },
   });
 
-  const createAgendaMutation = useMutation({
-    mutationFn: async () => {
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 14);
-
-      const res = await apiRequest("POST", "/api/agendas", {
-        title: agendaTitle,
-        description: agendaDescription,
-        categoryId: selectedCategory,
-        status: "active",
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
-      const agenda = await res.json();
-
-      await apiRequest("PATCH", `/api/clusters/${cluster.id}`, {
-        agendaId: agenda.id,
-      });
-
-      return agenda;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
-      setShowAgendaDialog(false);
-      toast({
-        title: "안건 생성 완료",
-        description: "클러스터가 안건으로 생성되었습니다.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "안건 생성 실패",
-        description: "안건 생성 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    },
-  });
 
   return (
     <>
@@ -159,7 +114,7 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => setShowAgendaDialog(true)}
+                  onClick={() => setLocation(`/admin/agendas/new?clusterId=${cluster.id}`)}
                   data-testid={`button-create-agenda-${cluster.id}`}
                 >
                   <FileText className="w-4 h-4 mr-2" />
@@ -251,76 +206,6 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
         </div>
       )}
     </Card>
-
-    <Dialog open={showAgendaDialog} onOpenChange={setShowAgendaDialog}>
-      <DialogContent data-testid="dialog-create-agenda">
-        <DialogHeader>
-          <DialogTitle>안건 생성</DialogTitle>
-          <DialogDescription>
-            클러스터를 안건으로 만듭니다. 투표 기간은 생성일로부터 14일입니다.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="agenda-title">제목</Label>
-            <Input
-              id="agenda-title"
-              value={agendaTitle}
-              onChange={(e) => setAgendaTitle(e.target.value)}
-              data-testid="input-agenda-title"
-            />
-          </div>
-          <div>
-            <Label htmlFor="agenda-description">설명</Label>
-            <Textarea
-              id="agenda-description"
-              value={agendaDescription}
-              onChange={(e) => setAgendaDescription(e.target.value)}
-              rows={4}
-              data-testid="textarea-agenda-description"
-            />
-          </div>
-          <div>
-            <Label htmlFor="agenda-category">카테고리</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger data-testid="select-category">
-                <SelectValue placeholder="카테고리 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category: any) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowAgendaDialog(false)}
-            data-testid="button-cancel-agenda"
-          >
-            취소
-          </Button>
-          <Button
-            onClick={() => createAgendaMutation.mutate()}
-            disabled={!agendaTitle || !agendaDescription || !selectedCategory || createAgendaMutation.isPending}
-            data-testid="button-confirm-agenda"
-          >
-            {createAgendaMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                생성 중...
-              </>
-            ) : (
-              "안건 생성"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
     </>
   );
 }
