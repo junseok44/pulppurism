@@ -203,6 +203,7 @@ export default function AgendaDetailPage() {
       const res = await fetch(`/api/agendas/${agendaId}/files`, {
         method: "POST",
         body: formData,
+        credentials: 'include',
       });
       if (!res.ok) {
         throw new Error("File upload failed");
@@ -210,8 +211,9 @@ export default function AgendaDetailPage() {
       return res.json();
     },
     onSuccess: (data) => {
-      if (data.url) {
-        setEditedReferenceFiles([...editedReferenceFiles, data.url]);
+      if (data.fileUrl && data.agenda) {
+        setEditedReferenceFiles(data.agenda.referenceFiles || []);
+        queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
         toast({
           title: "파일 업로드 완료",
           description: "파일이 성공적으로 업로드되었습니다.",
