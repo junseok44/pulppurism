@@ -521,6 +521,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/opinions/voice-upload", requireAuth, upload.single("audio"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      const userId = req.user!.id;
+      const timestamp = Date.now();
+      const filename = `voices/${userId}/${timestamp}.webm`;
+      
+      const fullPath = await objectStorageService.uploadFile(filename, req.file.buffer);
+      const publicUrl = `/public-objects/${filename}`;
+      
+      res.json({ 
+        success: true, 
+        voiceUrl: publicUrl,
+      });
+    } catch (error) {
+      console.error("Error uploading voice file:", error);
+      res.status(500).json({ error: "Failed to upload voice file" });
+    }
+  });
+
   app.post("/api/opinions", async (req, res) => {
     try {
       const data = insertOpinionSchema.parse(req.body);
