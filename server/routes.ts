@@ -363,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const opinionsData = await query;
 
-      const opinionIds = opinionsData.map(o => o.id);
+      const opinionIds = opinionsData.map((o: any) => o.id);
       
       const commentCounts = opinionIds.length > 0 ? await db
         .select({
@@ -387,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const likesSet = new Set(likesData.map(l => l.opinionId));
       const commentCountMap = new Map(commentCounts.map(c => [c.opinionId, c.count]));
 
-      const result = opinionsData.map(opinion => ({
+      const result = opinionsData.map((opinion: any) => ({
         ...opinion,
         commentCount: commentCountMap.get(opinion.id) || 0,
         isLiked: likesSet.has(opinion.id),

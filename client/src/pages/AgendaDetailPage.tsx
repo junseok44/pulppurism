@@ -616,12 +616,15 @@ export default function AgendaDetailPage() {
               <div className="space-y-2">
                 {editedReferenceLinks.map((link, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <Input
-                      value={link}
-                      readOnly
-                      className="flex-1"
-                      data-testid={`input-reference-link-${index}`}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        value={link}
+                        readOnly
+                        className="w-full truncate"
+                        title={link}
+                        data-testid={`input-reference-link-${index}`}
+                      />
+                    </div>
                     <Button
                       size="icon"
                       variant="ghost"
@@ -658,9 +661,9 @@ export default function AgendaDetailPage() {
               <div className="space-y-2">
                 {editedReferenceFiles.map((file, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center gap-2 p-2 border rounded-md">
-                      <FileText className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm truncate">{file.split('/').pop() || file}</span>
+                    <div className="flex-1 min-w-0 flex items-center gap-2 p-2 border rounded-md">
+                      <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm truncate" title={file.split('/').pop() || file}>{file.split('/').pop() || file}</span>
                     </div>
                     <Button
                       size="icon"
