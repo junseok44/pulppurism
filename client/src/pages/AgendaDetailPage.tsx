@@ -59,8 +59,8 @@ export default function AgendaDetailPage() {
   });
 
   const { data: userVote } = useQuery<Vote | null>({
-    queryKey: [`/api/votes/user/${TEMP_USER_ID}/agenda/${agendaId}`],
-    enabled: !!agendaId,
+    queryKey: [`/api/votes/user/${user?.id}/agenda/${agendaId}`],
+    enabled: !!agendaId && !!user,
   });
 
   const { data: relatedOpinions = [], isLoading: opinionsLoading } = useQuery<Opinion[]>({
@@ -70,8 +70,11 @@ export default function AgendaDetailPage() {
 
   const voteMutation = useMutation({
     mutationFn: async (voteType: "agree" | "disagree" | "neutral") => {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       const res = await apiRequest("POST", "/api/votes", {
-        userId: TEMP_USER_ID,
+        userId: user.id,
         agendaId,
         voteType,
       });
@@ -79,7 +82,7 @@ export default function AgendaDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/votes`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/votes/user/${TEMP_USER_ID}/agenda/${agendaId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/votes/user/${user?.id}/agenda/${agendaId}`] });
     },
   });
 
@@ -111,14 +114,60 @@ export default function AgendaDetailPage() {
     bookmarkMutation.mutate(agenda?.isBookmarked || false);
   };
 
-  const handleCommentSubmit = () => {
-    if (comment.trim()) {
-      console.log("Comment submitted:", comment);
+  const opinionMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      const res = await apiRequest("POST", "/api/opinions", {
+        userId: user.id,
+        content,
+        contentType: "text",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
       setComment("");
+      toast({
+        title: "의견이 제출되었습니다",
+        description: "제출하신 의견은 검토 후 안건에 반영될 수 있습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/opinions`] });
+    },
+    onError: (error) => {
+      toast({
+        title: "의견 제출 실패",
+        description: "의견을 제출하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCommentSubmit = () => {
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "의견을 작성하려면 로그인해주세요.",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
+    if (comment.trim()) {
+      opinionMutation.mutate(comment);
     }
   };
 
   const handleVote = (voteType: "agree" | "disagree" | "neutral") => {
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "투표 기능을 사용하려면 로그인해주세요.",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
     voteMutation.mutate(voteType);
   };
 
@@ -295,11 +344,11 @@ export default function AgendaDetailPage() {
                   />
                   <Button
                     onClick={handleCommentSubmit}
-                    disabled={!comment.trim()}
+                    disabled={!comment.trim() || opinionMutation.isPending}
                     className="self-end"
                     data-testid="button-submit-agenda-comment"
                   >
-                    등록
+                    {opinionMutation.isPending ? "제출 중..." : "등록"}
                   </Button>
                 </div>
               </div>
