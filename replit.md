@@ -6,6 +6,35 @@ The application is built as a full-stack TypeScript project with React on the fr
 
 # Recent Changes
 
+## November 11, 2025 - My Page Activity Data Integration
+
+**My Page API Endpoints Added:**
+- GET /api/users/me/stats - User activity statistics (requireAuth)
+  - Returns: { myOpinionsCount, likedOpinionsCount, myAgendasCount, bookmarkedAgendasCount }
+  - Batched count queries for performance optimization
+- GET /api/opinions/my - User's submitted opinions (requireAuth, pagination support)
+- GET /api/opinions/liked - User's liked opinions (requireAuth, opinionLikes join, pagination)
+- GET /api/agendas/my-opinions - Agendas containing user's opinions (requireAuth, selectDistinct for deduplication)
+- GET /api/agendas/bookmarked - User's bookmarked agendas (requireAuth, pagination)
+
+**Frontend Updates:**
+- MyPage.tsx migrated from mock data to live API integration
+- React Query for server state management with enabled: !!user gating
+- Loading states using Skeleton components
+- Error state handling with user-friendly "오류" message display
+- Navigation updated to use wouter's setLocation (SPA consistency)
+- Added data-testids for activity counts (count-my-opinions, count-liked-opinions, count-my-agendas, count-bookmarked-agendas)
+
+**Security & Performance:**
+- All endpoints protected with requireAuth middleware
+- Optional limit/offset pagination for scalability
+- Batched statistics queries to minimize database round trips
+- selectDistinct prevents duplicate agenda results when user has multiple opinions in same agenda
+
+**Known Limitations:**
+- OAuth authentication blocks automated E2E testing (manual verification required)
+- Future improvement: Harden limit/offset parsing to reject non-numeric values
+
 ## November 10, 2025 - Schema Simplification and Admin Dashboard Completion
 
 **Schema Changes:**

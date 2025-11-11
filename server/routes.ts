@@ -8,7 +8,7 @@ import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReport
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
-import { agendas, categories, clusters, opinionClusters, opinions, reports } from "@shared/schema";
+import { agendas, categories, clusters, opinionClusters, opinions, reports, opinionLikes, agendaBookmarks } from "@shared/schema";
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
 
@@ -323,6 +323,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to fetch unclustered opinions:", error);
       res.status(500).json({ error: "Failed to fetch unclustered opinions" });
+    }
+  });
+
+  app.get("/api/opinions/my", requireAuth, async (req, res) => {
+    try {
+      const { limit, offset } = req.query;
+      const userId = req.user!.id;
+      
+      let query: any = db
+        .select({
+          id: opinions.id,
+          userId: opinions.userId,
+          type: opinions.type,
+          content: opinions.content,
+          voiceUrl: opinions.voiceUrl,
+          likes: opinions.likes,
+          createdAt: opinions.createdAt,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(opinions)
+        .leftJoin(users, eq(opinions.userId, users.id))
+        .where(eq(opinions.userId, userId))
+        .orderBy(desc(opinions.createdAt));
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string));
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string));
+      }
+      
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch my opinions:", error);
+      res.status(500).json({ error: "Failed to fetch my opinions" });
+    }
+  });
+
+  app.get("/api/opinions/liked", requireAuth, async (req, res) => {
+    try {
+      const { limit, offset } = req.query;
+      const userId = req.user!.id;
+      
+      let query: any = db
+        .select({
+          id: opinions.id,
+          userId: opinions.userId,
+          type: opinions.type,
+          content: opinions.content,
+          voiceUrl: opinions.voiceUrl,
+          likes: opinions.likes,
+          createdAt: opinions.createdAt,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(opinions)
+        .leftJoin(users, eq(opinions.userId, users.id))
+        .innerJoin(opinionLikes, eq(opinions.id, opinionLikes.opinionId))
+        .where(eq(opinionLikes.userId, userId))
+        .orderBy(desc(opinions.createdAt));
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string));
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string));
+      }
+      
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch liked opinions:", error);
+      res.status(500).json({ error: "Failed to fetch liked opinions" });
     }
   });
 
@@ -742,6 +819,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
+  app.get("/api/agendas/my-opinions", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const result = await db
+        .selectDistinct({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          categoryName: categories.name,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .innerJoin(clusters, eq(agendas.id, clusters.agendaId))
+        .innerJoin(opinionClusters, eq(clusters.id, opinionClusters.clusterId))
+        .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
+        .where(eq(opinions.userId, userId))
+        .orderBy(desc(agendas.createdAt));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch my agendas:", error);
+      res.status(500).json({ error: "Failed to fetch my agendas" });
+    }
+  });
+
+  app.get("/api/agendas/bookmarked", requireAuth, async (req, res) => {
+    try {
+      const { limit, offset } = req.query;
+      const userId = req.user!.id;
+      
+      let query: any = db
+        .select({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          categoryName: categories.name,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .innerJoin(agendaBookmarks, eq(agendas.id, agendaBookmarks.agendaId))
+        .where(eq(agendaBookmarks.userId, userId))
+        .orderBy(desc(agendas.createdAt));
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string));
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string));
+      }
+      
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch bookmarked agendas:", error);
+      res.status(500).json({ error: "Failed to fetch bookmarked agendas" });
+    }
+  });
+
   app.post("/api/agendas/:id/bookmark", async (req, res) => {
     try {
       const { userId } = req.body;
@@ -1085,6 +1237,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to fetch dashboard stats:", error);
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/users/me/stats", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const myOpinionsCountResult = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(opinions)
+        .where(eq(opinions.userId, userId));
+      
+      const likedOpinionsCountResult = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(opinionLikes)
+        .where(eq(opinionLikes.userId, userId));
+      
+      const myAgendasCountResult = await db
+        .select({ count: sql<number>`count(distinct ${agendas.id})::int` })
+        .from(agendas)
+        .innerJoin(clusters, eq(agendas.id, clusters.agendaId))
+        .innerJoin(opinionClusters, eq(clusters.id, opinionClusters.clusterId))
+        .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
+        .where(eq(opinions.userId, userId));
+      
+      const bookmarkedAgendasCountResult = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agendaBookmarks)
+        .where(eq(agendaBookmarks.userId, userId));
+      
+      res.json({
+        myOpinionsCount: myOpinionsCountResult[0]?.count || 0,
+        likedOpinionsCount: likedOpinionsCountResult[0]?.count || 0,
+        myAgendasCount: myAgendasCountResult[0]?.count || 0,
+        bookmarkedAgendasCount: bookmarkedAgendasCountResult[0]?.count || 0,
+      });
+    } catch (error) {
+      console.error("Failed to fetch user stats:", error);
+      res.status(500).json({ error: "Failed to fetch user stats" });
     }
   });
 

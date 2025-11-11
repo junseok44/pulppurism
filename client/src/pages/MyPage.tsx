@@ -15,12 +15,26 @@ import {
   LogOut
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/hooks/useUser";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+
+interface UserStats {
+  myOpinionsCount: number;
+  likedOpinionsCount: number;
+  myAgendasCount: number;
+  bookmarkedAgendasCount: number;
+}
 
 export default function MyPage() {
   const { user, logout } = useUser();
   const [, setLocation] = useLocation();
+
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery<UserStats>({
+    queryKey: ['/api/users/me/stats'],
+    enabled: !!user,
+  });
 
   if (!user) {
     return (
@@ -109,7 +123,7 @@ export default function MyPage() {
             <Card 
               className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
               data-testid="card-my-opinions"
-              onClick={() => window.location.href = '/my/opinions'}
+              onClick={() => setLocation('/my/opinions')}
             >
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -117,7 +131,15 @@ export default function MyPage() {
                 </div>
                 <div>
                   <p className="font-semibold">내가 쓴 주민 의견</p>
-                  <p className="text-2xl font-bold mt-1">12</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto mt-1" />
+                  ) : statsError ? (
+                    <p className="text-sm text-destructive mt-1">오류</p>
+                  ) : (
+                    <p className="text-2xl font-bold mt-1" data-testid="count-my-opinions">
+                      {stats?.myOpinionsCount || 0}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -125,7 +147,7 @@ export default function MyPage() {
             <Card 
               className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
               data-testid="card-liked-opinions"
-              onClick={() => window.location.href = '/my/liked'}
+              onClick={() => setLocation('/my/liked')}
             >
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -133,7 +155,15 @@ export default function MyPage() {
                 </div>
                 <div>
                   <p className="font-semibold">좋아요한 의견</p>
-                  <p className="text-2xl font-bold mt-1">23</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto mt-1" />
+                  ) : statsError ? (
+                    <p className="text-sm text-destructive mt-1">오류</p>
+                  ) : (
+                    <p className="text-2xl font-bold mt-1" data-testid="count-liked-opinions">
+                      {stats?.likedOpinionsCount || 0}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -141,7 +171,7 @@ export default function MyPage() {
             <Card 
               className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
               data-testid="card-my-agendas"
-              onClick={() => window.location.href = '/my/agendas'}
+              onClick={() => setLocation('/my/agendas')}
             >
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -149,7 +179,15 @@ export default function MyPage() {
                 </div>
                 <div>
                   <p className="font-semibold">내 의견이 포함된 안건</p>
-                  <p className="text-2xl font-bold mt-1">5</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto mt-1" />
+                  ) : statsError ? (
+                    <p className="text-sm text-destructive mt-1">오류</p>
+                  ) : (
+                    <p className="text-2xl font-bold mt-1" data-testid="count-my-agendas">
+                      {stats?.myAgendasCount || 0}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -157,7 +195,7 @@ export default function MyPage() {
             <Card 
               className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
               data-testid="card-bookmarked-agendas"
-              onClick={() => window.location.href = '/my/bookmarks'}
+              onClick={() => setLocation('/my/bookmarks')}
             >
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -165,7 +203,15 @@ export default function MyPage() {
                 </div>
                 <div>
                   <p className="font-semibold">즐겨찾기한 안건</p>
-                  <p className="text-2xl font-bold mt-1">8</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto mt-1" />
+                  ) : statsError ? (
+                    <p className="text-sm text-destructive mt-1">오류</p>
+                  ) : (
+                    <p className="text-2xl font-bold mt-1" data-testid="count-bookmarked-agendas">
+                      {stats?.bookmarkedAgendasCount || 0}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
