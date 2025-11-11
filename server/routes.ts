@@ -929,6 +929,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agendas/:id/opinions", requireAuth, async (req, res) => {
+    try {
+      const agendaId = req.params.id;
+      const userId = req.user!.id;
+      
+      const opinionData = insertOpinionSchema.parse({
+        ...req.body,
+        userId,
+      });
+      
+      const opinion = await storage.createOpinion(opinionData);
+      
+      const agendaClusters = await db
+        .select()
+        .from(clusters)
+        .where(eq(clusters.agendaId, agendaId));
+      
+      if (agendaClusters.length > 0) {
+        for (const cluster of agendaClusters) {
+          await db.insert(opinionClusters).values({
+            opinionId: opinion.id,
+            clusterId: cluster.id,
+          });
+        }
+      }
+      
+      res.status(201).json(opinion);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating opinion for agenda:", error);
+      res.status(500).json({ error: "Failed to create opinion" });
+    }
+  });
+
   app.post("/api/agendas", async (req, res) => {
     try {
       const data = insertAgendaSchema.parse(req.body);
