@@ -51,14 +51,14 @@ export const opinions = pgTable("opinions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const agendaStatusEnum = pgEnum("agenda_status", ["draft", "active", "voting", "closed", "implemented"]);
+export const agendaStatusEnum = pgEnum("agenda_status", ["voting", "reviewing", "completed"]);
 
 export const agendas = pgTable("agendas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
   categoryId: varchar("category_id").notNull().references(() => categories.id),
-  status: agendaStatusEnum("status").notNull().default("draft"),
+  status: agendaStatusEnum("status").notNull().default("reviewing"),
   voteCount: integer("vote_count").notNull().default(0),
   viewCount: integer("view_count").notNull().default(0),
   startDate: timestamp("start_date"),
@@ -161,6 +161,7 @@ export const insertAgendaSchema = createInsertSchema(agendas)
     startDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
     endDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
   });
+export const updateAgendaSchema = insertAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({ id: true, createdAt: true });
 export const insertClusterSchema = createInsertSchema(clusters).omit({ id: true, createdAt: true });
 export const insertOpinionClusterSchema = createInsertSchema(opinionClusters).omit({ id: true, createdAt: true });
@@ -178,6 +179,7 @@ export type Category = typeof categories.$inferSelect;
 export type InsertOpinion = z.infer<typeof insertOpinionSchema>;
 export type Opinion = typeof opinions.$inferSelect;
 export type InsertAgenda = z.infer<typeof insertAgendaSchema>;
+export type UpdateAgenda = z.infer<typeof updateAgendaSchema>;
 export type Agenda = typeof agendas.$inferSelect;
 export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type Vote = typeof votes.$inferSelect;

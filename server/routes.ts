@@ -4,7 +4,7 @@ import passport from "passport";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { insertOpinionSchema, insertAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, insertCommentSchema, updateCommentSchema, users, comments as dbComments } from "@shared/schema";
+import { insertOpinionSchema, insertAgendaSchema, updateAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, insertCommentSchema, updateCommentSchema, users, comments as dbComments } from "@shared/schema";
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
@@ -980,12 +980,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/agendas/:id", async (req, res) => {
     try {
-      const agenda = await storage.updateAgenda(req.params.id, req.body);
+      const data = updateAgendaSchema.parse(req.body);
+      const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
         return res.status(404).json({ error: "Agenda not found" });
       }
       res.json(agenda);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
       res.status(500).json({ error: "Failed to update agenda" });
     }
   });
@@ -1302,7 +1306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(sql`${users.createdAt} >= ${weekStart}`),
         db.select({ count: sql<number>`count(*)::int` })
           .from(agendas)
-          .where(eq(agendas.status, "active")),
+          .where(eq(agendas.status, "voting")),
         db.select({ count: sql<number>`count(*)::int` })
           .from(reports)
           .where(eq(reports.status, "pending")),

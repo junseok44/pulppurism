@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -9,6 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -31,6 +40,11 @@ export default function AllAgendasManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAgenda, setEditingAgenda] = useState<Agenda | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStatus, setEditStatus] = useState<"voting" | "reviewing" | "completed">("reviewing");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -60,6 +74,29 @@ export default function AllAgendasManagement() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: string; title?: string; description?: string; status?: string }) => {
+      const { id, ...updateData } = data;
+      const response = await apiRequest("PATCH", `/api/agendas/${id}`, updateData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
+      setEditDialogOpen(false);
+      toast({
+        title: "안건 수정 완료",
+        description: "안건이 성공적으로 수정되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "수정 실패",
+        description: "안건 수정에 실패했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredAgendas = agendas.filter((agenda) => {
     const matchesSearch = agenda.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || agenda.status === statusFilter;
@@ -69,11 +106,11 @@ export default function AllAgendasManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "voting":
         return "default";
-      case "closed":
+      case "reviewing":
         return "secondary";
-      case "draft":
+      case "completed":
         return "outline";
       default:
         return "secondary";
@@ -82,12 +119,12 @@ export default function AllAgendasManagement() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "active":
-        return "진행 중";
-      case "closed":
-        return "완료";
-      case "draft":
-        return "초안";
+      case "voting":
+        return "투표중";
+      case "reviewing":
+        return "검토중";
+      case "completed":
+        return "답변 및 결과";
       default:
         return status;
     }
@@ -102,6 +139,24 @@ export default function AllAgendasManagement() {
     if (window.confirm("정말 이 안건을 삭제하시겠습니까?")) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleEdit = (agenda: Agenda) => {
+    setEditingAgenda(agenda);
+    setEditTitle(agenda.title);
+    setEditDescription(agenda.description);
+    setEditStatus(agenda.status as "voting" | "reviewing" | "completed");
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingAgenda) return;
+    updateMutation.mutate({
+      id: editingAgenda.id,
+      title: editTitle,
+      description: editDescription,
+      status: editStatus,
+    });
   };
 
   if (isLoading) {
@@ -146,9 +201,9 @@ export default function AllAgendasManagement() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 상태</SelectItem>
-              <SelectItem value="active">진행 중</SelectItem>
-              <SelectItem value="closed">완료</SelectItem>
-              <SelectItem value="draft">초안</SelectItem>
+              <SelectItem value="voting">투표중</SelectItem>
+              <SelectItem value="reviewing">검토중</SelectItem>
+              <SelectItem value="completed">답변 및 결과</SelectItem>
             </SelectContent>
           </Select>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -221,6 +276,14 @@ export default function AllAgendasManagement() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleEdit(agenda)}
+                        data-testid={`button-edit-${agenda.id}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(agenda.id)}
                         disabled={deleteMutation.isPending}
                         data-testid={`button-delete-${agenda.id}`}
@@ -235,6 +298,67 @@ export default function AllAgendasManagement() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>안건 편집</DialogTitle>
+            <DialogDescription>
+              안건의 제목, 내용, 상태를 수정할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">제목</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="안건 제목"
+                data-testid="input-edit-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">내용</label>
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="안건 내용"
+                rows={6}
+                data-testid="textarea-edit-description"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">상태</label>
+              <Select value={editStatus} onValueChange={(val) => setEditStatus(val as "voting" | "reviewing" | "completed")}>
+                <SelectTrigger data-testid="select-edit-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="voting">투표중</SelectItem>
+                  <SelectItem value="reviewing">검토중</SelectItem>
+                  <SelectItem value="completed">답변 및 결과</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updateMutation.isPending || !editTitle.trim() || !editDescription.trim()}
+              data-testid="button-save-edit"
+            >
+              {updateMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

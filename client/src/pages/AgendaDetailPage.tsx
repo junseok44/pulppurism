@@ -172,22 +172,44 @@ export default function AgendaDetailPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "draft": return "초안";
-      case "active": return "활성";
-      case "voting": return "투표 중";
-      case "closed": return "종료";
-      case "implemented": return "시행됨";
+      case "voting": return "투표중";
+      case "reviewing": return "검토중";
+      case "completed": return "답변 및 결과";
       default: return status;
     }
   };
 
-  const timelineSteps = [
-    { label: "의견 접수", status: "completed" as const, date: "2024.01.15" },
-    { label: "안건 작성", status: "completed" as const, date: "2024.02.01" },
-    { label: "주민 투표", status: "current" as const },
-    { label: "검토 중", status: "upcoming" as const },
-    { label: "답변 및 결과", status: "upcoming" as const },
-  ];
+  const getTimelineSteps = (status: string, createdAt: string) => {
+    const createdDate = new Date(createdAt).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).replace(/\. /g, '.').replace(/\.$/, '');
+
+    const steps = [
+      { 
+        label: "안건 생성", 
+        status: "completed" as const,
+        date: createdDate
+      },
+      { 
+        label: "투표중", 
+        status: status === "voting" ? "current" as const : (status === "reviewing" || status === "completed" ? "completed" as const : "upcoming" as const)
+      },
+      { 
+        label: "검토중", 
+        status: status === "reviewing" ? "current" as const : (status === "completed" ? "completed" as const : "upcoming" as const)
+      },
+      { 
+        label: "답변 및 결과", 
+        status: status === "completed" ? "current" as const : "upcoming" as const
+      },
+    ];
+
+    return steps;
+  };
+
+  const timelineSteps = agenda ? getTimelineSteps(agenda.status, String(agenda.createdAt)) : [];
 
   if (!match || !agendaId) {
     return (
