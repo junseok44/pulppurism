@@ -744,6 +744,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           viewCount: agendas.viewCount,
           startDate: agendas.startDate,
           endDate: agendas.endDate,
+          referenceLinks: agendas.referenceLinks,
+          referenceFiles: agendas.referenceFiles,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
           category: categories,
@@ -788,6 +790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           viewCount: agendas.viewCount,
           startDate: agendas.startDate,
           endDate: agendas.endDate,
+          referenceLinks: agendas.referenceLinks,
+          referenceFiles: agendas.referenceFiles,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
         })
@@ -823,6 +827,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           viewCount: agendas.viewCount,
           startDate: agendas.startDate,
           endDate: agendas.endDate,
+          referenceLinks: agendas.referenceLinks,
+          referenceFiles: agendas.referenceFiles,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
         })
