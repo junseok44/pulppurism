@@ -3,14 +3,31 @@ import MobileNav from "@/components/MobileNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Loader2 } from "lucide-react";
+import { Bookmark, Loader2, Edit, Plus, X, Trash2, Upload } from "lucide-react";
 import VotingWidget from "@/components/VotingWidget";
 import Timeline from "@/components/Timeline";
 import OpinionCard from "@/components/OpinionCard";
 import { Card } from "@/components/ui/card";
 import { ExternalLink, FileText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -42,6 +59,15 @@ export default function AgendaDetailPage() {
   const [match, params] = useRoute("/agendas/:id");
   const agendaId = params?.id;
   const { toast } = useToast();
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
+  const [editedStatus, setEditedStatus] = useState<"voting" | "reviewing" | "completed">("voting");
+  const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>([]);
+  const [editedReferenceFiles, setEditedReferenceFiles] = useState<string[]>([]);
+  const [newReferenceLink, setNewReferenceLink] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: user } = useQuery<User>({ 
     queryKey: ['/api/auth/me'],
@@ -142,6 +168,65 @@ export default function AgendaDetailPage() {
     },
   });
 
+  const updateAgendaMutation = useMutation({
+    mutationFn: async (data: {
+      title?: string;
+      description?: string;
+      status?: "voting" | "reviewing" | "completed";
+      referenceLinks?: string[];
+      referenceFiles?: string[];
+    }) => {
+      const res = await apiRequest("PATCH", `/api/agendas/${agendaId}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
+      setEditDialogOpen(false);
+      toast({
+        title: "안건이 수정되었습니다",
+        description: "변경사항이 성공적으로 저장되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "수정 실패",
+        description: "안건을 수정하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadFileMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`/api/agendas/${agendaId}/files`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        throw new Error("File upload failed");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        setEditedReferenceFiles([...editedReferenceFiles, data.url]);
+        toast({
+          title: "파일 업로드 완료",
+          description: "파일이 성공적으로 업로드되었습니다.",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "업로드 실패",
+        description: "파일 업로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCommentSubmit = () => {
     if (!user) {
       toast({
@@ -168,6 +253,49 @@ export default function AgendaDetailPage() {
       return;
     }
     voteMutation.mutate(voteType);
+  };
+
+  const handleEditClick = () => {
+    if (agenda) {
+      setEditedTitle(agenda.title);
+      setEditedDescription(agenda.description);
+      setEditedStatus(agenda.status);
+      setEditedReferenceLinks(agenda.referenceLinks || []);
+      setEditedReferenceFiles(agenda.referenceFiles || []);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    updateAgendaMutation.mutate({
+      title: editedTitle,
+      description: editedDescription,
+      status: editedStatus,
+      referenceLinks: editedReferenceLinks,
+      referenceFiles: editedReferenceFiles,
+    });
+  };
+
+  const handleAddReferenceLink = () => {
+    if (newReferenceLink.trim()) {
+      setEditedReferenceLinks([...editedReferenceLinks, newReferenceLink.trim()]);
+      setNewReferenceLink("");
+    }
+  };
+
+  const handleRemoveReferenceLink = (index: number) => {
+    setEditedReferenceLinks(editedReferenceLinks.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveReferenceFile = (index: number) => {
+    setEditedReferenceFiles(editedReferenceFiles.filter((_, i) => i !== index));
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadFileMutation.mutate(file);
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -283,15 +411,27 @@ export default function AgendaDetailPage() {
                 {agenda.title}
               </h1>
             </div>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={handleBookmarkClick}
-              disabled={bookmarkMutation.isPending}
-              data-testid="button-bookmark"
-            >
-              <Bookmark className={`w-5 h-5 ${agenda?.isBookmarked ? 'fill-current' : ''}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              {(user as any)?.isAdmin && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={handleEditClick}
+                  data-testid="button-edit"
+                >
+                  <Edit className="w-5 h-5" />
+                </Button>
+              )}
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={handleBookmarkClick}
+                disabled={bookmarkMutation.isPending}
+                data-testid="button-bookmark"
+              >
+                <Bookmark className={`w-5 h-5 ${agenda?.isBookmarked ? 'fill-current' : ''}`} />
+              </Button>
+            </div>
           </div>
 
           <Tabs defaultValue="overview" className="w-full">
@@ -376,30 +516,203 @@ export default function AgendaDetailPage() {
             </TabsContent>
 
             <TabsContent value="references" className="space-y-4 mt-6">
-              <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-reference-1">
-                <div className="flex items-center gap-4">
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <h3 className="font-medium">타지역 과속방지턱 설치 사례</h3>
-                    <p className="text-sm text-muted-foreground">
-                      서울시 강남구 B초등학교 사례 분석
-                    </p>
-                  </div>
+              {(!agenda.referenceLinks || agenda.referenceLinks.length === 0) && 
+               (!agenda.referenceFiles || agenda.referenceFiles.length === 0) ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">등록된 참고자료가 없습니다.</p>
                 </div>
-              </Card>
-              <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" data-testid="card-reference-2">
-                <div className="flex items-center gap-4">
-                  <FileText className="w-5 h-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <h3 className="font-medium">교통안전시설 설치 가이드라인.pdf</h3>
-                    <p className="text-sm text-muted-foreground">PDF · 2.4 MB</p>
-                  </div>
-                </div>
-              </Card>
+              ) : (
+                <>
+                  {agenda.referenceLinks && agenda.referenceLinks.map((link, index) => (
+                    <Card 
+                      key={`link-${index}`} 
+                      className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                      data-testid={`card-reference-link-${index}`}
+                      onClick={() => window.open(link, '_blank')}
+                    >
+                      <div className="flex items-center gap-4">
+                        <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex-1">
+                          <h3 className="font-medium break-all">{link}</h3>
+                          <p className="text-sm text-muted-foreground">외부 링크</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                  {agenda.referenceFiles && agenda.referenceFiles.map((file, index) => (
+                    <Card 
+                      key={`file-${index}`} 
+                      className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                      data-testid={`card-reference-file-${index}`}
+                      onClick={() => window.open(file, '_blank')}
+                    >
+                      <div className="flex items-center gap-4">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{file.split('/').pop() || file}</h3>
+                          <p className="text-sm text-muted-foreground">첨부 파일</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </>
+              )}
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-agenda">
+          <DialogHeader>
+            <DialogTitle>안건 수정</DialogTitle>
+            <DialogDescription>
+              안건의 정보를 수정하고 참고자료를 관리할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">제목</Label>
+              <Input
+                id="edit-title"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                placeholder="안건 제목을 입력하세요"
+                data-testid="input-edit-title"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">설명</Label>
+              <Textarea
+                id="edit-description"
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                placeholder="안건 설명을 입력하세요"
+                className="min-h-32"
+                data-testid="input-edit-description"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">상태</Label>
+              <Select value={editedStatus} onValueChange={(value: any) => setEditedStatus(value)}>
+                <SelectTrigger id="edit-status" data-testid="select-edit-status">
+                  <SelectValue placeholder="상태를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="voting">투표중</SelectItem>
+                  <SelectItem value="reviewing">검토중</SelectItem>
+                  <SelectItem value="completed">답변 및 결과</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>참고 링크</Label>
+              <div className="space-y-2">
+                {editedReferenceLinks.map((link, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={link}
+                      readOnly
+                      className="flex-1"
+                      data-testid={`input-reference-link-${index}`}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveReferenceLink(index)}
+                      data-testid={`button-remove-link-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newReferenceLink}
+                    onChange={(e) => setNewReferenceLink(e.target.value)}
+                    placeholder="https://example.com"
+                    className="flex-1"
+                    data-testid="input-new-reference-link"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleAddReferenceLink}
+                    disabled={!newReferenceLink.trim()}
+                    data-testid="button-add-reference-link"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>첨부 파일</Label>
+              <div className="space-y-2">
+                {editedReferenceFiles.map((file, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2 p-2 border rounded-md">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm truncate">{file.split('/').pop() || file}</span>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveReferenceFile(index)}
+                      data-testid={`button-remove-file-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    data-testid="input-file-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadFileMutation.isPending}
+                    className="w-full"
+                    data-testid="button-upload-file"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadFileMutation.isPending ? "업로드 중..." : "파일 업로드"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updateAgendaMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {updateAgendaMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <MobileNav />
     </div>
   );
