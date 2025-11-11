@@ -844,6 +844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/agendas/:id", async (req, res) => {
     try {
+      const userId = req.user?.id;
+      
       const agendaData = await db
         .select({
           id: agendas.id,
@@ -858,9 +860,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
           category: categories,
+          bookmarkId: agendaBookmarks.id,
         })
         .from(agendas)
         .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .leftJoin(
+          agendaBookmarks,
+          userId 
+            ? and(
+                eq(agendaBookmarks.agendaId, agendas.id),
+                eq(agendaBookmarks.userId, userId)
+              )
+            : sql`false`
+        )
         .where(eq(agendas.id, req.params.id));
 
       if (agendaData.length === 0) {
@@ -868,7 +880,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.incrementAgendaViewCount(req.params.id);
-      res.json(agendaData[0]);
+      
+      const result = agendaData[0];
+      const isBookmarked = !!result.bookmarkId;
+      const { bookmarkId, ...agendaWithoutBookmarkId } = result;
+      
+      res.json({ ...agendaWithoutBookmarkId, isBookmarked });
     } catch (error) {
       console.error("Error fetching agenda:", error);
       res.status(500).json({ error: "Failed to fetch agenda" });

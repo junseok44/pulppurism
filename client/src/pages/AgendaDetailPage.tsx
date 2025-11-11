@@ -14,10 +14,12 @@ import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Agenda, Category, Opinion } from "@shared/schema";
+import type { Agenda, Category, Opinion, User } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
+  isBookmarked?: boolean;
 }
 
 interface VoteStats {
@@ -39,8 +41,12 @@ export default function AgendaDetailPage() {
   const [comment, setComment] = useState("");
   const [match, params] = useRoute("/agenda/:id");
   const agendaId = params?.id;
+  const { toast } = useToast();
 
-  const TEMP_USER_ID = "temp-user-id";
+  const { data: user } = useQuery<User>({ 
+    queryKey: ['/api/auth/me'],
+    retry: false,
+  });
 
   const { data: agenda, isLoading: agendaLoading, error: agendaError } = useQuery<AgendaWithCategory>({
     queryKey: [`/api/agendas/${agendaId}`],
@@ -86,10 +92,24 @@ export default function AgendaDetailPage() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/agendas/bookmarked'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users/me/stats'] });
     },
   });
+
+  const handleBookmarkClick = () => {
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "북마크 기능을 사용하려면 로그인해주세요.",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
+    bookmarkMutation.mutate(agenda?.isBookmarked || false);
+  };
 
   const handleCommentSubmit = () => {
     if (comment.trim()) {
@@ -196,11 +216,11 @@ export default function AgendaDetailPage() {
             <Button 
               size="icon" 
               variant="ghost" 
-              onClick={() => bookmarkMutation.mutate(false)}
+              onClick={handleBookmarkClick}
               disabled={bookmarkMutation.isPending}
               data-testid="button-bookmark"
             >
-              <Bookmark className="w-5 h-5" />
+              <Bookmark className={`w-5 h-5 ${agenda?.isBookmarked ? 'fill-current' : ''}`} />
             </Button>
           </div>
 
