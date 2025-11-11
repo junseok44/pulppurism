@@ -23,10 +23,10 @@ export default function NewAgendaForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [clusterId, setClusterId] = useState("");
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlParams = new URLSearchParams(window.location.search);
   const urlClusterId = urlParams.get('clusterId');
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -100,7 +100,7 @@ export default function NewAgendaForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !categoryId) {
+    if (!title || !description || !categoryId || !clusterId || clusterId === "none") {
       toast({
         title: "입력 오류",
         description: "모든 필수 항목을 입력해주세요.",
@@ -139,14 +139,13 @@ export default function NewAgendaForm() {
 
             <div className="space-y-2">
               <Label htmlFor="cluster">
-                클러스터 선택 (선택사항)
+                클러스터 선택 <span className="text-destructive">*</span>
               </Label>
               <Select value={clusterId || undefined} onValueChange={(val) => setClusterId(val || "")}>
                 <SelectTrigger data-testid="select-cluster">
-                  <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
+                  <SelectValue placeholder="클러스터를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">클러스터 없음</SelectItem>
                   {clusters
                     .filter(c => !c.agendaId)
                     .map((cluster) => (
