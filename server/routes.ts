@@ -767,6 +767,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/agendas/my-opinions", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      const result = await db
+        .selectDistinct({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          categoryName: categories.name,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .innerJoin(clusters, eq(agendas.id, clusters.agendaId))
+        .innerJoin(opinionClusters, eq(clusters.id, opinionClusters.clusterId))
+        .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
+        .where(eq(opinions.userId, userId))
+        .orderBy(desc(agendas.createdAt));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch my agendas:", error);
+      res.status(500).json({ error: "Failed to fetch my agendas" });
+    }
+  });
+
+  app.get("/api/agendas/bookmarked", requireAuth, async (req, res) => {
+    try {
+      const { limit, offset } = req.query;
+      const userId = req.user!.id;
+      
+      let query: any = db
+        .select({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          categoryId: agendas.categoryId,
+          categoryName: categories.name,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          startDate: agendas.startDate,
+          endDate: agendas.endDate,
+          createdAt: agendas.createdAt,
+          updatedAt: agendas.updatedAt,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .innerJoin(agendaBookmarks, eq(agendas.id, agendaBookmarks.agendaId))
+        .where(eq(agendaBookmarks.userId, userId))
+        .orderBy(desc(agendas.createdAt));
+      
+      if (limit) {
+        query = query.limit(parseInt(limit as string));
+      }
+      if (offset) {
+        query = query.offset(parseInt(offset as string));
+      }
+      
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to fetch bookmarked agendas:", error);
+      res.status(500).json({ error: "Failed to fetch bookmarked agendas" });
+    }
+  });
+
   app.get("/api/agendas/:id", async (req, res) => {
     try {
       const agendaData = await db
@@ -870,87 +945,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  app.get("/api/agendas/my-opinions", requireAuth, async (req, res) => {
+  app.post("/api/agendas/:id/bookmark", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
-      const result = await db
-        .selectDistinct({
-          id: agendas.id,
-          title: agendas.title,
-          description: agendas.description,
-          categoryId: agendas.categoryId,
-          categoryName: categories.name,
-          status: agendas.status,
-          voteCount: agendas.voteCount,
-          viewCount: agendas.viewCount,
-          startDate: agendas.startDate,
-          endDate: agendas.endDate,
-          createdAt: agendas.createdAt,
-          updatedAt: agendas.updatedAt,
-        })
-        .from(agendas)
-        .leftJoin(categories, eq(agendas.categoryId, categories.id))
-        .innerJoin(clusters, eq(agendas.id, clusters.agendaId))
-        .innerJoin(opinionClusters, eq(clusters.id, opinionClusters.clusterId))
-        .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
-        .where(eq(opinions.userId, userId))
-        .orderBy(desc(agendas.createdAt));
-      
-      res.json(result);
-    } catch (error) {
-      console.error("Failed to fetch my agendas:", error);
-      res.status(500).json({ error: "Failed to fetch my agendas" });
-    }
-  });
-
-  app.get("/api/agendas/bookmarked", requireAuth, async (req, res) => {
-    try {
-      const { limit, offset } = req.query;
-      const userId = req.user!.id;
-      
-      let query: any = db
-        .select({
-          id: agendas.id,
-          title: agendas.title,
-          description: agendas.description,
-          categoryId: agendas.categoryId,
-          categoryName: categories.name,
-          status: agendas.status,
-          voteCount: agendas.voteCount,
-          viewCount: agendas.viewCount,
-          startDate: agendas.startDate,
-          endDate: agendas.endDate,
-          createdAt: agendas.createdAt,
-          updatedAt: agendas.updatedAt,
-        })
-        .from(agendas)
-        .leftJoin(categories, eq(agendas.categoryId, categories.id))
-        .innerJoin(agendaBookmarks, eq(agendas.id, agendaBookmarks.agendaId))
-        .where(eq(agendaBookmarks.userId, userId))
-        .orderBy(desc(agendas.createdAt));
-      
-      if (limit) {
-        query = query.limit(parseInt(limit as string));
-      }
-      if (offset) {
-        query = query.offset(parseInt(offset as string));
-      }
-      
-      const result = await query;
-      res.json(result);
-    } catch (error) {
-      console.error("Failed to fetch bookmarked agendas:", error);
-      res.status(500).json({ error: "Failed to fetch bookmarked agendas" });
-    }
-  });
-
-  app.post("/api/agendas/:id/bookmark", async (req, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
       
       const existing = await storage.getAgendaBookmark(userId, req.params.id);
       if (existing) {
@@ -964,12 +961,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/agendas/:id/bookmark", async (req, res) => {
+  app.delete("/api/agendas/:id/bookmark", requireAuth, async (req, res) => {
     try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
+      const userId = req.user!.id;
       
       await storage.deleteAgendaBookmark(userId, req.params.id);
       res.status(204).send();
