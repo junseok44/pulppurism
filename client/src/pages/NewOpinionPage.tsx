@@ -18,6 +18,7 @@ export default function NewOpinionPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const [content, setContent] = useState("");
+  const [shouldTranscribe, setShouldTranscribe] = useState(false);
   const voiceRecorder = useVoiceRecorder();
 
   useEffect(() => {
@@ -28,6 +29,13 @@ export default function NewOpinionPage() {
       voiceRecorder.clearRecording();
     };
   }, []);
+
+  useEffect(() => {
+    if (shouldTranscribe && voiceRecorder.audioBlob) {
+      transcribeMutation.mutate(voiceRecorder.audioBlob);
+      setShouldTranscribe(false);
+    }
+  }, [shouldTranscribe, voiceRecorder.audioBlob]);
 
   if (!user) {
     return (
@@ -174,10 +182,8 @@ export default function NewOpinionPage() {
   };
 
   const handleStopRecording = () => {
+    setShouldTranscribe(true);
     voiceRecorder.stopRecording();
-    if (voiceRecorder.audioBlob) {
-      transcribeMutation.mutate(voiceRecorder.audioBlob);
-    }
   };
 
   const formatTime = (seconds: number) => {
