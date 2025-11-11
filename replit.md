@@ -1,97 +1,6 @@
 # Overview
 
-This is a Korean civic engagement platform (주민참여 플랫폼) that enables citizens to submit opinions, vote on agendas, and participate in local governance. The platform features a public-facing interface for residents to browse agendas, submit opinions, and vote, along with an administrative dashboard for managing content, clustering opinions into agendas, and moderating community contributions.
-
-The application is built as a full-stack TypeScript project with React on the frontend and Express on the backend, using Material Design principles adapted for Korean audiences with accessibility and trust as core values.
-
-# Recent Changes
-
-## November 11, 2025 - My Page Activity Data Integration
-
-**My Page API Endpoints Added:**
-- GET /api/users/me/stats - User activity statistics (requireAuth)
-  - Returns: { myOpinionsCount, likedOpinionsCount, myAgendasCount, bookmarkedAgendasCount }
-  - Batched count queries for performance optimization
-- GET /api/opinions/my - User's submitted opinions (requireAuth, optional pagination)
-  - Returns opinions with commentCount and isLiked fields
-  - Fetches comment counts via dbComments join
-  - Checks like status for current user via opinionLikes
-- GET /api/opinions/liked - User's liked opinions (requireAuth, opinionLikes join, optional pagination)
-  - Returns opinions with commentCount field
-  - isLiked always true (user has liked these opinions)
-- GET /api/agendas/my-opinions - Agendas containing user's opinions (requireAuth, selectDistinct for deduplication)
-- GET /api/agendas/bookmarked - User's bookmarked agendas (requireAuth, optional pagination)
-
-**Frontend Updates:**
-- MyPage.tsx migrated from mock data to live API integration
-- React Query for server state management with enabled: !!user gating
-- Loading states using Skeleton components
-- Error state handling with user-friendly "오류" message display ("데이터를 불러오는데 실패했습니다")
-- Navigation updated to use wouter's setLocation (SPA consistency)
-- Added data-testids for activity counts (count-my-opinions, count-liked-opinions, count-my-agendas, count-bookmarked-agendas)
-
-**Activity Detail Pages (All migrated from mock to live data):**
-- MyOpinionsPage - Displays user's submitted opinions with accurate commentCount and isLiked from API
-- LikedOpinionsPage - Displays liked opinions with commentCount and isLiked
-- MyAgendasPage - Displays agendas containing user's opinions with error handling
-- BookmarkedAgendasPage - Displays bookmarked agendas with error handling
-- All pages include: loading states (including auth loading), error states, empty states, proper authentication checks
-- Uses early return pattern to show Skeleton during authentication (isUserLoading)
-- Query enabled only after authentication resolves (!isUserLoading && !!user)
-- Prevents misleading empty states during auth load
-- Redirects only unauthenticated users to /my after auth resolution
-
-**Security & Performance:**
-- All endpoints protected with requireAuth middleware
-- Optional limit/offset pagination for scalability (no hard caps - returns full dataset when limit/offset omitted)
-- Batched statistics queries to minimize database round trips
-- selectDistinct prevents duplicate agenda results when user has multiple opinions in same agenda
-
-**Performance Optimizations:**
-- Opinion APIs use separate batch queries for commentCounts and isLiked status to avoid N+1 queries
-- Map-based lookups for O(1) comment count and like status retrieval
-- Pagination support (optional limit/offset) for scalable list views
-
-**Known Limitations:**
-- OAuth authentication blocks automated E2E testing (manual verification required)
-- Agenda pages display commentCount/bookmarkCount as 0 (requires future API extension for accurate counts)
-- Future improvement: Harden limit/offset parsing to reject non-numeric values
-
-## November 10, 2025 - Schema Simplification and Admin Dashboard Completion
-
-**Schema Changes:**
-- Removed `categoryId` from opinions table - opinions no longer have categories, only agendas do
-- Removed `status` field from opinions table - all submitted opinions are automatically eligible for clustering
-- Simplified opinion workflow: submit → cluster → agenda (no approval/rejection workflow)
-- Unclustered opinions are identified by absence in `opinionClusters` table rather than status field
-
-**Admin Dashboard Migration:**
-Completed migration of all admin dashboard pages from mock data to live API integration:
-
-**Backend APIs Added:**
-- GET /api/stats/dashboard - Dashboard statistics (today/weekly new opinions/users, active agendas, pending reports, recent clusters)
-- GET /api/users - User list with filtering and pagination support
-- PATCH /api/users/:id - User profile updates
-- POST /api/dev/seed-opinions - Development tool to generate test opinions optimized for clustering tests
-
-**Test Data Generation:**
-- Creates 54 test opinions via POST /api/dev/seed-opinions
-- 6 clusterable groups with 6 similar opinions each (주차 문제, 놀이터 안전, 가로등, 쓰레기 분리수거, 버스 배차, 도서관 운영)
-- 18 standalone opinions on diverse topics (unclustered by design)
-- Optimized for realistic clustering algorithm testing
-
-**Frontend Pages Updated:**
-- AdminDashboardHome - Real-time statistics, recent clusters, pending reports, and test data generation button
-- ReportManagement - Opinion and agenda report handling with status updates
-- AllAgendasManagement - Agenda list with search, filtering, and deletion
-- CategoryManagement - Read-only category display with agenda counts
-- AdminUsersPage - User list with search and provider statistics
-
-All pages now use React Query for server state management with proper loading states, error handling, and cache invalidation.
-
-**Known Limitations:**
-- Comment-level reports not supported (schema limitation - backlog item)
-- Categories are read-only (11 predefined categories) and only used for agendas, not opinions
+This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
 # User Preferences
 
@@ -101,105 +10,70 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-**Framework**: React 18 with TypeScript, using Vite as the build tool and development server.
-
-**Routing**: Wouter for client-side routing, providing a lightweight alternative to React Router.
-
-**UI Components**: shadcn/ui component library (New York variant) built on Radix UI primitives, providing accessible and customizable components with Tailwind CSS styling.
-
-**State Management**: TanStack Query (React Query) for server state management, with custom query client configuration for API interactions.
-
-**Styling**: Tailwind CSS with custom design system extending Material Design principles. Custom CSS variables define a comprehensive color system supporting light/dark modes, with specific Korean typography using Noto Sans KR and Inter fonts.
-
-**Design System**: Custom spacing scale, border radius values, and elevation system using hover/active states (hover-elevate, active-elevate-2 classes) for interactive feedback.
+**Framework**: React 18 with TypeScript, using Vite.
+**Routing**: Wouter.
+**UI Components**: shadcn/ui (New York variant) built on Radix UI, styled with Tailwind CSS.
+**State Management**: TanStack Query (React Query) for server state management.
+**Styling**: Tailwind CSS with a custom design system extending Material Design principles, including a comprehensive color system for light/dark modes and Korean typography (Noto Sans KR, Inter fonts).
+**Design System**: Custom spacing, border radius, and elevation system for interactive feedback.
 
 ## Backend Architecture
 
-**Server Framework**: Express.js with TypeScript, using ES modules.
-
-**Database ORM**: Drizzle ORM configured for PostgreSQL with Neon serverless adapter for connection pooling.
-
-**API Pattern**: RESTful API structure with routes prefixed under `/api`. The storage interface pattern separates data access logic, using database-backed storage (DatabaseStorage) with PostgreSQL via Drizzle ORM. Query optimization uses JOIN operations to prevent N+1 query problems, with user data eagerly loaded in single database queries.
-
-**Development Setup**: Vite middleware integration for HMR in development, with separate build process for production using esbuild to bundle the server.
-
-**Authentication**: OAuth-based authentication using Passport.js with Google and Kakao strategies. Session management via express-session with connect-pg-simple for PostgreSQL-backed session storage. OAuth providers are conditionally enabled based on environment variables, allowing graceful degradation when credentials are not configured.
-
-**Session Management**: Infrastructure present for connect-pg-simple session storage (PostgreSQL-backed sessions).
+**Server Framework**: Express.js with TypeScript (ES modules).
+**Database ORM**: Drizzle ORM for PostgreSQL, utilizing Neon serverless adapter.
+**API Pattern**: RESTful API under `/api`, employing a storage interface pattern for data access. Query optimization uses JOINs to prevent N+1 issues.
+**Development Setup**: Vite middleware for HMR in development; esbuild for production bundling.
+**Authentication**: OAuth-based authentication via Passport.js (Google and Kakao strategies). Session management uses express-session with connect-pg-simple for PostgreSQL-backed storage.
+**Session Management**: PostgreSQL-backed session storage via `connect-pg-simple`.
 
 ## Database Schema
 
 **ORM**: Drizzle ORM with PostgreSQL dialect, schema defined in `shared/schema.ts`.
-
-**Current Schema**: Comprehensive schema for civic engagement platform including:
-- Users: OAuth authentication with Google and Kakao support (fields: googleId, kakaoId, provider enum), plus user profile data (username, email, displayName, avatarUrl)
-- Categories: 11 predefined categories (교육, 교통, 환경, 안전, 복지, 문화, 경제, 보건, 주거, 행정, 기타) - used for agendas only
-- Opinions: Citizen submissions with text/voice support and like counts - all opinions are automatically eligible for clustering
-- Agendas: Discussion topics with voting periods, view counts, category assignment, and status management
-- Votes: One vote per user per agenda with support for agree/disagree/neutral positions
-- Clusters: AI-generated opinion groupings with similarity scores, can be linked to agendas
-- OpinionClusters: Many-to-many relationship between opinions and clusters
-- Reports: Content moderation system for flagging inappropriate content (opinions and agendas only)
-- OpinionLikes: User likes on opinions with duplicate prevention
-- AgendaBookmarks: User bookmarks on agendas with duplicate prevention
-- Comments: Single-level comments on opinions with edit/delete support and author-only permissions
-
-Schema uses Drizzle's type inference for compile-time safety, Zod integration for validation, and composite unique constraints to prevent duplicate votes/likes/bookmarks.
-
-**Migration Strategy**: Drizzle Kit configured for schema migrations with output to `./migrations` directory.
+**Schema Overview**: Includes `Users`, `Categories` (11 predefined, for agendas only), `Opinions` (citizen submissions, automatically eligible for clustering), `Agendas`, `Votes`, `Clusters` (AI-generated opinion groupings), `OpinionClusters`, `Reports` (for opinions and agendas), `OpinionLikes`, `AgendaBookmarks`, and `Comments`.
+**Validation**: Zod integration for validation and composite unique constraints to prevent duplicates.
+**Migrations**: Drizzle Kit configured for schema migrations.
 
 ## Key Architectural Decisions
 
-**Monorepo Structure**: Single repository with client, server, and shared code organized in separate directories. Shared schema and types accessible to both frontend and backend via TypeScript path aliases.
-
-**Database Connection**: Neon serverless PostgreSQL with WebSocket support for efficient connection management in serverless environments.
-
-**Type Safety**: End-to-end TypeScript with shared types between client and server, Drizzle schema types, and Zod validation schemas derived from database schema.
-
-**Mobile-First Design**: Responsive layout with dedicated mobile navigation component, separate from desktop header navigation. Tailwind breakpoints used for adaptive layouts.
-
-**Component Organization**: Feature-based component structure with reusable UI components, page components, admin-specific components, and example components for documentation/testing.
-
-**Internationalization Consideration**: Korean language as primary interface language, with fonts and typography optimized for Korean text rendering (Noto Sans KR primary, Inter for Latin characters).
+**Monorepo Structure**: Single repository with client, server, and shared code, leveraging TypeScript path aliases.
+**Database Connection**: Neon serverless PostgreSQL with WebSocket support for efficient connection management.
+**Type Safety**: End-to-end TypeScript with shared types, Drizzle schema types, and Zod validation.
+**Mobile-First Design**: Responsive layout with dedicated mobile navigation and Tailwind breakpoints.
+**Component Organization**: Feature-based component structure.
+**Internationalization**: Primary language is Korean, with optimized typography (Noto Sans KR, Inter).
 
 # External Dependencies
 
 ## Database
 
-**Neon PostgreSQL**: Serverless PostgreSQL database accessed via `@neondatabase/serverless` package with connection pooling. Database URL configured via `DATABASE_URL` environment variable.
+**Neon PostgreSQL**: Serverless PostgreSQL accessed via `@neondatabase/serverless`.
 
 ## UI Libraries
 
-**Radix UI**: Comprehensive set of unstyled, accessible UI primitives (@radix-ui/* packages) forming the foundation of the component library.
-
-**shadcn/ui**: Pre-built component implementations using Radix UI primitives with Tailwind styling.
-
-**Lucide React**: Icon library for consistent iconography throughout the application.
+**Radix UI**: Unstyled, accessible UI primitives.
+**shadcn/ui**: Pre-built components based on Radix UI with Tailwind CSS.
+**Lucide React**: Icon library.
 
 ## Development Tools
 
-**Replit Integration**: Custom Vite plugins for Replit-specific features including runtime error overlay, cartographer, and dev banner (conditionally loaded in development).
-
-**TanStack Query DevTools**: Available for debugging server state and cache inspection.
+**Replit Integration**: Custom Vite plugins for Replit-specific features.
+**TanStack Query DevTools**: For debugging server state.
 
 ## Form Handling
 
-**React Hook Form**: Form state management with `@hookform/resolvers` for schema validation integration.
-
-**Zod**: Schema validation library, integrated with Drizzle for type-safe validation derived from database schemas.
+**React Hook Form**: Form state management.
+**Zod**: Schema validation, integrated with Drizzle.
 
 ## Utilities
 
-**date-fns**: Date manipulation and formatting library for Korean locale support.
-
-**clsx + tailwind-merge**: Utility for conditional className composition with Tailwind class conflict resolution.
-
+**date-fns**: Date manipulation and formatting (Korean locale support).
+**clsx + tailwind-merge**: Conditional className composition and Tailwind class conflict resolution.
 **class-variance-authority**: Type-safe variant API for component styling.
 
 ## AI Integration
 
-**OpenAI**: AI-powered opinion clustering using:
-- text-embedding-3-small for semantic similarity analysis
-- gpt-4o-mini for cluster title and summary generation
-- Cosine similarity matching for grouping related opinions
-- Automatic cluster generation via API endpoint (/api/clusters/generate)
+**OpenAI**: Used for opinion clustering:
+- `text-embedding-3-small` for semantic similarity.
+- `gpt-4o-mini` for cluster title and summary generation.
+- Cosine similarity matching for grouping opinions.
+- Automatic cluster generation via `/api/clusters/generate` endpoint.
