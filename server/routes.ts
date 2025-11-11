@@ -12,14 +12,14 @@ import { agendas, categories, clusters, opinionClusters, opinions, reports, opin
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
 import multer from "multer";
-import { Client } from "@replit/object-storage";
+import { ObjectStorageService } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const GOOGLE_ENABLED = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const KAKAO_ENABLED = !!process.env.KAKAO_CLIENT_ID;
   
   const upload = multer({ storage: multer.memoryStorage() });
-  const objectStorage = new Client();
+  const objectStorageService = new ObjectStorageService();
 
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
@@ -1022,9 +1022,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const timestamp = Date.now();
       const filename = `agendas/${agendaId}/${timestamp}-${req.file.originalname}`;
       
-      await objectStorage.uploadFromBytes(filename, req.file.buffer);
+      const fullPath = await objectStorageService.uploadFile(filename, req.file.buffer);
       
-      const publicUrl = `/public/${filename}`;
+      const publicUrl = `/public-objects/${filename}`;
       
       const currentFiles = agenda.referenceFiles || [];
       const updatedAgenda = await storage.updateAgenda(agendaId, {
@@ -1623,6 +1623,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Failed to update user:", error);
       res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -417,7 +417,7 @@ export default function AgendaDetailPage() {
                   size="icon" 
                   variant="ghost" 
                   onClick={handleEditClick}
-                  data-testid="button-edit"
+                  data-testid="button-edit-agenda"
                 >
                   <Edit className="w-5 h-5" />
                 </Button>
@@ -563,7 +563,7 @@ export default function AgendaDetailPage() {
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-agenda">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-agenda" closeButtonTestId="button-close-edit-dialog">
           <DialogHeader>
             <DialogTitle>안건 수정</DialogTitle>
             <DialogDescription>
@@ -591,7 +591,7 @@ export default function AgendaDetailPage() {
                 onChange={(e) => setEditedDescription(e.target.value)}
                 placeholder="안건 설명을 입력하세요"
                 className="min-h-32"
-                data-testid="input-edit-description"
+                data-testid="textarea-edit-description"
               />
             </div>
 
@@ -624,7 +624,7 @@ export default function AgendaDetailPage() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleRemoveReferenceLink(index)}
-                      data-testid={`button-remove-link-${index}`}
+                      data-testid={`button-remove-reference-link-${index}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -636,7 +636,7 @@ export default function AgendaDetailPage() {
                     onChange={(e) => setNewReferenceLink(e.target.value)}
                     placeholder="https://example.com"
                     className="flex-1"
-                    data-testid="input-new-reference-link"
+                    data-testid="input-add-reference-link"
                   />
                   <Button
                     size="icon"
@@ -664,7 +664,7 @@ export default function AgendaDetailPage() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleRemoveReferenceFile(index)}
-                      data-testid={`button-remove-file-${index}`}
+                      data-testid={`button-remove-reference-file-${index}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
