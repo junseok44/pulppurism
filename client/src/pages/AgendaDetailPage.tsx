@@ -80,14 +80,14 @@ export default function AgendaDetailPage() {
   const bookmarkMutation = useMutation({
     mutationFn: async (isBookmarked: boolean) => {
       if (isBookmarked) {
-        await apiRequest("DELETE", `/api/agendas/${agendaId}/bookmark`, {
-          userId: TEMP_USER_ID,
-        });
+        await apiRequest("DELETE", `/api/agendas/${agendaId}/bookmark`);
       } else {
-        await apiRequest("POST", `/api/agendas/${agendaId}/bookmark`, {
-          userId: TEMP_USER_ID,
-        });
+        await apiRequest("POST", `/api/agendas/${agendaId}/bookmark`);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/agendas/bookmarked'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me/stats'] });
     },
   });
 
