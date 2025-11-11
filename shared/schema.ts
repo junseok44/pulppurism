@@ -63,6 +63,8 @@ export const agendas = pgTable("agendas", {
   viewCount: integer("view_count").notNull().default(0),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
+  referenceLinks: text("reference_links").array(),
+  referenceFiles: text("reference_files").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -160,6 +162,8 @@ export const insertAgendaSchema = createInsertSchema(agendas)
   .extend({
     startDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
     endDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+    referenceLinks: z.array(z.string().url()).optional(),
+    referenceFiles: z.array(z.string()).optional(),
   });
 export const updateAgendaSchema = insertAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({ id: true, createdAt: true });
