@@ -521,26 +521,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/opinions/voice-upload", requireAuth, upload.single("audio"), async (req, res) => {
+  app.post("/api/opinions/transcribe", requireAuth, upload.single("audio"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No audio file provided" });
       }
 
-      const userId = req.user!.id;
-      const timestamp = Date.now();
-      const filename = `voices/${userId}/${timestamp}.webm`;
-      
-      const fullPath = await objectStorageService.uploadFile(filename, req.file.buffer);
-      const publicUrl = `/public-objects/${filename}`;
-      
-      res.json({ 
-        success: true, 
-        voiceUrl: publicUrl,
+      const formData = new FormData();
+      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+      formData.append("file", blob, "audio.webm");
+      formData.append("model", "whisper-1");
+      formData.append("language", "ko");
+
+      const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("OpenAI Whisper API error:", error);
+        return res.status(response.status).json({ error: "Transcription failed" });
+      }
+
+      const data = await response.json();
+      res.json({ text: data.text });
     } catch (error) {
-      console.error("Error uploading voice file:", error);
-      res.status(500).json({ error: "Failed to upload voice file" });
+      console.error("Transcription error:", error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
     }
   });
 
