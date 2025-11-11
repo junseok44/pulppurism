@@ -493,7 +493,7 @@ export default function OpinionDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setLocation(`/agenda/${opinion.linkedAgenda!.id}`)}
+                  onClick={() => setLocation(`/agendas/${opinion.linkedAgenda!.id}`)}
                   className="flex-shrink-0"
                   data-testid="button-view-agenda"
                 >

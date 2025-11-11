@@ -100,7 +100,7 @@ export default function AgendaListPage() {
                   commentCount={agenda.voteCount}
                   bookmarkCount={agenda.bookmarkCount || 0}
                   isBookmarked={agenda.isBookmarked || false}
-                  onClick={() => setLocation(`/agenda/${agenda.id}`)}
+                  onClick={() => setLocation(`/agendas/${agenda.id}`)}
                 />
               ))
             ) : (

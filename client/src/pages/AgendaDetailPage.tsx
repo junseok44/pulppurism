@@ -39,7 +39,7 @@ interface Vote {
 export default function AgendaDetailPage() {
   const [, setLocation] = useLocation();
   const [comment, setComment] = useState("");
-  const [match, params] = useRoute("/agenda/:id");
+  const [match, params] = useRoute("/agendas/:id");
   const agendaId = params?.id;
   const { toast } = useToast();
 

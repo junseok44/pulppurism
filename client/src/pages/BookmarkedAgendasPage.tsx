@@ -104,7 +104,7 @@ export default function BookmarkedAgendasPage() {
                 commentCount={0}
                 bookmarkCount={0}
                 isBookmarked={true}
-                onClick={() => setLocation(`/agenda/${agenda.id}`)}
+                onClick={() => setLocation(`/agendas/${agenda.id}`)}
               />
             ))}
           </div>

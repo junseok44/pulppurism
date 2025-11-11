@@ -73,7 +73,7 @@ export default function SearchPage() {
                     <AgendaCard
                       key={agenda.id}
                       {...agenda}
-                      onClick={() => setLocation(`/agenda/${agenda.id}`)}
+                      onClick={() => setLocation(`/agendas/${agenda.id}`)}
                     />
                   ))}
                 </>

@@ -268,7 +268,7 @@ export default function AllAgendasManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLocation(`/agenda/${agenda.id}`)}
+                        onClick={() => setLocation(`/agendas/${agenda.id}`)}
                         data-testid={`button-view-${agenda.id}`}
                       >
                         <Eye className="w-4 h-4" />
