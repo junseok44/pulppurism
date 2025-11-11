@@ -119,10 +119,9 @@ export default function AgendaDetailPage() {
       if (!user) {
         throw new Error("User not authenticated");
       }
-      const res = await apiRequest("POST", "/api/opinions", {
-        userId: user.id,
+      const res = await apiRequest("POST", `/api/agendas/${agendaId}/opinions`, {
         content,
-        contentType: "text",
+        type: "text",
       });
       return res.json();
     },
@@ -130,7 +129,7 @@ export default function AgendaDetailPage() {
       setComment("");
       toast({
         title: "의견이 제출되었습니다",
-        description: "제출하신 의견은 검토 후 안건에 반영될 수 있습니다.",
+        description: "의견이 안건에 자동으로 연결되었습니다.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/opinions`] });
     },
