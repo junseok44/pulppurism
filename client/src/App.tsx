@@ -28,7 +28,7 @@ function Router() {
       <Route path="/my/liked" component={LikedOpinionsPage} />
       <Route path="/my/agendas" component={MyAgendasPage} />
       <Route path="/my/bookmarks" component={BookmarkedAgendasPage} />
-      <Route path="/agenda/:id" component={AgendaDetailPage} />
+      <Route path="/agendas/:id" component={AgendaDetailPage} />
       <Route path="/opinion/new" component={NewOpinionPage} />
       <Route path="/opinion/:id" component={OpinionDetailPage} />
       <Route path="/search" component={SearchPage} />
