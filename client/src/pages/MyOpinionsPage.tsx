@@ -2,43 +2,68 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import OpinionCard from "@/components/OpinionCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@/hooks/useUser";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+
+interface Opinion {
+  id: string;
+  userId: string;
+  type: string;
+  content: string;
+  voiceUrl: string | null;
+  likes: number;
+  createdAt: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  commentCount: number;
+  isLiked: boolean;
+}
 
 export default function MyOpinionsPage() {
   const [, setLocation] = useLocation();
+  const { user, isLoading: isUserLoading } = useUser();
 
-  // todo: remove mock functionality
-  const myOpinions = [
-    {
-      id: "1",
-      authorName: "김철수",
-      content: "A초등학교 앞 도로가 너무 위험합니다. 아이들이 등하교할 때 차량 속도가 너무 빠르고, 횡단보도도 부족합니다. 과속방지턱과 신호등 설치가 시급합니다.",
-      likeCount: 12,
-      commentCount: 5,
-      isLiked: true,
-      timestamp: "2시간 전",
-      isAuthor: true,
-    },
-    {
-      id: "2",
-      authorName: "김철수",
-      content: "지역 도서관이 평일 저녁 6시에 문을 닫아서 직장인들은 이용하기 어렵습니다. 주말과 저녁 시간대 운영 연장을 건의합니다.",
-      likeCount: 15,
-      commentCount: 7,
-      timestamp: "1일 전",
-      isAuthor: true,
-    },
-    {
-      id: "3",
-      authorName: "김철수",
-      content: "노후 놀이터 시설 개선이 필요합니다. 안전 점검과 함께 새로운 놀이 기구 설치를 요청드립니다.",
-      likeCount: 8,
-      commentCount: 3,
-      timestamp: "3일 전",
-      isAuthor: true,
-    },
-  ];
+  const { data: opinions, isLoading, isError } = useQuery<Opinion[]>({
+    queryKey: ['/api/opinions/my'],
+    enabled: !isUserLoading && !!user,
+  });
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <div className="max-w-4xl mx-auto p-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/my')}
+            className="mb-4"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            뒤로가기
+          </Button>
+          <h2 className="text-2xl font-bold mb-6">내가 쓴 주민 의견</h2>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation('/my');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -54,15 +79,42 @@ export default function MyOpinionsPage() {
           뒤로가기
         </Button>
         <h2 className="text-2xl font-bold mb-6">내가 쓴 주민 의견</h2>
-        <div className="space-y-4">
-          {myOpinions.map((opinion) => (
-            <OpinionCard
-              key={opinion.id}
-              {...opinion}
-              onClick={() => setLocation(`/opinion/${opinion.id}`)}
-            />
-          ))}
-        </div>
+        
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="text-center py-12">
+            <p className="text-destructive">데이터를 불러오는데 실패했습니다.</p>
+          </div>
+        ) : !opinions || opinions.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">아직 작성한 의견이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {opinions.map((opinion) => (
+              <OpinionCard
+                key={opinion.id}
+                id={opinion.id}
+                authorName={opinion.displayName || opinion.username}
+                content={opinion.content}
+                likeCount={opinion.likes}
+                commentCount={opinion.commentCount}
+                isLiked={opinion.isLiked}
+                timestamp={formatDistanceToNow(new Date(opinion.createdAt), { 
+                  addSuffix: true, 
+                  locale: ko 
+                })}
+                isAuthor={true}
+                onClick={() => setLocation(`/opinion/${opinion.id}`)}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <MobileNav />
     </div>

@@ -348,15 +348,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(users, eq(opinions.userId, users.id))
         .where(eq(opinions.userId, userId))
         .orderBy(desc(opinions.createdAt));
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string));
       }
       if (offset) {
         query = query.offset(parseInt(offset as string));
       }
+
+      const opinionsData = await query;
+
+      const opinionIds = opinionsData.map(o => o.id);
       
-      const result = await query;
+      const commentCounts = opinionIds.length > 0 ? await db
+        .select({
+          opinionId: dbComments.opinionId,
+          count: sql<number>`count(*)::int`.as('count')
+        })
+        .from(dbComments)
+        .where(inArray(dbComments.opinionId, opinionIds))
+        .groupBy(dbComments.opinionId) : [];
+
+      const likesData = opinionIds.length > 0 ? await db
+        .select({
+          opinionId: opinionLikes.opinionId,
+        })
+        .from(opinionLikes)
+        .where(and(
+          inArray(opinionLikes.opinionId, opinionIds),
+          eq(opinionLikes.userId, userId)
+        )) : [];
+
+      const likesSet = new Set(likesData.map(l => l.opinionId));
+      const commentCountMap = new Map(commentCounts.map(c => [c.opinionId, c.count]));
+
+      const result = opinionsData.map(opinion => ({
+        ...opinion,
+        commentCount: commentCountMap.get(opinion.id) || 0,
+        isLiked: likesSet.has(opinion.id),
+      }));
+      
       res.json(result);
     } catch (error) {
       console.error("Failed to fetch my opinions:", error);
@@ -387,15 +418,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(opinionLikes, eq(opinions.id, opinionLikes.opinionId))
         .where(eq(opinionLikes.userId, userId))
         .orderBy(desc(opinions.createdAt));
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string));
       }
       if (offset) {
         query = query.offset(parseInt(offset as string));
       }
+
+      const opinionsData = await query;
+
+      const opinionIds = opinionsData.map(o => o.id);
       
-      const result = await query;
+      const commentCounts = opinionIds.length > 0 ? await db
+        .select({
+          opinionId: dbComments.opinionId,
+          count: sql<number>`count(*)::int`.as('count')
+        })
+        .from(dbComments)
+        .where(inArray(dbComments.opinionId, opinionIds))
+        .groupBy(dbComments.opinionId) : [];
+
+      const commentCountMap = new Map(commentCounts.map(c => [c.opinionId, c.count]));
+
+      const result = opinionsData.map(opinion => ({
+        ...opinion,
+        commentCount: commentCountMap.get(opinion.id) || 0,
+        isLiked: true,
+      }));
+      
       res.json(result);
     } catch (error) {
       console.error("Failed to fetch liked opinions:", error);

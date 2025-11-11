@@ -12,27 +12,49 @@ The application is built as a full-stack TypeScript project with React on the fr
 - GET /api/users/me/stats - User activity statistics (requireAuth)
   - Returns: { myOpinionsCount, likedOpinionsCount, myAgendasCount, bookmarkedAgendasCount }
   - Batched count queries for performance optimization
-- GET /api/opinions/my - User's submitted opinions (requireAuth, pagination support)
-- GET /api/opinions/liked - User's liked opinions (requireAuth, opinionLikes join, pagination)
+- GET /api/opinions/my - User's submitted opinions (requireAuth, optional pagination)
+  - Returns opinions with commentCount and isLiked fields
+  - Fetches comment counts via dbComments join
+  - Checks like status for current user via opinionLikes
+- GET /api/opinions/liked - User's liked opinions (requireAuth, opinionLikes join, optional pagination)
+  - Returns opinions with commentCount field
+  - isLiked always true (user has liked these opinions)
 - GET /api/agendas/my-opinions - Agendas containing user's opinions (requireAuth, selectDistinct for deduplication)
-- GET /api/agendas/bookmarked - User's bookmarked agendas (requireAuth, pagination)
+- GET /api/agendas/bookmarked - User's bookmarked agendas (requireAuth, optional pagination)
 
 **Frontend Updates:**
 - MyPage.tsx migrated from mock data to live API integration
 - React Query for server state management with enabled: !!user gating
 - Loading states using Skeleton components
-- Error state handling with user-friendly "오류" message display
+- Error state handling with user-friendly "오류" message display ("데이터를 불러오는데 실패했습니다")
 - Navigation updated to use wouter's setLocation (SPA consistency)
 - Added data-testids for activity counts (count-my-opinions, count-liked-opinions, count-my-agendas, count-bookmarked-agendas)
 
+**Activity Detail Pages (All migrated from mock to live data):**
+- MyOpinionsPage - Displays user's submitted opinions with accurate commentCount and isLiked from API
+- LikedOpinionsPage - Displays liked opinions with commentCount and isLiked
+- MyAgendasPage - Displays agendas containing user's opinions with error handling
+- BookmarkedAgendasPage - Displays bookmarked agendas with error handling
+- All pages include: loading states (including auth loading), error states, empty states, proper authentication checks
+- Uses early return pattern to show Skeleton during authentication (isUserLoading)
+- Query enabled only after authentication resolves (!isUserLoading && !!user)
+- Prevents misleading empty states during auth load
+- Redirects only unauthenticated users to /my after auth resolution
+
 **Security & Performance:**
 - All endpoints protected with requireAuth middleware
-- Optional limit/offset pagination for scalability
+- Optional limit/offset pagination for scalability (no hard caps - returns full dataset when limit/offset omitted)
 - Batched statistics queries to minimize database round trips
 - selectDistinct prevents duplicate agenda results when user has multiple opinions in same agenda
 
+**Performance Optimizations:**
+- Opinion APIs use separate batch queries for commentCounts and isLiked status to avoid N+1 queries
+- Map-based lookups for O(1) comment count and like status retrieval
+- Pagination support (optional limit/offset) for scalable list views
+
 **Known Limitations:**
 - OAuth authentication blocks automated E2E testing (manual verification required)
+- Agenda pages display commentCount/bookmarkCount as 0 (requires future API extension for accurate counts)
 - Future improvement: Harden limit/offset parsing to reject non-numeric values
 
 ## November 10, 2025 - Schema Simplification and Admin Dashboard Completion
