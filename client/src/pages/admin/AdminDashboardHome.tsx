@@ -238,7 +238,7 @@ export default function AdminDashboardHome() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => setLocation("/admin/agendas/new")}
+                        onClick={() => setLocation(`/admin/agendas/new?clusterId=${cluster.id}`)}
                         data-testid={`button-create-agenda-${cluster.id}`}
                       >
                         <FileText className="w-4 h-4 mr-2" />
