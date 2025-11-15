@@ -743,13 +743,13 @@ export default function AgendaDetailPage() {
                     data-testid="input-add-reference-link"
                   />
                   <Button
-                    size="icon"
-                    variant="ghost"
+                    variant="outline"
                     onClick={handleAddReferenceLink}
                     disabled={!newReferenceLink.trim()}
                     data-testid="button-add-reference-link"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 mr-1" />
+                    추가
                   </Button>
                 </div>
               </div>
@@ -830,13 +830,13 @@ export default function AgendaDetailPage() {
                     data-testid="input-add-regional-case"
                   />
                   <Button
-                    size="icon"
-                    variant="ghost"
+                    variant="outline"
                     onClick={handleAddRegionalCase}
                     disabled={!newRegionalCase.trim()}
                     data-testid="button-add-regional-case"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 mr-1" />
+                    추가
                   </Button>
                 </div>
               </div>
