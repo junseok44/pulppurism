@@ -65,9 +65,11 @@ export default function AgendaDetailPage() {
   const [editedDescription, setEditedDescription] = useState("");
   const [editedStatus, setEditedStatus] = useState<"voting" | "reviewing" | "completed">("voting");
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
-  const [editedReferenceLinksText, setEditedReferenceLinksText] = useState("");
+  const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>([]);
   const [editedReferenceFiles, setEditedReferenceFiles] = useState<string[]>([]);
-  const [editedRegionalCasesText, setEditedRegionalCasesText] = useState("");
+  const [editedRegionalCases, setEditedRegionalCases] = useState<string[]>([]);
+  const [newReferenceLink, setNewReferenceLink] = useState("");
+  const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: user } = useQuery<User>({ 
@@ -266,37 +268,49 @@ export default function AgendaDetailPage() {
       setEditedDescription(agenda.description);
       setEditedStatus(agenda.status);
       setEditedOkinewsUrl(agenda.okinewsUrl || "");
-      setEditedReferenceLinksText((agenda.referenceLinks || []).join('\n'));
+      setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
-      setEditedRegionalCasesText((agenda.regionalCases || []).join('\n'));
+      setEditedRegionalCases(agenda.regionalCases || []);
       setEditDialogOpen(true);
     }
   };
 
   const handleSaveEdit = () => {
-    const referenceLinks = editedReferenceLinksText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    
-    const regionalCases = editedRegionalCasesText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    
     updateAgendaMutation.mutate({
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
       okinewsUrl: editedOkinewsUrl.trim() || null,
-      referenceLinks,
+      referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
-      regionalCases,
+      regionalCases: editedRegionalCases,
     });
+  };
+
+  const handleAddReferenceLink = () => {
+    if (newReferenceLink.trim()) {
+      setEditedReferenceLinks([...editedReferenceLinks, newReferenceLink.trim()]);
+      setNewReferenceLink("");
+    }
+  };
+
+  const handleRemoveReferenceLink = (index: number) => {
+    setEditedReferenceLinks(editedReferenceLinks.filter((_, i) => i !== index));
   };
 
   const handleRemoveReferenceFile = (index: number) => {
     setEditedReferenceFiles(editedReferenceFiles.filter((_, i) => i !== index));
+  };
+
+  const handleAddRegionalCase = () => {
+    if (newRegionalCase.trim()) {
+      setEditedRegionalCases([...editedRegionalCases, newRegionalCase.trim()]);
+      setNewRegionalCase("");
+    }
+  };
+
+  const handleRemoveRegionalCase = (index: number) => {
+    setEditedRegionalCases(editedRegionalCases.filter((_, i) => i !== index));
   };
 
 
@@ -689,16 +703,49 @@ export default function AgendaDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-reference-links">참고 링크</Label>
-              <Textarea
-                id="edit-reference-links"
-                value={editedReferenceLinksText}
-                onChange={(e) => setEditedReferenceLinksText(e.target.value)}
-                placeholder="한 줄에 하나씩 URL을 입력하세요.&#10;예:&#10;https://example.com/article1&#10;https://example.com/article2"
-                className="min-h-24"
-                data-testid="textarea-reference-links"
-              />
-              <p className="text-sm text-muted-foreground">한 줄에 하나씩 URL을 입력하세요.</p>
+              <Label>참고 링크</Label>
+              <div className="space-y-2">
+                {editedReferenceLinks.map((link, index) => (
+                  <div key={index} className="flex items-center gap-2 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        value={link}
+                        readOnly
+                        className="w-full"
+                        style={{ textOverflow: 'ellipsis' }}
+                        title={link}
+                        data-testid={`input-reference-link-${index}`}
+                      />
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveReferenceLink(index)}
+                      data-testid={`button-remove-reference-link-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newReferenceLink}
+                    onChange={(e) => setNewReferenceLink(e.target.value)}
+                    placeholder="https://example.com"
+                    className="flex-1"
+                    data-testid="input-add-reference-link"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleAddReferenceLink}
+                    disabled={!newReferenceLink.trim()}
+                    data-testid="button-add-reference-link"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    추가
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -744,16 +791,48 @@ export default function AgendaDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-regional-cases">타 지역 정책 사례</Label>
-              <Textarea
-                id="edit-regional-cases"
-                value={editedRegionalCasesText}
-                onChange={(e) => setEditedRegionalCasesText(e.target.value)}
-                placeholder="한 줄에 하나씩 입력하세요.&#10;예:&#10;서울시: 시민참여예산제 운영&#10;부산시: 주민자치회 활성화 방안"
-                className="min-h-32"
-                data-testid="textarea-regional-cases"
-              />
-              <p className="text-sm text-muted-foreground">한 줄에 하나씩 입력하세요.</p>
+              <Label>타 지역 정책 사례</Label>
+              <div className="space-y-2">
+                {editedRegionalCases.map((caseItem, index) => (
+                  <div key={index} className="flex items-center gap-2 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        value={caseItem}
+                        readOnly
+                        className="w-full"
+                        title={caseItem}
+                        data-testid={`input-regional-case-${index}`}
+                      />
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveRegionalCase(index)}
+                      data-testid={`button-remove-regional-case-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newRegionalCase}
+                    onChange={(e) => setNewRegionalCase(e.target.value)}
+                    placeholder="예: 서울시 ○○구의 ○○ 정책 사례"
+                    className="flex-1"
+                    data-testid="input-add-regional-case"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleAddRegionalCase}
+                    disabled={!newRegionalCase.trim()}
+                    data-testid="button-add-regional-case"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    추가
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
