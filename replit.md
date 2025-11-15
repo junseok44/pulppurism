@@ -2,7 +2,18 @@
 
 This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
-## Recent Updates (2024-11-11)
+## Recent Updates (2024-11-15)
+- **Reference Materials Enhancement**: Reorganized agenda reference materials into 4 distinct sections
+  - **옥천신문** (Okcheon News): Shows link preview when URL is provided, or "취재 요청하기" button that redirects to news submission form when empty
+  - **참고링크** (Reference Links): Display clickable reference links with icons
+  - **첨부파일** (Attachments): Display downloadable file attachments
+  - **타 지역 정책 사례** (Regional Policy Case Studies): Display regional policy examples as text cards
+- **Database Schema Updates**: 
+  - Added `okinewsUrl` field (TEXT, nullable) to agendas table for Okcheon News links
+  - Added `regionalCases` field (TEXT[], nullable) to agendas table for regional policy case studies
+- **Admin Edit Enhancement**: Extended admin edit dialog to support managing all reference material types including Okcheon News URL and regional policy cases
+
+## Previous Updates (2024-11-11)
 - **Speech-to-Text Integration**: Implemented voice input for opinion submission using OpenAI Whisper API
   - Users can record audio directly in the browser using MediaRecorder API
   - Recorded audio is automatically transcribed to Korean text
