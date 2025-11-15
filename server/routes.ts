@@ -1096,16 +1096,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Admin access required" });
       }
 
+      console.log("PATCH /api/agendas/:id - Request body:", JSON.stringify(req.body, null, 2));
       const data = updateAgendaSchema.parse(req.body);
+      console.log("PATCH /api/agendas/:id - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
         return res.status(404).json({ error: "Agenda not found" });
       }
+      console.log("PATCH /api/agendas/:id - Updated agenda:", JSON.stringify({ id: agenda.id, okinewsUrl: agenda.okinewsUrl, regionalCases: agenda.regionalCases }, null, 2));
       res.json(agenda);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("PATCH /api/agendas/:id - Validation error:", error.errors);
         return res.status(400).json({ error: error.errors });
       }
+      console.error("PATCH /api/agendas/:id - Error:", error);
       res.status(500).json({ error: "Failed to update agenda" });
     }
   });
