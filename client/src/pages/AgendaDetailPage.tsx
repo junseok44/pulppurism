@@ -64,9 +64,12 @@ export default function AgendaDetailPage() {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [editedStatus, setEditedStatus] = useState<"voting" | "reviewing" | "completed">("voting");
+  const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
   const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>([]);
   const [editedReferenceFiles, setEditedReferenceFiles] = useState<string[]>([]);
+  const [editedRegionalCases, setEditedRegionalCases] = useState<string[]>([]);
   const [newReferenceLink, setNewReferenceLink] = useState("");
+  const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: user } = useQuery<User>({ 
@@ -173,8 +176,10 @@ export default function AgendaDetailPage() {
       title?: string;
       description?: string;
       status?: "voting" | "reviewing" | "completed";
+      okinewsUrl?: string | null;
       referenceLinks?: string[];
       referenceFiles?: string[];
+      regionalCases?: string[];
     }) => {
       const res = await apiRequest("PATCH", `/api/agendas/${agendaId}`, data);
       return res.json();
@@ -262,8 +267,10 @@ export default function AgendaDetailPage() {
       setEditedTitle(agenda.title);
       setEditedDescription(agenda.description);
       setEditedStatus(agenda.status);
+      setEditedOkinewsUrl(agenda.okinewsUrl || "");
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
+      setEditedRegionalCases(agenda.regionalCases || []);
       setEditDialogOpen(true);
     }
   };
@@ -273,8 +280,10 @@ export default function AgendaDetailPage() {
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
+      okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
+      regionalCases: editedRegionalCases,
     });
   };
 
@@ -291,6 +300,17 @@ export default function AgendaDetailPage() {
 
   const handleRemoveReferenceFile = (index: number) => {
     setEditedReferenceFiles(editedReferenceFiles.filter((_, i) => i !== index));
+  };
+
+  const handleAddRegionalCase = () => {
+    if (newRegionalCase.trim()) {
+      setEditedRegionalCases([...editedRegionalCases, newRegionalCase.trim()]);
+      setNewRegionalCase("");
+    }
+  };
+
+  const handleRemoveRegionalCase = (index: number) => {
+    setEditedRegionalCases(editedRegionalCases.filter((_, i) => i !== index));
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -517,15 +537,41 @@ export default function AgendaDetailPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="references" className="space-y-4 mt-6">
-              {(!agenda.referenceLinks || agenda.referenceLinks.length === 0) && 
-               (!agenda.referenceFiles || agenda.referenceFiles.length === 0) ? (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">등록된 참고자료가 없습니다.</p>
-                </div>
-              ) : (
-                <>
-                  {agenda.referenceLinks && agenda.referenceLinks.map((link, index) => (
+            <TabsContent value="references" className="space-y-6 mt-6">
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">옥천신문</h3>
+                {agenda.okinewsUrl ? (
+                  <Card 
+                    className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                    data-testid="card-okinews-link"
+                    onClick={() => window.open(agenda.okinewsUrl!, '_blank')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <h4 className="font-medium break-all">{agenda.okinewsUrl}</h4>
+                        <p className="text-sm text-muted-foreground">옥천신문 기사</p>
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground mb-4">아직 취재 전이에요. 취재를 요청해보세요.</p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.open('http://www.okinews.com/bbs/writeForm.html?mode=input&table=bbs_43&category=', '_blank')}
+                      data-testid="button-request-coverage"
+                    >
+                      취재 요청하기
+                    </Button>
+                  </Card>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">참고링크</h3>
+                {agenda.referenceLinks && agenda.referenceLinks.length > 0 ? (
+                  agenda.referenceLinks.map((link, index) => (
                     <Card 
                       key={`link-${index}`} 
                       className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
@@ -535,13 +581,23 @@ export default function AgendaDetailPage() {
                       <div className="flex items-center gap-4">
                         <ExternalLink className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <h3 className="font-medium break-all">{link}</h3>
+                          <h4 className="font-medium break-all">{link}</h4>
                           <p className="text-sm text-muted-foreground">외부 링크</p>
                         </div>
                       </div>
                     </Card>
-                  ))}
-                  {agenda.referenceFiles && agenda.referenceFiles.map((file, index) => (
+                  ))
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">등록된 참고링크가 없습니다.</p>
+                  </Card>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">첨부파일</h3>
+                {agenda.referenceFiles && agenda.referenceFiles.length > 0 ? (
+                  agenda.referenceFiles.map((file, index) => (
                     <Card 
                       key={`file-${index}`} 
                       className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
@@ -551,14 +607,37 @@ export default function AgendaDetailPage() {
                       <div className="flex items-center gap-4">
                         <FileText className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <h3 className="font-medium">{file.split('/').pop() || file}</h3>
+                          <h4 className="font-medium">{file.split('/').pop() || file}</h4>
                           <p className="text-sm text-muted-foreground">첨부 파일</p>
                         </div>
                       </div>
                     </Card>
-                  ))}
-                </>
-              )}
+                  ))
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">등록된 첨부파일이 없습니다.</p>
+                  </Card>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">타 지역 정책 사례</h3>
+                {agenda.regionalCases && agenda.regionalCases.length > 0 ? (
+                  agenda.regionalCases.map((caseItem, index) => (
+                    <Card 
+                      key={`case-${index}`} 
+                      className="p-6" 
+                      data-testid={`card-regional-case-${index}`}
+                    >
+                      <p className="text-sm">{caseItem}</p>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">등록된 타 지역 정책 사례가 없습니다.</p>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -609,6 +688,17 @@ export default function AgendaDetailPage() {
                   <SelectItem value="completed">답변 및 결과</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-okinews-url">옥천신문 링크</Label>
+              <Input
+                id="edit-okinews-url"
+                value={editedOkinewsUrl}
+                onChange={(e) => setEditedOkinewsUrl(e.target.value)}
+                placeholder="http://www.okinews.com/..."
+                data-testid="input-edit-okinews-url"
+              />
             </div>
 
             <div className="space-y-2">
@@ -694,6 +784,51 @@ export default function AgendaDetailPage() {
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {uploadFileMutation.isPending ? "업로드 중..." : "파일 업로드"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>타 지역 정책 사례</Label>
+              <div className="space-y-2">
+                {editedRegionalCases.map((caseItem, index) => (
+                  <div key={index} className="flex items-center gap-2 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        value={caseItem}
+                        readOnly
+                        className="w-full"
+                        title={caseItem}
+                        data-testid={`input-regional-case-${index}`}
+                      />
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveRegionalCase(index)}
+                      data-testid={`button-remove-regional-case-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newRegionalCase}
+                    onChange={(e) => setNewRegionalCase(e.target.value)}
+                    placeholder="예: 서울시 ○○구의 ○○ 정책 사례"
+                    className="flex-1"
+                    data-testid="input-add-regional-case"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleAddRegionalCase}
+                    disabled={!newRegionalCase.trim()}
+                    data-testid="button-add-regional-case"
+                  >
+                    <Plus className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
