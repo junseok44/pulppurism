@@ -999,6 +999,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isBookmarked = !!result.bookmarkId;
       const { bookmarkId, ...agendaWithoutBookmarkId } = result;
 
+      console.log("GET /api/agendas/:id - Response data:", {
+        id: agendaWithoutBookmarkId.id,
+        okinewsUrl: agendaWithoutBookmarkId.okinewsUrl,
+        regionalCases: agendaWithoutBookmarkId.regionalCases,
+      });
+
       res.json({ ...agendaWithoutBookmarkId, isBookmarked });
     } catch (error) {
       console.error("Error fetching agenda:", error);

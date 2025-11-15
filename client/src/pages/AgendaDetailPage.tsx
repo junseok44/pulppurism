@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -81,6 +81,18 @@ export default function AgendaDetailPage() {
     queryKey: [`/api/agendas/${agendaId}`],
     enabled: !!agendaId,
   });
+
+  useEffect(() => {
+    if (agenda) {
+      console.log("AgendaDetailPage - Agenda data received:", {
+        id: agenda.id,
+        okinewsUrl: agenda.okinewsUrl,
+        regionalCases: agenda.regionalCases,
+        referenceLinks: agenda.referenceLinks,
+        referenceFiles: agenda.referenceFiles,
+      });
+    }
+  }, [agenda]);
 
   const { data: voteStats, isLoading: voteStatsLoading } = useQuery<VoteStats>({
     queryKey: [`/api/agendas/${agendaId}/votes`],
