@@ -276,6 +276,8 @@ export default function AgendaDetailPage() {
   };
 
   const handleSaveEdit = () => {
+    console.log("handleSaveEdit - editedRegionalCases:", editedRegionalCases);
+    console.log("handleSaveEdit - editedOkinewsUrl:", editedOkinewsUrl);
     updateAgendaMutation.mutate({
       title: editedTitle,
       description: editedDescription,
@@ -303,9 +305,15 @@ export default function AgendaDetailPage() {
   };
 
   const handleAddRegionalCase = () => {
+    console.log("handleAddRegionalCase called - newRegionalCase:", newRegionalCase);
+    console.log("handleAddRegionalCase - current editedRegionalCases:", editedRegionalCases);
     if (newRegionalCase.trim()) {
-      setEditedRegionalCases([...editedRegionalCases, newRegionalCase.trim()]);
+      const updatedCases = [...editedRegionalCases, newRegionalCase.trim()];
+      console.log("handleAddRegionalCase - updating to:", updatedCases);
+      setEditedRegionalCases(updatedCases);
       setNewRegionalCase("");
+    } else {
+      console.log("handleAddRegionalCase - newRegionalCase is empty");
     }
   };
 
