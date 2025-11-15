@@ -540,7 +540,7 @@ export default function AgendaDetailPage() {
             <TabsContent value="references" className="space-y-6 mt-6">
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">옥천신문</h3>
-                {agenda.okinewsUrl ? (
+                {agenda?.okinewsUrl ? (
                   <Card 
                     className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
                     data-testid="card-okinews-link"
@@ -570,7 +570,7 @@ export default function AgendaDetailPage() {
 
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">참고링크</h3>
-                {agenda.referenceLinks && agenda.referenceLinks.length > 0 ? (
+                {agenda?.referenceLinks && agenda.referenceLinks.length > 0 ? (
                   agenda.referenceLinks.map((link, index) => (
                     <Card 
                       key={`link-${index}`} 
@@ -596,7 +596,7 @@ export default function AgendaDetailPage() {
 
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">첨부파일</h3>
-                {agenda.referenceFiles && agenda.referenceFiles.length > 0 ? (
+                {agenda?.referenceFiles && agenda.referenceFiles.length > 0 ? (
                   agenda.referenceFiles.map((file, index) => (
                     <Card 
                       key={`file-${index}`} 
@@ -622,7 +622,7 @@ export default function AgendaDetailPage() {
 
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">타 지역 정책 사례</h3>
-                {agenda.regionalCases && agenda.regionalCases.length > 0 ? (
+                {agenda?.regionalCases && agenda.regionalCases.length > 0 ? (
                   agenda.regionalCases.map((caseItem, index) => (
                     <Card 
                       key={`case-${index}`} 
