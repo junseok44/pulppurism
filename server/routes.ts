@@ -4,20 +4,42 @@ import passport from "passport";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { insertOpinionSchema, insertAgendaSchema, updateAgendaSchema, insertVoteSchema, insertReportSchema, insertClusterSchema, insertCommentSchema, updateCommentSchema, users, comments as dbComments } from "@shared/schema";
+import {
+  insertOpinionSchema,
+  insertAgendaSchema,
+  updateAgendaSchema,
+  insertVoteSchema,
+  insertReportSchema,
+  insertClusterSchema,
+  insertCommentSchema,
+  updateCommentSchema,
+  users,
+  comments as dbComments,
+} from "@shared/schema";
 import { z } from "zod";
 import { clusterOpinions } from "./clustering";
 import { db } from "./db";
-import { agendas, categories, clusters, opinionClusters, opinions, reports, opinionLikes, agendaBookmarks } from "@shared/schema";
+import {
+  agendas,
+  categories,
+  clusters,
+  opinionClusters,
+  opinions,
+  reports,
+  opinionLikes,
+  agendaBookmarks,
+} from "@shared/schema";
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
 import multer from "multer";
 import { ObjectStorageService } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const GOOGLE_ENABLED = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const GOOGLE_ENABLED = !!(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  );
   const KAKAO_ENABLED = !!process.env.KAKAO_CLIENT_ID;
-  
+
   const upload = multer({ storage: multer.memoryStorage() });
   const objectStorageService = new ObjectStorageService();
 
@@ -38,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper to generate OAuth state
   function generateState() {
-    return randomBytes(32).toString('hex');
+    return randomBytes(32).toString("hex");
   }
 
   // Google OAuth - only if enabled
@@ -46,9 +68,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.get("/api/auth/google", (req, res, next) => {
       const state = generateState();
       (req.session as any).oauthState = state;
-      passport.authenticate("google", { 
+      passport.authenticate("google", {
         scope: ["profile", "email"],
-        state
+        state,
       })(req, res, next);
     });
 
@@ -57,7 +79,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const callbackState = req.query.state;
 
       if (!sessionState || sessionState !== callbackState) {
-        return res.status(403).send("Invalid state parameter - CSRF protection");
+        return res
+          .status(403)
+          .send("Invalid state parameter - CSRF protection");
       }
 
       delete (req.session as any).oauthState;
@@ -76,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Session regeneration failed:", err);
             return res.redirect("/");
           }
-          
+
           req.login(user, (err) => {
             if (err) {
               console.error("Login failed:", err);
@@ -102,7 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const callbackState = req.query.state;
 
       if (!sessionState || sessionState !== callbackState) {
-        return res.status(403).send("Invalid state parameter - CSRF protection");
+        return res
+          .status(403)
+          .send("Invalid state parameter - CSRF protection");
       }
 
       delete (req.session as any).oauthState;
@@ -121,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Session regeneration failed:", err);
             return res.redirect("/");
           }
-          
+
           req.login(user, (err) => {
             if (err) {
               console.error("Login failed:", err);
@@ -149,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
-      
+
       const existingUser = await db
         .select()
         .from(users)
@@ -162,18 +188,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      const newUsers = await db.insert(users).values({
-        username: data.username,
-        email: data.email,
-        password: hashedPassword,
-        provider: "local",
-      }).returning();
+      const newUsers = await db
+        .insert(users)
+        .values({
+          username: data.username,
+          email: data.email,
+          password: hashedPassword,
+          provider: "local",
+        })
+        .returning();
 
       const user = newUsers[0];
 
       req.login(user, (err) => {
         if (err) {
-          return res.status(500).json({ error: "Login failed after registration" });
+          return res
+            .status(500)
+            .json({ error: "Login failed after registration" });
         }
         res.status(201).json({
           id: user.id,
@@ -209,7 +240,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = existingUsers[0];
 
       if (!user.password) {
-        return res.status(401).json({ error: "This account uses social login" });
+        return res
+          .status(401)
+          .json({ error: "This account uses social login" });
       }
 
       const validPassword = await bcrypt.compare(data.password, user.password);
@@ -260,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/opinions", async (req, res) => {
     try {
       const { limit, offset } = req.query;
-      
+
       let query = db
         .select({
           id: opinions.id,
@@ -277,14 +310,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(opinions)
         .leftJoin(users, eq(opinions.userId, users.id))
         .orderBy(desc(opinions.createdAt));
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string)) as any;
       }
       if (offset) {
         query = query.offset(parseInt(offset as string)) as any;
       }
-      
+
       const result = await query;
       res.json(result);
     } catch (error) {
@@ -296,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/opinions/unclustered", async (req, res) => {
     try {
       const { limit, offset } = req.query;
-      
+
       let query: any = db
         .select({
           id: opinions.id,
@@ -315,14 +348,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
         .where(isNull(opinionClusters.id))
         .orderBy(desc(opinions.createdAt));
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string));
       }
       if (offset) {
         query = query.offset(parseInt(offset as string));
       }
-      
+
       const result = await query;
       res.json(result);
     } catch (error) {
@@ -335,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit, offset } = req.query;
       const userId = req.user!.id;
-      
+
       let query: any = db
         .select({
           id: opinions.id,
@@ -364,35 +397,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const opinionsData = await query;
 
       const opinionIds = opinionsData.map((o: any) => o.id);
-      
-      const commentCounts = opinionIds.length > 0 ? await db
-        .select({
-          opinionId: dbComments.opinionId,
-          count: sql<number>`count(*)::int`.as('count')
-        })
-        .from(dbComments)
-        .where(inArray(dbComments.opinionId, opinionIds))
-        .groupBy(dbComments.opinionId) : [];
 
-      const likesData = opinionIds.length > 0 ? await db
-        .select({
-          opinionId: opinionLikes.opinionId,
-        })
-        .from(opinionLikes)
-        .where(and(
-          inArray(opinionLikes.opinionId, opinionIds),
-          eq(opinionLikes.userId, userId)
-        )) : [];
+      const commentCounts =
+        opinionIds.length > 0
+          ? await db
+              .select({
+                opinionId: dbComments.opinionId,
+                count: sql<number>`count(*)::int`.as("count"),
+              })
+              .from(dbComments)
+              .where(inArray(dbComments.opinionId, opinionIds))
+              .groupBy(dbComments.opinionId)
+          : [];
 
-      const likesSet = new Set(likesData.map(l => l.opinionId));
-      const commentCountMap = new Map(commentCounts.map(c => [c.opinionId, c.count]));
+      const likesData =
+        opinionIds.length > 0
+          ? await db
+              .select({
+                opinionId: opinionLikes.opinionId,
+              })
+              .from(opinionLikes)
+              .where(
+                and(
+                  inArray(opinionLikes.opinionId, opinionIds),
+                  eq(opinionLikes.userId, userId),
+                ),
+              )
+          : [];
+
+      const likesSet = new Set(likesData.map((l) => l.opinionId));
+      const commentCountMap = new Map(
+        commentCounts.map((c) => [c.opinionId, c.count]),
+      );
 
       const result = opinionsData.map((opinion: any) => ({
         ...opinion,
         commentCount: commentCountMap.get(opinion.id) || 0,
         isLiked: likesSet.has(opinion.id),
       }));
-      
+
       res.json(result);
     } catch (error) {
       console.error("Failed to fetch my opinions:", error);
@@ -404,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit, offset } = req.query;
       const userId = req.user!.id;
-      
+
       let query: any = db
         .select({
           id: opinions.id,
@@ -434,24 +477,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const opinionsData = await query;
 
       const opinionIds = opinionsData.map((o: any) => o.id);
-      
-      const commentCounts = opinionIds.length > 0 ? await db
-        .select({
-          opinionId: dbComments.opinionId,
-          count: sql<number>`count(*)::int`.as('count')
-        })
-        .from(dbComments)
-        .where(inArray(dbComments.opinionId, opinionIds))
-        .groupBy(dbComments.opinionId) : [];
 
-      const commentCountMap = new Map(commentCounts.map(c => [c.opinionId, c.count]));
+      const commentCounts =
+        opinionIds.length > 0
+          ? await db
+              .select({
+                opinionId: dbComments.opinionId,
+                count: sql<number>`count(*)::int`.as("count"),
+              })
+              .from(dbComments)
+              .where(inArray(dbComments.opinionId, opinionIds))
+              .groupBy(dbComments.opinionId)
+          : [];
+
+      const commentCountMap = new Map(
+        commentCounts.map((c) => [c.opinionId, c.count]),
+      );
 
       const result = opinionsData.map((opinion: any) => ({
         ...opinion,
         commentCount: commentCountMap.get(opinion.id) || 0,
         isLiked: true,
       }));
-      
+
       res.json(result);
     } catch (error) {
       console.error("Failed to fetch liked opinions:", error);
@@ -502,16 +550,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = {
         ...opinionData[0],
-        linkedAgenda: opinionClustersData.length > 0 && opinionClustersData[0].agendaId
-          ? {
-              id: opinionClustersData[0].agendaId,
-              title: opinionClustersData[0].agendaTitle,
-              category: opinionClustersData[0].categoryName,
-              status: opinionClustersData[0].agendaStatus,
-              clusterId: opinionClustersData[0].clusterId,
-              clusterName: opinionClustersData[0].clusterTitle,
-            }
-          : null,
+        linkedAgenda:
+          opinionClustersData.length > 0 && opinionClustersData[0].agendaId
+            ? {
+                id: opinionClustersData[0].agendaId,
+                title: opinionClustersData[0].agendaTitle,
+                category: opinionClustersData[0].categoryName,
+                status: opinionClustersData[0].agendaStatus,
+                clusterId: opinionClustersData[0].clusterId,
+                clusterName: opinionClustersData[0].clusterTitle,
+              }
+            : null,
       };
 
       res.json(result);
@@ -521,39 +570,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/opinions/transcribe", requireAuth, upload.single("audio"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
+  app.post(
+    "/api/opinions/transcribe",
+    requireAuth,
+    upload.single("audio"),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: "No audio file provided" });
+        }
+
+        const formData = new FormData();
+        const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+        formData.append("file", blob, "audio.webm");
+        formData.append("model", "whisper-1");
+        formData.append("language", "ko");
+
+        const response = await fetch(
+          "https://api.openai.com/v1/audio/transcriptions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+            body: formData,
+          },
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          console.error("OpenAI Whisper API error:", error);
+          return res
+            .status(response.status)
+            .json({ error: "Transcription failed" });
+        }
+
+        const data = await response.json();
+        res.json({ text: data.text });
+      } catch (error) {
+        console.error("Transcription error:", error);
+        res.status(500).json({ error: "Failed to transcribe audio" });
       }
-
-      const formData = new FormData();
-      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
-      formData.append("file", blob, "audio.webm");
-      formData.append("model", "whisper-1");
-      formData.append("language", "ko");
-
-      const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("OpenAI Whisper API error:", error);
-        return res.status(response.status).json({ error: "Transcription failed" });
-      }
-
-      const data = await response.json();
-      res.json({ text: data.text });
-    } catch (error) {
-      console.error("Transcription error:", error);
-      res.status(500).json({ error: "Failed to transcribe audio" });
-    }
-  });
+    },
+  );
 
   app.post("/api/opinions", async (req, res) => {
     try {
@@ -594,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      
+
       const existing = await storage.getOpinionLike(userId, req.params.id);
       if (existing) {
         return res.status(400).json({ error: "Already liked" });
@@ -614,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      
+
       const success = await storage.deleteOpinionLike(userId, req.params.id);
       if (success) {
         await storage.decrementOpinionLikes(req.params.id);
@@ -631,7 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      
+
       const like = await storage.getOpinionLike(userId, req.params.id);
       res.json({ liked: !!like });
     } catch (error) {
@@ -658,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(users, eq(dbComments.userId, users.id))
         .where(eq(dbComments.opinionId, req.params.id))
         .orderBy(desc(dbComments.createdAt));
-      
+
       res.json(comments);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
@@ -687,10 +746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = updateCommentSchema.parse(req.body);
       const userId = req.user!.id;
-      
+
       const comment = await storage.updateComment(req.params.id, userId, data);
       if (!comment) {
-        return res.status(404).json({ error: "Comment not found or unauthorized" });
+        return res
+          .status(404)
+          .json({ error: "Comment not found or unauthorized" });
       }
       res.json(comment);
     } catch (error) {
@@ -707,7 +768,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       const success = await storage.deleteComment(req.params.id, userId);
       if (!success) {
-        return res.status(404).json({ error: "Comment not found or unauthorized" });
+        return res
+          .status(404)
+          .json({ error: "Comment not found or unauthorized" });
       }
       res.status(204).send();
     } catch (error) {
@@ -722,7 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      
+
       const existing = await storage.getCommentLike(userId, req.params.id);
       if (existing) {
         return res.status(400).json({ error: "Already liked" });
@@ -743,7 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      
+
       const success = await storage.deleteCommentLike(userId, req.params.id);
       if (success) {
         await storage.decrementCommentLikes(req.params.id);
@@ -758,7 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/agendas", async (req, res) => {
     try {
       const { limit, offset, status, categoryId } = req.query;
-      
+
       const conditions = [];
       if (status) {
         conditions.push(eq(agendas.status, status as any));
@@ -766,7 +829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (categoryId) {
         conditions.push(eq(agendas.categoryId, categoryId as string));
       }
-      
+
       let query = db
         .select({
           id: agendas.id,
@@ -783,23 +846,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
           category: categories,
+          okinews: agendas.okinews,
         })
         .from(agendas)
         .leftJoin(categories, eq(agendas.categoryId, categories.id));
-      
+
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as any;
       }
-      
+
       query = query.orderBy(desc(agendas.createdAt)) as any;
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string)) as any;
       }
       if (offset) {
         query = query.offset(parseInt(offset as string)) as any;
       }
-      
+
       const results = await query;
       res.json(results);
     } catch (error) {
@@ -811,7 +875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/agendas/my-opinions", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const result = await db
         .selectDistinct({
           id: agendas.id,
@@ -828,6 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceFiles: agendas.referenceFiles,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
+          okinews: agendas.okinews,
         })
         .from(agendas)
         .leftJoin(categories, eq(agendas.categoryId, categories.id))
@@ -836,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
         .where(eq(opinions.userId, userId))
         .orderBy(desc(agendas.createdAt));
-      
+
       res.json(result);
     } catch (error) {
       console.error("Failed to fetch my agendas:", error);
@@ -848,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit, offset } = req.query;
       const userId = req.user!.id;
-      
+
       let query: any = db
         .select({
           id: agendas.id,
@@ -871,14 +936,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(agendaBookmarks, eq(agendas.id, agendaBookmarks.agendaId))
         .where(eq(agendaBookmarks.userId, userId))
         .orderBy(desc(agendas.createdAt));
-      
+
       if (limit) {
         query = query.limit(parseInt(limit as string));
       }
       if (offset) {
         query = query.offset(parseInt(offset as string));
       }
-      
+
       const result = await query;
       res.json(result);
     } catch (error) {
@@ -890,7 +955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/agendas/:id", async (req, res) => {
     try {
       const userId = req.user?.id;
-      
+
       const agendaData = await db
         .select({
           id: agendas.id,
@@ -913,12 +978,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(categories, eq(agendas.categoryId, categories.id))
         .leftJoin(
           agendaBookmarks,
-          userId 
+          userId
             ? and(
                 eq(agendaBookmarks.agendaId, agendas.id),
-                eq(agendaBookmarks.userId, userId)
+                eq(agendaBookmarks.userId, userId),
               )
-            : sql`false`
+            : sql`false`,
         )
         .where(eq(agendas.id, req.params.id));
 
@@ -927,11 +992,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.incrementAgendaViewCount(req.params.id);
-      
+
       const result = agendaData[0];
       const isBookmarked = !!result.bookmarkId;
       const { bookmarkId, ...agendaWithoutBookmarkId } = result;
-      
+
       res.json({ ...agendaWithoutBookmarkId, isBookmarked });
     } catch (error) {
       console.error("Error fetching agenda:", error);
@@ -950,8 +1015,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
 
-      const clusterIds = agendaClusters.map(c => c.id);
-      
+      const clusterIds = agendaClusters.map((c) => c.id);
+
       const opinionClusterLinks = await db
         .select()
         .from(opinionClusters)
@@ -961,8 +1026,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
 
-      const opinionIds = opinionClusterLinks.map(oc => oc.opinionId);
-      
+      const opinionIds = opinionClusterLinks.map((oc) => oc.opinionId);
+
       const agendaOpinions = await db
         .select()
         .from(opinions)
@@ -980,19 +1045,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const agendaId = req.params.id;
       const userId = req.user!.id;
-      
+
       const opinionData = insertOpinionSchema.parse({
         ...req.body,
         userId,
       });
-      
+
       const opinion = await storage.createOpinion(opinionData);
-      
+
       const agendaClusters = await db
         .select()
         .from(clusters)
         .where(eq(clusters.agendaId, agendaId));
-      
+
       if (agendaClusters.length > 0) {
         for (const cluster of agendaClusters) {
           await db.insert(opinionClusters).values({
@@ -1001,7 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.status(201).json(opinion);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1030,7 +1095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user?.isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
       }
-      
+
       const data = updateAgendaSchema.parse(req.body);
       const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
@@ -1045,44 +1110,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/agendas/:id/files", requireAuth, upload.single("file"), async (req, res) => {
-    try {
-      if (!req.user?.isAdmin) {
-        return res.status(403).json({ error: "Admin access required" });
+  app.post(
+    "/api/agendas/:id/files",
+    requireAuth,
+    upload.single("file"),
+    async (req, res) => {
+      try {
+        if (!req.user?.isAdmin) {
+          return res.status(403).json({ error: "Admin access required" });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ error: "No file provided" });
+        }
+
+        const agendaId = req.params.id;
+        const agenda = await storage.getAgenda(agendaId);
+        if (!agenda) {
+          return res.status(404).json({ error: "Agenda not found" });
+        }
+
+        const timestamp = Date.now();
+        const filename = `agendas/${agendaId}/${timestamp}-${req.file.originalname}`;
+
+        const fullPath = await objectStorageService.uploadFile(
+          filename,
+          req.file.buffer,
+        );
+
+        const publicUrl = `/public-objects/${filename}`;
+
+        const currentFiles = agenda.referenceFiles || [];
+        const updatedAgenda = await storage.updateAgenda(agendaId, {
+          referenceFiles: [...currentFiles, publicUrl],
+        });
+
+        res.json({
+          success: true,
+          fileUrl: publicUrl,
+          agenda: updatedAgenda,
+        });
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        res.status(500).json({ error: "Failed to upload file" });
       }
-
-      if (!req.file) {
-        return res.status(400).json({ error: "No file provided" });
-      }
-
-      const agendaId = req.params.id;
-      const agenda = await storage.getAgenda(agendaId);
-      if (!agenda) {
-        return res.status(404).json({ error: "Agenda not found" });
-      }
-
-      const timestamp = Date.now();
-      const filename = `agendas/${agendaId}/${timestamp}-${req.file.originalname}`;
-      
-      const fullPath = await objectStorageService.uploadFile(filename, req.file.buffer);
-      
-      const publicUrl = `/public-objects/${filename}`;
-      
-      const currentFiles = agenda.referenceFiles || [];
-      const updatedAgenda = await storage.updateAgenda(agendaId, {
-        referenceFiles: [...currentFiles, publicUrl],
-      });
-
-      res.json({ 
-        success: true, 
-        fileUrl: publicUrl,
-        agenda: updatedAgenda
-      });
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      res.status(500).json({ error: "Failed to upload file" });
-    }
-  });
+    },
+  );
 
   app.delete("/api/agendas/:id", async (req, res) => {
     const success = await storage.deleteAgenda(req.params.id);
@@ -1095,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/agendas/:id/bookmark", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const existing = await storage.getAgendaBookmark(userId, req.params.id);
       if (existing) {
         return res.status(400).json({ error: "Already bookmarked" });
@@ -1111,7 +1184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/agendas/:id/bookmark", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
+
       await storage.deleteAgendaBookmark(userId, req.params.id);
       res.status(204).send();
     } catch (error) {
@@ -1121,11 +1194,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/agendas/:id/votes", async (req, res) => {
     const votes = await storage.getVotes(req.params.id);
-    
-    const agreeCount = votes.filter(v => v.voteType === "agree").length;
-    const disagreeCount = votes.filter(v => v.voteType === "disagree").length;
-    const neutralCount = votes.filter(v => v.voteType === "neutral").length;
-    
+
+    const agreeCount = votes.filter((v) => v.voteType === "agree").length;
+    const disagreeCount = votes.filter((v) => v.voteType === "disagree").length;
+    const neutralCount = votes.filter((v) => v.voteType === "neutral").length;
+
     res.json({
       total: votes.length,
       agree: agreeCount,
@@ -1137,8 +1210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/votes", async (req, res) => {
     try {
       const data = insertVoteSchema.parse(req.body);
-      
-      const existing = await storage.getVoteByUserAndAgenda(data.userId, data.agendaId);
+
+      const existing = await storage.getVoteByUserAndAgenda(
+        data.userId,
+        data.agendaId,
+      );
       if (existing) {
         if (existing.voteType !== data.voteType) {
           const updated = await storage.updateVote(existing.id, data.voteType);
@@ -1159,7 +1235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/votes/user/:userId/agenda/:agendaId", async (req, res) => {
-    const vote = await storage.getVoteByUserAndAgenda(req.params.userId, req.params.agendaId);
+    const vote = await storage.getVoteByUserAndAgenda(
+      req.params.userId,
+      req.params.agendaId,
+    );
     res.json(vote || null);
   });
 
@@ -1245,30 +1324,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/clusters/:clusterId/opinions/:opinionId", requireAuth, async (req, res) => {
-    try {
-      const { clusterId, opinionId } = req.params;
+  app.delete(
+    "/api/clusters/:clusterId/opinions/:opinionId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { clusterId, opinionId } = req.params;
 
-      await db
-        .delete(opinionClusters)
-        .where(
-          and(
-            eq(opinionClusters.clusterId, clusterId),
-            eq(opinionClusters.opinionId, opinionId)
-          )
-        );
+        await db
+          .delete(opinionClusters)
+          .where(
+            and(
+              eq(opinionClusters.clusterId, clusterId),
+              eq(opinionClusters.opinionId, opinionId),
+            ),
+          );
 
-      await db
-        .update(clusters)
-        .set({ opinionCount: sql`GREATEST(opinion_count - 1, 0)` })
-        .where(eq(clusters.id, clusterId));
+        await db
+          .update(clusters)
+          .set({ opinionCount: sql`GREATEST(opinion_count - 1, 0)` })
+          .where(eq(clusters.id, clusterId));
 
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Failed to remove opinion from cluster:", error);
-      res.status(500).json({ error: "Failed to remove opinion from cluster" });
-    }
-  });
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Failed to remove opinion from cluster:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to remove opinion from cluster" });
+      }
+    },
+  );
 
   app.patch("/api/clusters/:id", async (req, res) => {
     try {
@@ -1310,7 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .leftJoin(users, eq(opinions.userId, users.id))
         .where(eq(opinionClusters.clusterId, req.params.id))
         .orderBy(desc(opinions.createdAt));
-      
+
       res.json(opinionsWithUsers);
     } catch (error) {
       console.error("Failed to fetch cluster opinions:", error);
@@ -1369,7 +1454,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stats/dashboard", async (req, res) => {
     try {
       const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
       const weekStart = new Date(now);
       weekStart.setDate(weekStart.getDate() - 7);
 
@@ -1382,32 +1471,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pendingReports,
         recentClusters,
       ] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(opinions)
           .where(sql`${opinions.createdAt} >= ${todayStart}`),
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(opinions)
           .where(sql`${opinions.createdAt} >= ${weekStart}`),
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(users)
           .where(sql`${users.createdAt} >= ${todayStart}`),
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(users)
           .where(sql`${users.createdAt} >= ${weekStart}`),
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(agendas)
           .where(eq(agendas.status, "voting")),
-        db.select({ count: sql<number>`count(*)::int` })
+        db
+          .select({ count: sql<number>`count(*)::int` })
           .from(reports)
           .where(eq(reports.status, "pending")),
-        db.select({
-          id: clusters.id,
-          title: clusters.title,
-          summary: clusters.summary,
-          opinionCount: clusters.opinionCount,
-          similarity: clusters.similarity,
-          createdAt: clusters.createdAt,
-        })
+        db
+          .select({
+            id: clusters.id,
+            title: clusters.title,
+            summary: clusters.summary,
+            opinionCount: clusters.opinionCount,
+            similarity: clusters.similarity,
+            createdAt: clusters.createdAt,
+          })
           .from(clusters)
           .orderBy(desc(clusters.createdAt))
           .limit(5),
@@ -1435,17 +1531,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/me/stats", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const myOpinionsCountResult = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(opinions)
         .where(eq(opinions.userId, userId));
-      
+
       const likedOpinionsCountResult = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(opinionLikes)
         .where(eq(opinionLikes.userId, userId));
-      
+
       const myAgendasCountResult = await db
         .select({ count: sql<number>`count(distinct ${agendas.id})::int` })
         .from(agendas)
@@ -1453,12 +1549,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(opinionClusters, eq(clusters.id, opinionClusters.clusterId))
         .innerJoin(opinions, eq(opinionClusters.opinionId, opinions.id))
         .where(eq(opinions.userId, userId));
-      
+
       const bookmarkedAgendasCountResult = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(agendaBookmarks)
         .where(eq(agendaBookmarks.userId, userId));
-      
+
       res.json({
         myOpinionsCount: myOpinionsCountResult[0]?.count || 0,
         likedOpinionsCount: likedOpinionsCountResult[0]?.count || 0,
@@ -1474,7 +1570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users", async (req, res) => {
     try {
       const { limit, offset, search } = req.query;
-      
+
       let query = db
         .select({
           id: users.id,
@@ -1490,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (search) {
         query = query.where(
-          sql`${users.username} ILIKE ${'%' + search + '%'} OR ${users.displayName} ILIKE ${'%' + search + '%'} OR ${users.email} ILIKE ${'%' + search + '%'}`
+          sql`${users.username} ILIKE ${"%" + search + "%"} OR ${users.displayName} ILIKE ${"%" + search + "%"} OR ${users.email} ILIKE ${"%" + search + "%"}`,
         ) as any;
       }
 
@@ -1517,7 +1613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user.id;
-      
+
       const clusterableGroups = [
         {
           theme: "주차 문제",
@@ -1528,7 +1624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "주차장 부족으로 골목길에 차가 가득합니다. 해결책이 필요해요.",
             "지하 주차장을 확충해주세요. 지상 주차 공간이 모자랍니다.",
             "주차 공간 확보를 위한 다층 주차타워 건설을 제안합니다.",
-          ]
+          ],
         },
         {
           theme: "어린이 놀이터 안전",
@@ -1539,7 +1635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "어린이 놀이터 CCTV를 설치해서 안전을 강화해주세요.",
             "놀이터 놀이기구가 오래되어 녹이 슬었습니다. 교체가 시급해요.",
             "놀이터 울타리가 낮아서 아이들이 도로로 뛰어나갈 수 있어요. 울타리를 높여주세요.",
-          ]
+          ],
         },
         {
           theme: "야간 가로등",
@@ -1550,7 +1646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "가로등 간격이 너무 넓어서 어두운 구간이 많습니다.",
             "가로등 전구가 나간 곳이 많은데 빨리 교체해주세요.",
             "보안등을 추가로 설치해서 밤길을 밝게 해주세요.",
-          ]
+          ],
         },
         {
           theme: "쓰레기 분리수거",
@@ -1561,7 +1657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "분리수거 안내 표지판을 명확하게 만들어주세요. 헷갈립니다.",
             "대형 폐기물 수거를 더 자주 해주세요. 방치된 것들이 많아요.",
             "쓰레기 불법 투기 단속을 강화해주세요. CCTV 설치가 필요합니다.",
-          ]
+          ],
         },
         {
           theme: "버스 배차 간격",
@@ -1572,7 +1668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "저녁 시간대 버스가 너무 안 와요. 증차가 필요합니다.",
             "심야 시간 버스 배차를 늘려주세요. 늦게 퇴근하는 사람들이 많아요.",
             "버스 실시간 도착 정보가 부정확합니다. 시스템 개선이 필요해요.",
-          ]
+          ],
         },
         {
           theme: "도서관 운영",
@@ -1583,7 +1679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "도서관 책이 너무 오래되었어요. 신간 도서를 많이 구비해주세요.",
             "전자책 대여 서비스를 도입해주세요. 편리할 것 같아요.",
             "도서관에 스터디룸을 만들어주세요. 그룹 스터디 공간이 필요합니다.",
-          ]
+          ],
         },
       ];
 
@@ -1628,10 +1724,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await db.insert(opinions).values(opinionsToInsert);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         count: opinionsToInsert.length,
-        message: `${opinionsToInsert.length}개의 의견이 생성되었습니다.`
+        message: `${opinionsToInsert.length}개의 의견이 생성되었습니다.`,
       });
     } catch (error) {
       console.error("Failed to seed opinions:", error);
@@ -1647,7 +1743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const data = schema.parse(req.body);
-      
+
       const [updatedUser] = await db
         .update(users)
         .set(data)

@@ -1,12 +1,27 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, pgEnum, unique, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  integer,
+  pgEnum,
+  unique,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const authProviderEnum = pgEnum("auth_provider", ["google", "kakao", "local"]);
+export const authProviderEnum = pgEnum("auth_provider", [
+  "google",
+  "kakao",
+  "local",
+]);
 
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   email: text("email"),
   password: text("password"),
@@ -34,17 +49,24 @@ export const categoryEnum = pgEnum("category_type", [
 ]);
 
 export const categories = pgTable("categories", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
   type: categoryEnum("type").notNull(),
   description: text("description"),
+  icon: text("icons"),
 });
 
 export const opinionTypeEnum = pgEnum("opinion_type", ["text", "voice"]);
 
 export const opinions = pgTable("opinions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id),
   type: opinionTypeEnum("type").notNull().default("text"),
   content: text("content").notNull(),
   voiceUrl: text("voice_url"),
@@ -52,13 +74,21 @@ export const opinions = pgTable("opinions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const agendaStatusEnum = pgEnum("agenda_status", ["voting", "reviewing", "completed"]);
+export const agendaStatusEnum = pgEnum("agenda_status", [
+  "voting",
+  "reviewing",
+  "completed",
+]);
 
 export const agendas = pgTable("agendas", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  categoryId: varchar("category_id").notNull().references(() => categories.id),
+  categoryId: varchar("category_id")
+    .notNull()
+    .references(() => categories.id),
   status: agendaStatusEnum("status").notNull().default("reviewing"),
   voteCount: integer("vote_count").notNull().default(0),
   viewCount: integer("view_count").notNull().default(0),
@@ -68,24 +98,45 @@ export const agendas = pgTable("agendas", {
   referenceFiles: text("reference_files").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  okinews: boolean("okinews").notNull().default(false),
 });
 
-export const voteTypeEnum = pgEnum("vote_type", ["agree", "disagree", "neutral"]);
+export const voteTypeEnum = pgEnum("vote_type", [
+  "agree",
+  "disagree",
+  "neutral",
+]);
 
-export const votes = pgTable("votes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  agendaId: varchar("agenda_id").notNull().references(() => agendas.id),
-  voteType: voteTypeEnum("vote_type").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => ({
-  uniqueUserAgenda: unique().on(table.userId, table.agendaId),
-}));
+export const votes = pgTable(
+  "votes",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    agendaId: varchar("agenda_id")
+      .notNull()
+      .references(() => agendas.id),
+    voteType: voteTypeEnum("vote_type").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUserAgenda: unique().on(table.userId, table.agendaId),
+  }),
+);
 
-export const clusterStatusEnum = pgEnum("cluster_status", ["pending", "reviewed", "converted"]);
+export const clusterStatusEnum = pgEnum("cluster_status", [
+  "pending",
+  "reviewed",
+  "converted",
+]);
 
 export const clusters = pgTable("clusters", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   summary: text("summary").notNull(),
   categoryId: varchar("category_id").references(() => categories.id),
@@ -97,18 +148,39 @@ export const clusters = pgTable("clusters", {
 });
 
 export const opinionClusters = pgTable("opinion_clusters", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  opinionId: varchar("opinion_id").notNull().references(() => opinions.id),
-  clusterId: varchar("cluster_id").notNull().references(() => clusters.id),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  opinionId: varchar("opinion_id")
+    .notNull()
+    .references(() => opinions.id),
+  clusterId: varchar("cluster_id")
+    .notNull()
+    .references(() => clusters.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const reportStatusEnum = pgEnum("report_status", ["pending", "reviewing", "resolved", "dismissed"]);
-export const reportTypeEnum = pgEnum("report_type", ["spam", "inappropriate", "offensive", "misleading", "other"]);
+export const reportStatusEnum = pgEnum("report_status", [
+  "pending",
+  "reviewing",
+  "resolved",
+  "dismissed",
+]);
+export const reportTypeEnum = pgEnum("report_type", [
+  "spam",
+  "inappropriate",
+  "offensive",
+  "misleading",
+  "other",
+]);
 
 export const reports = pgTable("reports", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  reporterId: varchar("reporter_id").notNull().references(() => users.id),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  reporterId: varchar("reporter_id")
+    .notNull()
+    .references(() => users.id),
   opinionId: varchar("opinion_id").references(() => opinions.id),
   agendaId: varchar("agenda_id").references(() => agendas.id),
   commentId: varchar("comment_id").references(() => comments.id),
@@ -119,63 +191,141 @@ export const reports = pgTable("reports", {
   resolvedAt: timestamp("resolved_at"),
 });
 
-export const opinionLikes = pgTable("opinion_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  opinionId: varchar("opinion_id").notNull().references(() => opinions.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => ({
-  uniqueUserOpinion: unique().on(table.userId, table.opinionId),
-}));
+export const opinionLikes = pgTable(
+  "opinion_likes",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    opinionId: varchar("opinion_id")
+      .notNull()
+      .references(() => opinions.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUserOpinion: unique().on(table.userId, table.opinionId),
+  }),
+);
 
-export const agendaBookmarks = pgTable("agenda_bookmarks", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  agendaId: varchar("agenda_id").notNull().references(() => agendas.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => ({
-  uniqueUserAgenda: unique().on(table.userId, table.agendaId),
-}));
+export const agendaBookmarks = pgTable(
+  "agenda_bookmarks",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    agendaId: varchar("agenda_id")
+      .notNull()
+      .references(() => agendas.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUserAgenda: unique().on(table.userId, table.agendaId),
+  }),
+);
 
 export const comments = pgTable("comments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  opinionId: varchar("opinion_id").notNull().references(() => opinions.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  opinionId: varchar("opinion_id")
+    .notNull()
+    .references(() => opinions.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id),
   content: text("content").notNull(),
   likes: integer("likes").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const commentLikes = pgTable("comment_likes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  commentId: varchar("comment_id").notNull().references(() => comments.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => ({
-  uniqueUserComment: unique().on(table.userId, table.commentId),
-}));
+export const commentLikes = pgTable(
+  "comment_likes",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id),
+    commentId: varchar("comment_id")
+      .notNull()
+      .references(() => comments.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueUserComment: unique().on(table.userId, table.commentId),
+  }),
+);
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
-export const insertOpinionSchema = createInsertSchema(opinions).omit({ id: true, createdAt: true, likes: true });
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+});
+export const insertOpinionSchema = createInsertSchema(opinions).omit({
+  id: true,
+  createdAt: true,
+  likes: true,
+});
 export const insertAgendaSchema = createInsertSchema(agendas)
-  .omit({ id: true, createdAt: true, updatedAt: true, voteCount: true, viewCount: true })
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    voteCount: true,
+    viewCount: true,
+  })
   .extend({
-    startDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
-    endDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+    startDate: z
+      .string()
+      .optional()
+      .transform((val) => (val ? new Date(val) : undefined)),
+    endDate: z
+      .string()
+      .optional()
+      .transform((val) => (val ? new Date(val) : undefined)),
     referenceLinks: z.array(z.string().url()).optional(),
     referenceFiles: z.array(z.string()).optional(),
   });
 export const updateAgendaSchema = insertAgendaSchema.partial();
-export const insertVoteSchema = createInsertSchema(votes).omit({ id: true, createdAt: true });
-export const insertClusterSchema = createInsertSchema(clusters).omit({ id: true, createdAt: true });
-export const insertOpinionClusterSchema = createInsertSchema(opinionClusters).omit({ id: true, createdAt: true });
-export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, resolvedAt: true });
-export const insertOpinionLikeSchema = createInsertSchema(opinionLikes).omit({ id: true, createdAt: true });
-export const insertAgendaBookmarkSchema = createInsertSchema(agendaBookmarks).omit({ id: true, createdAt: true });
-export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true, likes: true });
+export const insertVoteSchema = createInsertSchema(votes).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertClusterSchema = createInsertSchema(clusters).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertOpinionClusterSchema = createInsertSchema(
+  opinionClusters,
+).omit({ id: true, createdAt: true });
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
+});
+export const insertOpinionLikeSchema = createInsertSchema(opinionLikes).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertAgendaBookmarkSchema = createInsertSchema(
+  agendaBookmarks,
+).omit({ id: true, createdAt: true });
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  likes: true,
+});
 export const updateCommentSchema = insertCommentSchema.pick({ content: true });
-export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({ id: true, createdAt: true });
+export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

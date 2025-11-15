@@ -11,6 +11,8 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
+        //okinews color
+        ok_white1:"#ffffff",
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
@@ -83,7 +85,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Noto Sans KR", "Inter", "sans-serif"],
+        sans: ["Pretendard","Noto Sans KR", "Inter", "sans-serif"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },

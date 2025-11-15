@@ -1,13 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
+interface CategoryItem {
+  name: string;
+  icons: string | null;
+}
+
 interface CategoryFilterProps {
-  categories: string[];
-  selected?: string;
+  categories: CategoryItem[];
+  selected: string;
   onSelect: (category: string) => void;
 }
 
-export default function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
+export default function CategoryFilter({
+  categories,
+  selected,
+  onSelect,
+}: CategoryFilterProps) {
   return (
     <ScrollArea className="w-full" data-testid="filter-categories">
       <div className="flex gap-2 p-4">
@@ -21,13 +30,14 @@ export default function CategoryFilter({ categories, selected, onSelect }: Categ
         </Button>
         {categories.map((category) => (
           <Button
-            key={category}
-            variant={selected === category ? "default" : "outline"}
+            key={category.name}
+            variant={selected === category.name ? "default" : "outline"}
             size="sm"
-            onClick={() => onSelect(category)}
+            onClick={() => onSelect(category.name)}
             data-testid={`button-category-${category}`}
           >
-            {category}
+            {category.icons && <span>{category.icons}</span>}
+            {category.name}
           </Button>
         ))}
       </div>
