@@ -291,8 +291,10 @@ export const insertAgendaSchema = createInsertSchema(agendas)
       .string()
       .optional()
       .transform((val) => (val ? new Date(val) : undefined)),
+    okinewsUrl: z.string().optional().nullable(),
     referenceLinks: z.array(z.string().url()).optional(),
     referenceFiles: z.array(z.string()).optional(),
+    regionalCases: z.array(z.string()).optional(),
   });
 export const updateAgendaSchema = insertAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({
