@@ -152,6 +152,30 @@ export default function Header() {
               <div className="text-sm text-muted-foreground text-center mt-4">
                 로그인하면 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다
               </div>
+              <div className="flex items-center justify-between mt-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground h-auto p-0 hover:bg-transparent"
+                  onClick={() => {
+                    setShowLoginDialog(false);
+                  }}
+                  data-testid="button-signup"
+                >
+                  회원가입
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground h-auto p-0 hover:bg-transparent"
+                  onClick={() => {
+                    setShowLoginDialog(false);
+                  }}
+                  data-testid="button-find-account"
+                >
+                  계정 찾기
+                </Button>
+              </div>
             </>
           ) : (
             <div className="text-sm text-muted-foreground text-center py-4">
