@@ -281,6 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/demo-login", async (req, res) => {
     try {
+      console.log("[DEBUG] Demo login started");
       const tempUsers = await db
         .select()
         .from(users)
@@ -290,6 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user;
       if (tempUsers.length > 0) {
         user = tempUsers[0];
+        console.log("[DEBUG] Found existing temp user:", user.id);
       } else {
         const newUsers = await db
           .insert(users)
@@ -301,18 +303,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .returning();
         user = newUsers[0];
+        console.log("[DEBUG] Created new temp user:", user.id);
       }
 
+      console.log("[DEBUG] Calling req.login with user:", user.id);
       req.login(user, (err) => {
         if (err) {
-          console.error("Login error:", err);
+          console.error("[ERROR] Login error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
+        console.log("[DEBUG] req.login successful, session ID:", req.sessionID);
+        console.log("[DEBUG] req.user after login:", req.user);
+        console.log("[DEBUG] Calling req.session.save");
         req.session.save((err) => {
           if (err) {
-            console.error("Session save error:", err);
+            console.error("[ERROR] Session save error:", err);
             return res.status(500).json({ error: "Session save failed" });
           }
+          console.log("[DEBUG] Session saved successfully");
+          console.log("[DEBUG] Session data:", JSON.stringify(req.session));
           res.json({
             id: user.id,
             username: user.username,
@@ -323,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
     } catch (error) {
-      console.error("Demo login error:", error);
+      console.error("[ERROR] Demo login error:", error);
       res.status(500).json({ error: "Demo login failed" });
     }
   });
