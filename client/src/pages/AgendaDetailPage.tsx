@@ -390,7 +390,9 @@ export default function AgendaDetailPage() {
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
-      response: editedResponse.trim() || null,
+      response: (editedStatus === "passed" || editedStatus === "rejected") 
+        ? (editedResponse.trim() || null) 
+        : null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,

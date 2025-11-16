@@ -1049,6 +1049,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceLinks: agendas.referenceLinks,
           referenceFiles: agendas.referenceFiles,
           regionalCases: agendas.regionalCases,
+          tags: agendas.tags,
+          response: agendas.response,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
           category: categories,
@@ -1078,9 +1080,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { bookmarkId, ...agendaWithoutBookmarkId } = result;
 
       console.log("GET /api/agendas/:id - Response data:", {
-        id: agendaWithoutBookmarkId.id,
-        okinewsUrl: agendaWithoutBookmarkId.okinewsUrl,
-        regionalCases: agendaWithoutBookmarkId.regionalCases,
+        id: (agendaWithoutBookmarkId as any).id,
+        status: (agendaWithoutBookmarkId as any).status,
+        response: (agendaWithoutBookmarkId as any).response,
+        okinewsUrl: (agendaWithoutBookmarkId as any).okinewsUrl,
+        regionalCases: (agendaWithoutBookmarkId as any).regionalCases,
       });
 
       res.json({ ...agendaWithoutBookmarkId, isBookmarked });
