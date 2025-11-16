@@ -31,7 +31,7 @@ export default function MobileNav() {
         credentials: "include",
       });
       if (res.ok) {
-        window.location.reload();
+        window.location.href = "/";
       }
     } catch (error) {
       console.error("Demo login failed:", error);
@@ -45,7 +45,7 @@ export default function MobileNav() {
         credentials: "include",
       });
       if (res.ok) {
-        window.location.reload();
+        window.location.href = "/";
       }
     } catch (error) {
       console.error("Demo login failed:", error);
