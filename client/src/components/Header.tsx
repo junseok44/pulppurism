@@ -6,6 +6,7 @@ import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { SiGoogle, SiKakaotalk } from "react-icons/si";
+import { queryClient } from "@/lib/queryClient";
 
 interface AuthProviders {
   google: boolean;
@@ -45,7 +46,8 @@ export default function Header() {
         credentials: "include",
       });
       if (res.ok) {
-        window.location.href = "/";
+        setShowLoginDialog(false);
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       }
     } catch (error) {
       console.error("Demo login failed:", error);
@@ -59,7 +61,8 @@ export default function Header() {
         credentials: "include",
       });
       if (res.ok) {
-        window.location.href = "/";
+        setShowLoginDialog(false);
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       }
     } catch (error) {
       console.error("Demo login failed:", error);
