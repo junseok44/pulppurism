@@ -38,9 +38,9 @@ export default function VotingWidget({
   return (
     <div className="space-y-4" data-testid="widget-voting">
       <h3 className="font-semibold text-lg">투표하기</h3>
-      <div className="flex justify-center items-center gap-2.5">
+      <div className="w-full flex items-center gap-2.5">
         <div
-          className={`w-24 h-24 px-5 pt-5 pb-4 bg-neutral-300 dark:bg-neutral-700 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 aspect-square px-5 pt-5 pb-4 bg-neutral-300 dark:bg-neutral-700 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
             disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover-elevate active-elevate-2"
           } ${selectedVote === "agree" ? "ring-2 ring-green-700" : ""}`}
           onClick={() => handleVote("agree")}
@@ -51,7 +51,7 @@ export default function VotingWidget({
         </div>
 
         <div
-          className={`w-24 h-24 px-5 pt-5 pb-4 bg-amber-200 dark:bg-amber-300 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 aspect-square px-5 pt-5 pb-4 bg-amber-200 dark:bg-amber-300 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
             disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover-elevate active-elevate-2"
           } ${selectedVote === "neutral" ? "ring-2 ring-amber-500" : ""}`}
           onClick={() => handleVote("neutral")}
@@ -64,7 +64,7 @@ export default function VotingWidget({
         </div>
 
         <div
-          className={`w-24 h-24 px-5 pt-5 pb-4 bg-rose-300 dark:bg-rose-400 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 aspect-square px-5 pt-5 pb-4 bg-rose-300 dark:bg-rose-400 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
             disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover-elevate active-elevate-2"
           } ${selectedVote === "disagree" ? "ring-2 ring-red-600" : ""}`}
           onClick={() => handleVote("disagree")}
