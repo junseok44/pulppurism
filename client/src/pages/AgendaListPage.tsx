@@ -94,9 +94,20 @@ export default function AgendaListPage() {
           </div>
           {votingAgendas.length > 0 && (
             <div className="mb-10">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                🔥 투표 진행 중
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  🔥 투표 진행 중
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/agendas/voting")}
+                  className="text-muted-foreground text-sm"
+                  data-testid="button-view-all-voting"
+                >
+                  더보기
+                </Button>
+              </div>
               <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
                 {votingAgendas.map((agenda) => (
                   <div
