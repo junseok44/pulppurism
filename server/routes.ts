@@ -274,21 +274,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/demo-login", async (req, res) => {
     try {
-      const randomId = randomBytes(4).toString("hex");
-      const demoEmail = `demo_${randomId}@example.com`;
-      const demoUsername = `데모사용자${randomId.substring(0, 4)}`;
+      const tempUsers = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, "temp-user-id"))
+        .limit(1);
 
-      const newUsers = await db
-        .insert(users)
-        .values({
-          username: demoUsername,
-          email: demoEmail,
-          displayName: demoUsername,
-          provider: "local",
-        })
-        .returning();
-
-      const user = newUsers[0];
+      let user;
+      if (tempUsers.length > 0) {
+        user = tempUsers[0];
+      } else {
+        const newUsers = await db
+          .insert(users)
+          .values({
+            id: "temp-user-id",
+            username: "임시사용자",
+            email: null,
+            provider: "local",
+          })
+          .returning();
+        user = newUsers[0];
+      }
 
       req.login(user, (err) => {
         if (err) {
