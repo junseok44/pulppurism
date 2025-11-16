@@ -10,11 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Loader2 } from "lucide-react";
 import type { Category, Cluster } from "@shared/schema";
 
@@ -23,10 +23,16 @@ export default function NewAgendaForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [clusterId, setClusterId] = useState("");
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+  const search = useSearch();
   const { toast } = useToast();
+  const lastPrefilledData = useRef<{ clusterId: string | null; title: string; description: string }>({
+    clusterId: null,
+    title: "",
+    description: ""
+  });
 
-  const searchParams = useMemo(() => new URLSearchParams(location.split('?')[1] || ''), [location]);
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
   const urlClusterId = searchParams.get('clusterId');
   const urlTitle = searchParams.get('title');
   const urlSummary = searchParams.get('summary');
@@ -45,16 +51,24 @@ export default function NewAgendaForm() {
   });
 
   useEffect(() => {
-    if (urlTitle && urlSummary && urlClusterId) {
+    const isNewCluster = urlClusterId && lastPrefilledData.current.clusterId !== urlClusterId;
+    
+    if (urlTitle && urlSummary && isNewCluster) {
       setTitle(urlTitle);
       setDescription(urlSummary);
       setClusterId(urlClusterId);
-    } else if (selectedCluster) {
+      lastPrefilledData.current = { clusterId: urlClusterId, title: urlTitle, description: urlSummary };
+    } else if (selectedCluster && isNewCluster) {
       setTitle(selectedCluster.title);
       setDescription(selectedCluster.summary);
       setClusterId(selectedCluster.id);
+      lastPrefilledData.current = { 
+        clusterId: urlClusterId, 
+        title: selectedCluster.title, 
+        description: selectedCluster.summary 
+      };
     }
-  }, [selectedCluster, urlClusterId, urlTitle, urlSummary, clusterLoading]);
+  }, [search, selectedCluster, urlTitle, urlSummary, urlClusterId]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
