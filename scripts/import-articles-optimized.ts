@@ -57,12 +57,28 @@ async function importArticles() {
       return true;
     });
 
+    // Remove duplicates based on content
+    const seenContent = new Set<string>();
+    const uniqueArticles = validArticles.filter((article) => {
+      const content = article["게시물 내용"];
+      if (seenContent.has(content)) {
+        return false; // Skip duplicate
+      }
+      seenContent.add(content);
+      return true;
+    });
+
+    const duplicateCount = validArticles.length - uniqueArticles.length;
     console.log(`Valid articles to import: ${validArticles.length} out of ${articles.length}`);
+    if (duplicateCount > 0) {
+      console.log(`⚠️  Removed ${duplicateCount} duplicate articles`);
+    }
+    console.log(`Unique articles to import: ${uniqueArticles.length}`);
 
     // Step 1: Collect all unique usernames
     console.log("Collecting unique usernames...");
     const allUsernames = new Set<string>();
-    for (const article of validArticles) {
+    for (const article of uniqueArticles) {
       allUsernames.add(article["게시물 작성자"] || "익명");
       const comments = article["댓글"] || [];
       for (const comment of comments) {
@@ -130,10 +146,10 @@ async function importArticles() {
 
       // Step 4: Process articles
       let processedCount = 0;
-      for (const article of validArticles) {
+      for (const article of uniqueArticles) {
         processedCount++;
         if (processedCount % 100 === 0) {
-          console.log(`Processing article ${processedCount}/${validArticles.length}...`);
+          console.log(`Processing article ${processedCount}/${uniqueArticles.length}...`);
         }
 
         try {

@@ -44,7 +44,7 @@ export default function OpinionListPage() {
       return response.json();
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < PAGE_SIZE) return undefined;
+      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
       return allPages.length * PAGE_SIZE;
     },
     initialPageParam: 0,
