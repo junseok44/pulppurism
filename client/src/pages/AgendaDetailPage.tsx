@@ -68,6 +68,7 @@ export default function AgendaDetailPage() {
   const [editedStatus, setEditedStatus] = useState<
     "voting" | "reviewing" | "passed" | "rejected"
   >("voting");
+  const [editedResponse, setEditedResponse] = useState("");
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
   const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>(
     [],
@@ -246,6 +247,7 @@ export default function AgendaDetailPage() {
       title?: string;
       description?: string;
       status?: "voting" | "reviewing" | "passed" | "rejected";
+      response?: string | null;
       okinewsUrl?: string | null;
       referenceLinks?: string[];
       referenceFiles?: string[];
@@ -374,6 +376,7 @@ export default function AgendaDetailPage() {
       setEditedTitle(agenda.title);
       setEditedDescription(agenda.description);
       setEditedStatus(agenda.status);
+      setEditedResponse(agenda.response || "");
       setEditedOkinewsUrl(agenda.okinewsUrl || "");
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
@@ -387,6 +390,7 @@ export default function AgendaDetailPage() {
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
+      response: editedResponse.trim() || null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
@@ -627,10 +631,16 @@ export default function AgendaDetailPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">답변 및 결과</h2>
                 <Card className="p-6">
-                  <p className="text-muted-foreground">
-                    현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
-                    등록됩니다.
-                  </p>
+                  {agenda.response ? (
+                    <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-agenda-response">
+                      {agenda.response}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
+                      등록됩니다.
+                    </p>
+                  )}
                 </Card>
               </div>
             </TabsContent>
@@ -1064,6 +1074,20 @@ export default function AgendaDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {(editedStatus === "passed" || editedStatus === "rejected") && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-response">답변 및 결과</Label>
+                <Textarea
+                  id="edit-response"
+                  value={editedResponse}
+                  onChange={(e) => setEditedResponse(e.target.value)}
+                  placeholder="안건에 대한 최종 답변 및 결과를 입력하세요"
+                  className="min-h-32"
+                  data-testid="textarea-edit-response"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="edit-okinews-url">옥천신문 링크</Label>
