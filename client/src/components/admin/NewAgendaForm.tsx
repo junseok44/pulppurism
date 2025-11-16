@@ -15,7 +15,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import type { Category, Cluster } from "@shared/schema";
 
 export default function NewAgendaForm() {
@@ -23,6 +23,11 @@ export default function NewAgendaForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [clusterId, setClusterId] = useState("");
+  const [okinewsUrl, setOkinewsUrl] = useState("");
+  const [referenceLinks, setReferenceLinks] = useState<string[]>([]);
+  const [regionalCases, setRegionalCases] = useState<string[]>([]);
+  const [newReferenceLink, setNewReferenceLink] = useState("");
+  const [newRegionalCase, setNewRegionalCase] = useState("");
   const [, setLocation] = useLocation();
   const search = useSearch();
   const { toast } = useToast();
@@ -83,6 +88,9 @@ export default function NewAgendaForm() {
         status: "voting",
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
+        okinewsUrl: okinewsUrl || null,
+        referenceLinks: referenceLinks.length > 0 ? referenceLinks : null,
+        regionalCases: regionalCases.length > 0 ? regionalCases : null,
       });
       const agenda = await res.json();
 
@@ -201,6 +209,117 @@ export default function NewAgendaForm() {
                 rows={10}
                 data-testid="textarea-description"
               />
+            </div>
+
+            <div className="border-t pt-6 space-y-6">
+              <h3 className="text-lg font-semibold">참고 자료</h3>
+
+              <div className="space-y-2">
+                <Label htmlFor="okinews-url">옥천신문 기사</Label>
+                <Input
+                  id="okinews-url"
+                  type="url"
+                  placeholder="https://www.okinews.com/..."
+                  value={okinewsUrl}
+                  onChange={(e) => setOkinewsUrl(e.target.value)}
+                  data-testid="input-okinews-url"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>참고링크</Label>
+                <div className="space-y-2">
+                  {referenceLinks.map((link, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={link}
+                        readOnly
+                        data-testid={`reference-link-${index}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setReferenceLinks(referenceLinks.filter((_, i) => i !== index))}
+                        data-testid={`button-remove-reference-link-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      type="url"
+                      placeholder="참고링크 URL을 입력하세요"
+                      value={newReferenceLink}
+                      onChange={(e) => setNewReferenceLink(e.target.value)}
+                      data-testid="input-new-reference-link"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newReferenceLink.trim()) {
+                          setReferenceLinks([...referenceLinks, newReferenceLink.trim()]);
+                          setNewReferenceLink("");
+                        }
+                      }}
+                      data-testid="button-add-reference-link"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>타 지역 정책 사례</Label>
+                <div className="space-y-2">
+                  {regionalCases.map((caseText, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Textarea
+                        value={caseText}
+                        readOnly
+                        rows={2}
+                        data-testid={`regional-case-${index}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setRegionalCases(regionalCases.filter((_, i) => i !== index))}
+                        data-testid={`button-remove-regional-case-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="타 지역 사례를 입력하세요 (예: 서울시 강남구 - 주민참여 예산제 운영)"
+                      value={newRegionalCase}
+                      onChange={(e) => setNewRegionalCase(e.target.value)}
+                      rows={2}
+                      data-testid="input-new-regional-case"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newRegionalCase.trim()) {
+                          setRegionalCases([...regionalCases, newRegionalCase.trim()]);
+                          setNewRegionalCase("");
+                        }
+                      }}
+                      data-testid="button-add-regional-case"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-4">
