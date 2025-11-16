@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 
 interface VotingWidgetProps {
@@ -18,25 +17,18 @@ export default function VotingWidget({
   onVote,
   disabled = false,
 }: VotingWidgetProps) {
-  const [selectedVote, setSelectedVote] = useState(userVote);
   const total = agreeCount + neutralCount + disagreeCount;
   const agreePercent = total > 0 ? (agreeCount / total) * 100 : 0;
   const neutralPercent = total > 0 ? (neutralCount / total) * 100 : 0;
   const disagreePercent = total > 0 ? (disagreeCount / total) * 100 : 0;
 
-  useEffect(() => {
-    setSelectedVote(userVote);
-  }, [userVote]);
-
   const handleVote = (vote: "agree" | "neutral" | "disagree") => {
     if (disabled) return;
     
-    if (selectedVote === vote) {
-      setSelectedVote(undefined);
+    if (userVote === vote) {
       onVote?.(null);
       console.log("Vote cancelled");
     } else {
-      setSelectedVote(vote);
       onVote?.(vote);
       console.log("Voted:", vote);
     }
@@ -51,7 +43,7 @@ export default function VotingWidget({
             disabled
               ? "opacity-50 cursor-not-allowed"
               : "cursor-pointer hover-elevate active-elevate-2"
-          } ${selectedVote === "agree" ? "ring-2 ring-green-700" : ""}`}
+          } ${userVote === "agree" ? "ring-2 ring-green-700" : ""}`}
           onClick={() => handleVote("agree")}
           data-testid="button-vote-agree"
         >
@@ -66,7 +58,7 @@ export default function VotingWidget({
             disabled
               ? "opacity-50 cursor-not-allowed"
               : "cursor-pointer hover-elevate active-elevate-2"
-          } ${selectedVote === "neutral" ? "ring-2 ring-amber-500" : ""}`}
+          } ${userVote === "neutral" ? "ring-2 ring-amber-500" : ""}`}
           onClick={() => handleVote("neutral")}
           data-testid="button-vote-neutral"
         >
@@ -83,7 +75,7 @@ export default function VotingWidget({
             disabled
               ? "opacity-50 cursor-not-allowed"
               : "cursor-pointer hover-elevate active-elevate-2"
-          } ${selectedVote === "disagree" ? "ring-2 ring-red-600" : ""}`}
+          } ${userVote === "disagree" ? "ring-2 ring-red-600" : ""}`}
           onClick={() => handleVote("disagree")}
           data-testid="button-vote-disagree"
         >
@@ -96,7 +88,7 @@ export default function VotingWidget({
           </div>
         </div>
       </div>
-      {selectedVote && (
+      {userVote && (
         <div className="space-y-2">
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
