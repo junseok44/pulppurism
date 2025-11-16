@@ -4,6 +4,24 @@ This project is a Korean civic engagement platform (주민참여 플랫폼) desi
 
 ## Recent Updates (2024-11-16)
 
+### Admin Agenda Response Feature
+- **Status-Based Response System**: Implemented conditional response field for agendas with "통과" (passed) or "반려" (rejected) status
+  - Added `response` field (TEXT, nullable) to agendas table in database schema
+  - Response field allows admins to provide official answers/explanations when marking agendas as passed or rejected
+- **Admin Edit Dialog Enhancement** (`client/src/components/admin/AllAgendasManagement.tsx`):
+  - Added status selection dropdown in agenda edit dialog (4 statuses: 투표중, 검토중, 통과, 반려)
+  - Conditional response textarea appears only when status is "통과" or "반려"
+  - Response automatically clears when status changes to "투표중" or "검토중" via useEffect
+  - Response field has contextual placeholders based on selected status
+- **Backend API Updates** (`server/routes.ts`):
+  - Fixed GET /api/agendas/:id to include `response` and `tags` fields in select query (critical bug fix)
+  - PATCH /api/agendas/:id properly validates and saves response field using updateAgendaSchema
+  - Response automatically set to null when status is voting or reviewing, preserving data integrity
+- **Frontend Display** (`client/src/pages/AgendaDetailPage.tsx`):
+  - "답변 및 결과" section displays saved response when available
+  - Shows contextual default message when no response is provided
+- **Schema Validation**: insertAgendaSchema and updateAgendaSchema properly include response field with nullable zod validation
+
 ### Bulk Data Import Script
 - **Backend Import Script** (`scripts/import-articles.ts`):
   - Command-line script for importing external article data from JSON files
