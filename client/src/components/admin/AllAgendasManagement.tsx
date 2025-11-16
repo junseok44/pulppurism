@@ -30,6 +30,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 import type { Agenda, Category } from "@shared/schema";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -44,7 +45,7 @@ export default function AllAgendasManagement() {
   const [editingAgenda, setEditingAgenda] = useState<Agenda | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editStatus, setEditStatus] = useState<"voting" | "reviewing" | "completed">("reviewing");
+  const [editStatus, setEditStatus] = useState<"voting" | "reviewing" | "passed" | "rejected">("reviewing");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -104,32 +105,6 @@ export default function AllAgendasManagement() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "voting":
-        return "default";
-      case "reviewing":
-        return "secondary";
-      case "completed":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "voting":
-        return "투표중";
-      case "reviewing":
-        return "검토중";
-      case "completed":
-        return "답변 및 결과";
-      default:
-        return status;
-    }
-  };
-
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     return category?.name || "미지정";
@@ -145,7 +120,7 @@ export default function AllAgendasManagement() {
     setEditingAgenda(agenda);
     setEditTitle(agenda.title);
     setEditDescription(agenda.description);
-    setEditStatus(agenda.status as "voting" | "reviewing" | "completed");
+    setEditStatus(agenda.status as "voting" | "reviewing" | "passed" | "rejected");
     setEditDialogOpen(true);
   };
 
@@ -203,7 +178,8 @@ export default function AllAgendasManagement() {
               <SelectItem value="all">전체 상태</SelectItem>
               <SelectItem value="voting">투표중</SelectItem>
               <SelectItem value="reviewing">검토중</SelectItem>
-              <SelectItem value="completed">답변 및 결과</SelectItem>
+              <SelectItem value="passed">통과</SelectItem>
+              <SelectItem value="rejected">반려</SelectItem>
             </SelectContent>
           </Select>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -253,7 +229,7 @@ export default function AllAgendasManagement() {
                     <Badge variant="outline">{getCategoryName(agenda.categoryId)}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusColor(agenda.status)}>
+                    <Badge className={getStatusBadgeClass(agenda.status)}>
                       {getStatusLabel(agenda.status)}
                     </Badge>
                   </TableCell>
@@ -329,14 +305,15 @@ export default function AllAgendasManagement() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">상태</label>
-              <Select value={editStatus} onValueChange={(val) => setEditStatus(val as "voting" | "reviewing" | "completed")}>
+              <Select value={editStatus} onValueChange={(val) => setEditStatus(val as "voting" | "reviewing" | "passed" | "rejected")}>
                 <SelectTrigger data-testid="select-edit-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="voting">투표중</SelectItem>
                   <SelectItem value="reviewing">검토중</SelectItem>
-                  <SelectItem value="completed">답변 및 결과</SelectItem>
+                  <SelectItem value="passed">통과</SelectItem>
+                  <SelectItem value="rejected">반려</SelectItem>
                 </SelectContent>
               </Select>
             </div>

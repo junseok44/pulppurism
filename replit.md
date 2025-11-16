@@ -3,16 +3,24 @@
 This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
 ## Recent Updates (2024-11-16)
+- **Status Badge System Refactoring**: Completed comprehensive refactoring to remove "completed" status
+  - Replaced single "completed" status with two distinct outcome statuses: `passed` (통과) and `rejected` (반려)
+  - Final status set: `voting`, `reviewing`, `passed`, `rejected` (4 total statuses)
+  - Centralized all status label and badge color logic in `client/src/lib/utils.ts`
+  - Implemented color-coded status badges across all components:
+    - **voting** (투표중): Blue badges
+    - **reviewing** (검토중): Orange badges
+    - **passed** (통과): Green badges
+    - **rejected** (반려): Red badges
+  - Updated all components to use centralized `getStatusLabel` and `getStatusBadgeClass` utilities
+  - Refactored components: AgendaCard, OkAgendaCard, AllAgendasManagement, VotingAgendasPage, AgendaListPage, AgendaDetailPage
+  - Enhanced Timeline component to dynamically show "통과" or "반려" as final step based on actual agenda status
+  - Updated admin edit dialogs and status filters throughout the application
+  - Database migration: Converted existing "completed" agendas to "passed" status
 - **Random Spotlight Section**: Implemented dynamic spotlight feature on agenda list page
   - Randomly displays one of three sections on page load: voting (투표 진행 중), passed (통과 된 안건), or rejected (반려 된 안건)
   - Each section shows a curated selection of agendas with that status
   - "더보기" button applies status filter and smoothly scrolls to agenda list section
-- **New Agenda Statuses**: Extended agenda status system from 3 to 5 states
-  - Added `passed`: 통과 (Agenda has been passed)
-  - Added `rejected`: 반려 (Agenda has been rejected)
-  - Updated status filter dropdown to include all 5 options
-- **Enhanced Filtering**: Status filter dropdown now includes comprehensive options
-  - 전체 (All), 투표중 (Voting), 검토중 (Reviewing), 완료 (Completed), **통과 (Passed)**, **반려 (Rejected)**
 
 ## Previous Updates (2024-11-15)
 - **Reference Materials Enhancement**: Reorganized agenda reference materials into 4 distinct sections
@@ -31,13 +39,8 @@ This project is a Korean civic engagement platform (주민참여 플랫폼) desi
   - Recorded audio is automatically transcribed to Korean text
   - Transcribed text appears in the text input field for review and editing
   - Supports pause/resume during recording
-- **Agenda Status Simplification**: Reduced agenda status from 5 states to 3 streamlined states:
-  - `voting`: 투표중 (Voting in progress)
-  - `reviewing`: 검토중 (Under review)
-  - `completed`: 답변 및 결과 (Response and results)
 - **Admin Edit Functionality**: Added ability for administrators to edit agenda title, description, and status through a dialog interface
 - **Dynamic Timeline**: Timeline component now dynamically updates based on agenda status, providing real-time progress tracking
-- **Database Migration**: Successfully migrated existing agenda data from legacy statuses (draft→reviewing, active→voting, closed/implemented→completed)
 
 # User Preferences
 

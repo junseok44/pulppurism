@@ -28,19 +28,6 @@ export default function VotingAgendasPage() {
     (agenda) => agenda.status === "voting"
   ) || [];
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "voting":
-        return "투표 중";
-      case "reviewing":
-        return "검토중";
-      case "completed":
-        return "답변 및 결과";
-      default:
-        return status;
-    }
-  };
-
   return (
     <div className="h-screen flex flex-col pb-20 md:pb-0">
       <Header />
@@ -79,7 +66,7 @@ export default function VotingAgendasPage() {
                   id={agenda.id}
                   title={agenda.title}
                   category={agenda.category?.name || ""}
-                  status={getStatusLabel(agenda.status)}
+                  status={agenda.status}
                   commentCount={agenda.voteCount}
                   bookmarkCount={agenda.bookmarkCount || 0}
                   isBookmarked={agenda.isBookmarked || false}

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Bookmark, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getStatusBadgeClass } from "@/lib/utils";
+import { getStatusBadgeClass, getStatusLabel } from "@/lib/utils";
 
 interface AgendaCardProps {
   id: string;
@@ -63,7 +63,7 @@ export default function AgendaCard({
             className={`font-medium border ${getStatusBadgeClass(status)}`}
             data-testid={`badge-status-${id}`}
           >
-            {status}
+            {getStatusLabel(status)}
           </Badge>
         </div>
 

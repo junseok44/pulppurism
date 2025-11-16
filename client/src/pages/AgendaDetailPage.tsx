@@ -434,6 +434,9 @@ export default function AgendaDetailPage() {
       .replace(/\. /g, ".")
       .replace(/\.$/, "");
 
+    const isCompleted = status === "passed" || status === "rejected";
+    const resultLabel = status === "passed" ? "통과" : status === "rejected" ? "반려" : "결과";
+
     const steps = [
       {
         label: "안건 생성",
@@ -445,7 +448,7 @@ export default function AgendaDetailPage() {
         status:
           status === "voting"
             ? ("current" as const)
-            : status === "reviewing" || status === "completed"
+            : status === "reviewing" || isCompleted
               ? ("completed" as const)
               : ("upcoming" as const),
       },
@@ -454,14 +457,14 @@ export default function AgendaDetailPage() {
         status:
           status === "reviewing"
             ? ("current" as const)
-            : status === "completed"
+            : isCompleted
               ? ("completed" as const)
               : ("upcoming" as const),
       },
       {
-        label: "답변 및 결과",
+        label: resultLabel,
         status:
-          status === "completed" ? ("current" as const) : ("upcoming" as const),
+          isCompleted ? ("current" as const) : ("upcoming" as const),
       },
     ];
 
@@ -855,7 +858,8 @@ export default function AgendaDetailPage() {
                 <SelectContent>
                   <SelectItem value="voting">투표중</SelectItem>
                   <SelectItem value="reviewing">검토중</SelectItem>
-                  <SelectItem value="completed">답변 및 결과</SelectItem>
+                  <SelectItem value="passed">통과</SelectItem>
+                  <SelectItem value="rejected">반려</SelectItem>
                 </SelectContent>
               </Select>
             </div>

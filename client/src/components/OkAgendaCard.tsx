@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Bookmark, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 
 // Card 같은 거 import 안 함! 내가 직접 만드니까!
 
@@ -30,27 +31,6 @@ export default function OkAgendaCard({
   isBookmarked,
   onClick,
 }: OkAgendaCardProps) {
-  const getStatusColor = () => {
-    switch (status) {
-      case "투표 중":
-      case "주민 투표":
-        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800";
-      case "활성":
-      case "검토 중":
-        return "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800";
-      case "시행됨":
-      case "진행 중":
-        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800";
-      case "종료":
-      case "답변 완료":
-        return "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-800";
-      case "초안":
-      case "의견 접수":
-        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800";
-      default:
-        return "";
-    }
-  };
   const [count, setCount] = useState(bookmarkCount);
   const [marked, setMarked] = useState(isBookmarked || false);
   const handleBookmarkClick = (e: React.MouseEvent) => {
@@ -136,14 +116,9 @@ export default function OkAgendaCard({
             <div className="self-stretch flex flex-col justify-start items-start gap-px">
               <div className="inline-flex justify-center items-center gap-2.5 overflow-hidden">
                 {/*여기부터는 하단에 붙은 내용들 중 가장 윗줄... 왼->오 정렬됨*/}
-                {/* 3. getStatusColor() 적용! (이제 색깔이 상태에 따라 바뀔 거야) */}
-                <div
-                  className={`px-1.5 rounded-[3px] inline-flex flex-col justify-center items-center gap-2.5 ${getStatusColor()}`}
-                >
-                  <div className="justify-start text-[10px] font-medium font-['Pretendard_Variable'] leading-5">
-                    {status}
-                  </div>
-                </div>
+                <Badge className={`text-[10px] ${getStatusBadgeClass(status)}`}>
+                  {getStatusLabel(status)}
+                </Badge>
 
                 {/* 4. okinews 조건부 렌더링! (true일 때만 보여라!) */}
                 {okinews && (

@@ -22,7 +22,7 @@ interface AgendaWithCategory extends Agenda {
   isBookmarked?: boolean;
 }
 
-type AgendaStatus = "all" | "voting" | "reviewing" | "completed" | "passed" | "rejected";
+type AgendaStatus = "all" | "voting" | "reviewing" | "passed" | "rejected";
 type SortOption = "latest" | "views" | "votes";
 type SpotlightSection = "voting" | "passed" | "rejected";
 
@@ -107,21 +107,6 @@ export default function AgendaListPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "voting":
-        return "투표중";
-      case "reviewing":
-        return "검토중";
-      case "passed":
-        return "통과";
-      case "rejected":
-        return "반려";
-      default:
-        return status;
-    }
-  };
-
   const getSpotlightConfig = () => {
     switch (spotlightSection) {
       case "voting":
@@ -200,7 +185,7 @@ export default function AgendaListPage() {
                       id={agenda.id}
                       title={agenda.title}
                       category={agenda.category?.name || "카테고리 없음"}
-                      status={getStatusLabel(agenda.status)}
+                      status={agenda.status}
                       content={agenda.description}
                       commentCount={agenda.voteCount}
                       bookmarkCount={agenda.bookmarkCount || 0}
@@ -332,7 +317,7 @@ export default function AgendaListPage() {
                   id={agenda.id}
                   title={agenda.title}
                   category={agenda.category?.name || ""}
-                  status={getStatusLabel(agenda.status)}
+                  status={agenda.status}
                   commentCount={agenda.voteCount} // 변수명 매핑
                   bookmarkCount={agenda.bookmarkCount || 0}
                   isBookmarked={agenda.isBookmarked || false}
