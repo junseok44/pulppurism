@@ -77,7 +77,6 @@ export const opinions = pgTable("opinions", {
 export const agendaStatusEnum = pgEnum("agenda_status", [
   "voting",
   "reviewing",
-  "completed",
   "passed",
   "rejected",
 ]);
