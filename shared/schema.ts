@@ -100,6 +100,7 @@ export const agendas = pgTable("agendas", {
   referenceFiles: text("reference_files").array(),
   regionalCases: text("regional_cases").array(),
   tags: text("tags").array(),
+  response: text("response"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   okinews: boolean("okinews").notNull().default(false),
@@ -298,6 +299,7 @@ export const insertAgendaSchema = createInsertSchema(agendas)
     referenceLinks: z.array(z.string().url()).optional(),
     referenceFiles: z.array(z.string()).optional(),
     regionalCases: z.array(z.string()).optional(),
+    response: z.string().optional().nullable(),
   });
 export const updateAgendaSchema = insertAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({
