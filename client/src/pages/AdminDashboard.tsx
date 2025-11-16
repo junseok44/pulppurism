@@ -14,7 +14,6 @@ import {
   MessageSquare,
   FileText,
   Users,
-  Upload,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import AdminDashboardHome from "@/pages/admin/AdminDashboardHome";
@@ -22,7 +21,6 @@ import AdminOpinionsPage from "@/pages/admin/AdminOpinionsPage";
 import AdminAgendasPage from "@/pages/admin/AdminAgendasPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import ActiveAgendasPage from "@/pages/admin/ActiveAgendasPage";
-import ImportArticlesPage from "@/pages/admin/ImportArticlesPage";
 
 function AppSidebar() {
   const [location] = useLocation();
@@ -51,12 +49,6 @@ function AppSidebar() {
       url: "/admin/users",
       icon: Users,
       isActive: location === "/admin/users",
-    },
-    {
-      title: "데이터 임포트",
-      url: "/admin/import",
-      icon: Upload,
-      isActive: location === "/admin/import",
     },
   ];
 
@@ -106,8 +98,6 @@ export default function AdminDashboard() {
       return <AdminAgendasPage />;
     } else if (location.startsWith("/admin/users")) {
       return <AdminUsersPage />;
-    } else if (location === "/admin/import") {
-      return <ImportArticlesPage />;
     }
     return <AdminDashboardHome />;
   };

@@ -4,14 +4,9 @@ This project is a Korean civic engagement platform (주민참여 플랫폼) desi
 
 ## Recent Updates (2024-11-16)
 
-### Bulk Data Import Feature
-- **Admin Import Page**: Created dedicated import page (/admin/import) for importing external article data
-  - File upload interface with JSON file selection
-  - Pre-deletion warning alerts about destructive operation
-  - Real-time import progress with success/failure feedback
-  - Statistics display showing imported opinions and comments count
-  - Data format documentation with example JSON structure
-- **Backend Import API** (/api/admin/import-articles):
+### Bulk Data Import Script
+- **Backend Import Script** (`scripts/import-articles.ts`):
+  - Command-line script for importing external article data from JSON files
   - Transaction-based processing with automatic rollback on failure
   - Pre-validation before data deletion to ensure data integrity
   - Korean datetime parsing utility (parseKoreanDateTime) for "YYYY-MM-DD HH:mm:ss" format
@@ -24,7 +19,8 @@ This project is a Korean civic engagement platform (주민참여 플랫폼) desi
   - Comments mapped to comments table
   - Preserves original timestamps and like counts
   - Auto-creates users with provider='local' if not existing
-- **Admin Access**: Requires admin authentication, added "데이터 임포트" menu item to admin sidebar
+- **Usage**: Run `npx tsx scripts/import-articles.ts [path/to/articles.json]` to import data
+- **Documentation**: See `scripts/README.md` for detailed usage instructions
 
 ### Cluster Management Page Improvements
 - **Page Title Unification**: Changed both sidebar and page header from "클러스터 관리" to "주민 의견 관리" for consistency
