@@ -238,7 +238,7 @@ export default function AgendaDetailPage() {
     mutationFn: async (data: {
       title?: string;
       description?: string;
-      status?: "voting" | "reviewing" | "completed";
+      status?: "voting" | "reviewing" | "passed" | "rejected";
       okinewsUrl?: string | null;
       referenceLinks?: string[];
       referenceFiles?: string[];
