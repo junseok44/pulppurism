@@ -1662,6 +1662,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/stats/weekly-opinions", async (req, res) => {
+    try {
+      const now = new Date();
+      const weeklyData = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const dayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - i,
+        );
+        const dayEnd = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - i + 1,
+        );
+
+        const result = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(opinions)
+          .where(
+            sql`${opinions.createdAt} >= ${dayStart} AND ${opinions.createdAt} < ${dayEnd}`,
+          );
+
+        const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+        const dayOfWeek = dayNames[dayStart.getDay()];
+
+        weeklyData.push({
+          date: dayStart.toISOString().split("T")[0],
+          day: dayOfWeek,
+          count: result[0]?.count || 0,
+          isToday: i === 0,
+        });
+      }
+
+      res.json(weeklyData);
+    } catch (error) {
+      console.error("Failed to fetch weekly opinions stats:", error);
+      res.status(500).json({ error: "Failed to fetch weekly opinions stats" });
+    }
+  });
+
+  app.get("/api/admin/stats/active-agendas", async (req, res) => {
+    try {
+      const agendasWithStats = await db
+        .select({
+          id: agendas.id,
+          title: agendas.title,
+          description: agendas.description,
+          status: agendas.status,
+          voteCount: agendas.voteCount,
+          viewCount: agendas.viewCount,
+          categoryId: agendas.categoryId,
+          categoryName: categories.name,
+        })
+        .from(agendas)
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .orderBy(desc(sql`${agendas.voteCount} + ${agendas.viewCount}`))
+        .limit(20);
+
+      const agendasWithComments = await Promise.all(
+        agendasWithStats.map(async (agenda) => {
+          const commentCountResult = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(comments)
+            .innerJoin(opinions, eq(comments.opinionId, opinions.id))
+            .innerJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
+            .innerJoin(clusters, eq(opinionClusters.clusterId, clusters.id))
+            .where(eq(clusters.agendaId, agenda.id));
+
+          const commentCount = commentCountResult[0]?.count || 0;
+          const activityScore = agenda.voteCount + agenda.viewCount + commentCount;
+
+          return {
+            ...agenda,
+            commentCount,
+            activityScore,
+          };
+        }),
+      );
+
+      const sortedAgendas = agendasWithComments.sort(
+        (a, b) => b.activityScore - a.activityScore,
+      );
+
+      res.json(sortedAgendas);
+    } catch (error) {
+      console.error("Failed to fetch active agendas:", error);
+      res.status(500).json({ error: "Failed to fetch active agendas" });
+    }
+  });
+
   app.get("/api/users/me/stats", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
