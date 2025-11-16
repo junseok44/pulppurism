@@ -322,13 +322,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           console.log("[DEBUG] Session saved successfully");
           console.log("[DEBUG] Session data:", JSON.stringify(req.session));
-          res.json({
+          console.log("[DEBUG] Session cookie:", req.session.cookie);
+          
+          const response = {
             id: user.id,
             username: user.username,
             email: user.email,
             displayName: user.displayName,
             avatarUrl: user.avatarUrl,
+          };
+          
+          res.on('finish', () => {
+            console.log("[DEBUG] Response headers:", res.getHeaders());
           });
+          
+          res.json(response);
         });
       });
     } catch (error) {
