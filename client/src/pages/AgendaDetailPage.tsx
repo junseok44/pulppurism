@@ -63,21 +63,31 @@ export default function AgendaDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
-  const [editedStatus, setEditedStatus] = useState<"voting" | "reviewing" | "completed">("voting");
+  const [editedStatus, setEditedStatus] = useState<
+    "voting" | "reviewing" | "completed"
+  >("voting");
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
-  const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>([]);
-  const [editedReferenceFiles, setEditedReferenceFiles] = useState<string[]>([]);
+  const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>(
+    [],
+  );
+  const [editedReferenceFiles, setEditedReferenceFiles] = useState<string[]>(
+    [],
+  );
   const [editedRegionalCases, setEditedRegionalCases] = useState<string[]>([]);
   const [newReferenceLink, setNewReferenceLink] = useState("");
   const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: user } = useQuery<User>({ 
-    queryKey: ['/api/auth/me'],
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/me"],
     retry: false,
   });
 
-  const { data: agenda, isLoading: agendaLoading, error: agendaError } = useQuery<AgendaWithCategory>({
+  const {
+    data: agenda,
+    isLoading: agendaLoading,
+    error: agendaError,
+  } = useQuery<AgendaWithCategory>({
     queryKey: [`/api/agendas/${agendaId}`],
     enabled: !!agendaId,
   });
@@ -104,7 +114,9 @@ export default function AgendaDetailPage() {
     enabled: !!agendaId && !!user,
   });
 
-  const { data: relatedOpinions = [], isLoading: opinionsLoading } = useQuery<Opinion[]>({
+  const { data: relatedOpinions = [], isLoading: opinionsLoading } = useQuery<
+    Opinion[]
+  >({
     queryKey: [`/api/agendas/${agendaId}/opinions`],
     enabled: !!agendaId,
   });
@@ -122,8 +134,12 @@ export default function AgendaDetailPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/votes`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/votes/user/${user?.id}/agenda/${agendaId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/agendas/${agendaId}/votes`],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/votes/user/${user?.id}/agenda/${agendaId}`],
+      });
     },
   });
 
@@ -137,8 +153,8 @@ export default function AgendaDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/agendas/bookmarked'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me/stats'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agendas/bookmarked"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me/stats"] });
     },
   });
 
@@ -160,10 +176,14 @@ export default function AgendaDetailPage() {
       if (!user) {
         throw new Error("User not authenticated");
       }
-      const res = await apiRequest("POST", `/api/agendas/${agendaId}/opinions`, {
-        content,
-        type: "text",
-      });
+      const res = await apiRequest(
+        "POST",
+        `/api/agendas/${agendaId}/opinions`,
+        {
+          content,
+          type: "text",
+        },
+      );
       return res.json();
     },
     onSuccess: () => {
@@ -172,7 +192,9 @@ export default function AgendaDetailPage() {
         title: "의견이 제출되었습니다",
         description: "의견이 안건에 자동으로 연결되었습니다.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}/opinions`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/agendas/${agendaId}/opinions`],
+      });
     },
     onError: (error) => {
       toast({
@@ -220,7 +242,7 @@ export default function AgendaDetailPage() {
       const res = await fetch(`/api/agendas/${agendaId}/files`, {
         method: "POST",
         body: formData,
-        credentials: 'include',
+        credentials: "include",
       });
       if (!res.ok) {
         throw new Error("File upload failed");
@@ -230,7 +252,9 @@ export default function AgendaDetailPage() {
     onSuccess: (data) => {
       if (data.fileUrl && data.agenda) {
         setEditedReferenceFiles(data.agenda.referenceFiles || []);
-        queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
+        queryClient.invalidateQueries({
+          queryKey: [`/api/agendas/${agendaId}`],
+        });
         toast({
           title: "파일 업로드 완료",
           description: "파일이 성공적으로 업로드되었습니다.",
@@ -301,7 +325,10 @@ export default function AgendaDetailPage() {
 
   const handleAddReferenceLink = () => {
     if (newReferenceLink.trim()) {
-      setEditedReferenceLinks([...editedReferenceLinks, newReferenceLink.trim()]);
+      setEditedReferenceLinks([
+        ...editedReferenceLinks,
+        newReferenceLink.trim(),
+      ]);
       setNewReferenceLink("");
     }
   };
@@ -325,7 +352,6 @@ export default function AgendaDetailPage() {
     setEditedRegionalCases(editedRegionalCases.filter((_, i) => i !== index));
   };
 
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -335,44 +361,64 @@ export default function AgendaDetailPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "voting": return "투표중";
-      case "reviewing": return "검토중";
-      case "completed": return "답변 및 결과";
-      default: return status;
+      case "voting":
+        return "투표중";
+      case "reviewing":
+        return "검토중";
+      case "completed":
+        return "답변 및 결과";
+      default:
+        return status;
     }
   };
 
   const getTimelineSteps = (status: string, createdAt: string) => {
-    const createdDate = new Date(createdAt).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).replace(/\. /g, '.').replace(/\.$/, '');
+    const createdDate = new Date(createdAt)
+      .toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .replace(/\. /g, ".")
+      .replace(/\.$/, "");
 
     const steps = [
-      { 
-        label: "안건 생성", 
+      {
+        label: "안건 생성",
         status: "completed" as const,
-        date: createdDate
+        date: createdDate,
       },
-      { 
-        label: "투표중", 
-        status: status === "voting" ? "current" as const : (status === "reviewing" || status === "completed" ? "completed" as const : "upcoming" as const)
+      {
+        label: "투표중",
+        status:
+          status === "voting"
+            ? ("current" as const)
+            : status === "reviewing" || status === "completed"
+              ? ("completed" as const)
+              : ("upcoming" as const),
       },
-      { 
-        label: "검토중", 
-        status: status === "reviewing" ? "current" as const : (status === "completed" ? "completed" as const : "upcoming" as const)
+      {
+        label: "검토중",
+        status:
+          status === "reviewing"
+            ? ("current" as const)
+            : status === "completed"
+              ? ("completed" as const)
+              : ("upcoming" as const),
       },
-      { 
-        label: "답변 및 결과", 
-        status: status === "completed" ? "current" as const : "upcoming" as const
+      {
+        label: "답변 및 결과",
+        status:
+          status === "completed" ? ("current" as const) : ("upcoming" as const),
       },
     ];
 
     return steps;
   };
 
-  const timelineSteps = agenda ? getTimelineSteps(agenda.status, String(agenda.createdAt)) : [];
+  const timelineSteps = agenda
+    ? getTimelineSteps(agenda.status, String(agenda.createdAt))
+    : [];
 
   if (!match || !agendaId) {
     return (
@@ -425,13 +471,17 @@ export default function AgendaDetailPage() {
       <Header />
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="space-y-6">
-          <div className="w-full h-64 bg-muted rounded-lg overflow-hidden" data-testid="agenda-hero-image">
-            <img 
-              src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop" 
+          <div
+            className="w-full h-64 bg-muted rounded-lg overflow-hidden"
+            data-testid="agenda-hero-image"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop"
               alt="안건 대표 이미지"
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='400'%3E%3Crect width='1200' height='400' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%239ca3af'%3E안건 이미지%3C/text%3E%3C/svg%3E";
+                e.currentTarget.src =
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='400'%3E%3Crect width='1200' height='400' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%239ca3af'%3E안건 이미지%3C/text%3E%3C/svg%3E";
               }}
             />
           </div>
@@ -439,70 +489,88 @@ export default function AgendaDetailPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{agenda.category?.name || "기타"}</Badge>
+                <Badge variant="secondary">
+                  {agenda.category?.name || "기타"}
+                </Badge>
                 <Badge variant="outline">{getStatusLabel(agenda.status)}</Badge>
               </div>
-              <h1 className="text-3xl font-bold" data-testid="text-agenda-title">
+              <h1
+                className="text-3xl font-bold"
+                data-testid="text-agenda-title"
+              >
                 {agenda.title}
               </h1>
             </div>
             <div className="flex items-center gap-2">
               {(user as any)?.isAdmin && (
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
+                <Button
+                  size="icon"
+                  variant="ghost"
                   onClick={handleEditClick}
                   data-testid="button-edit-agenda"
                 >
                   <Edit className="w-5 h-5" />
                 </Button>
               )}
-              <Button 
-                size="icon" 
-                variant="ghost" 
+              <Button
+                size="icon"
+                variant="ghost"
                 onClick={handleBookmarkClick}
                 disabled={bookmarkMutation.isPending}
                 data-testid="button-bookmark"
               >
-                <Bookmark className={`w-5 h-5 ${agenda?.isBookmarked ? 'fill-current' : ''}`} />
+                <Bookmark
+                  className={`w-5 h-5 ${agenda?.isBookmarked ? "fill-current" : ""}`}
+                />
               </Button>
             </div>
           </div>
 
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-full justify-start">
-              <TabsTrigger value="overview" data-testid="tab-overview">개요</TabsTrigger>
-              <TabsTrigger value="opinions" data-testid="tab-opinions">주민의견</TabsTrigger>
-              <TabsTrigger value="references" data-testid="tab-references">참고자료</TabsTrigger>
+              <TabsTrigger value="overview" data-testid="tab-overview">
+                개요
+              </TabsTrigger>
+              <TabsTrigger value="opinions" data-testid="tab-opinions">
+                주민의견
+              </TabsTrigger>
+              <TabsTrigger value="references" data-testid="tab-references">
+                참고자료
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-8 mt-6">
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">안건 소개</h2>
-                <p className="text-base leading-relaxed" data-testid="text-description">
+                <p
+                  className="text-base leading-relaxed"
+                  data-testid="text-description"
+                >
                   {agenda.description}
                 </p>
               </div>
+                <div className="h-[20vh]">
+                  <VotingWidget
+                    agreeCount={voteStats?.agree || 0}
+                    neutralCount={voteStats?.neutral || 0}
+                    disagreeCount={voteStats?.disagree || 0}
+                    userVote={userVote?.voteType}
+                    onVote={handleVote}
+                    disabled={voteMutation.isPending}
+                  />
+                </div>
 
-              <VotingWidget
-                agreeCount={voteStats?.agree || 0}
-                neutralCount={voteStats?.neutral || 0}
-                disagreeCount={voteStats?.disagree || 0}
-                userVote={userVote?.voteType}
-                onVote={handleVote}
-                disabled={voteMutation.isPending}
-              />
+                <Timeline steps={timelineSteps} />
 
-              <Timeline steps={timelineSteps} />
-
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">답변 및 결과</h2>
-                <Card className="p-6">
-                  <p className="text-muted-foreground">
-                    현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이 등록됩니다.
-                  </p>
-                </Card>
-              </div>
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">답변 및 결과</h2>
+                  <Card className="p-6">
+                    <p className="text-muted-foreground">
+                      현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
+                      등록됩니다.
+                    </p>
+                  </Card>
+                </div>
             </TabsContent>
 
             <TabsContent value="opinions" className="space-y-4 mt-6 pb-32">
@@ -519,7 +587,9 @@ export default function AgendaDetailPage() {
                     content={opinion.content}
                     likeCount={opinion.likes}
                     commentCount={0}
-                    timestamp={new Date(opinion.createdAt).toLocaleDateString('ko-KR')}
+                    timestamp={new Date(opinion.createdAt).toLocaleDateString(
+                      "ko-KR",
+                    )}
                     onClick={() => setLocation(`/opinion/${opinion.id}`)}
                   />
                 ))
@@ -528,7 +598,7 @@ export default function AgendaDetailPage() {
                   <p className="text-muted-foreground">관련 의견이 없습니다.</p>
                 </div>
               )}
-              
+
               <div className="fixed bottom-20 md:bottom-0 left-0 right-0 bg-card border-t border-card-border p-4 z-30">
                 <div className="max-w-7xl mx-auto flex gap-3">
                   <Textarea
@@ -554,25 +624,36 @@ export default function AgendaDetailPage() {
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">옥천신문</h3>
                 {agenda?.okinewsUrl ? (
-                  <Card 
-                    className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                  <Card
+                    className="p-6 hover-elevate active-elevate-2 cursor-pointer"
                     data-testid="card-okinews-link"
-                    onClick={() => window.open(agenda.okinewsUrl!, '_blank')}
+                    onClick={() => window.open(agenda.okinewsUrl!, "_blank")}
                   >
                     <div className="flex items-center gap-4">
                       <ExternalLink className="w-5 h-5 text-muted-foreground" />
                       <div className="flex-1">
-                        <h4 className="font-medium break-all">{agenda.okinewsUrl}</h4>
-                        <p className="text-sm text-muted-foreground">옥천신문 기사</p>
+                        <h4 className="font-medium break-all">
+                          {agenda.okinewsUrl}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          옥천신문 기사
+                        </p>
                       </div>
                     </div>
                   </Card>
                 ) : (
                   <Card className="p-6 text-center">
-                    <p className="text-muted-foreground mb-4">아직 취재 전이에요. 취재를 요청해보세요.</p>
-                    <Button 
+                    <p className="text-muted-foreground mb-4">
+                      아직 취재 전이에요. 취재를 요청해보세요.
+                    </p>
+                    <Button
                       variant="outline"
-                      onClick={() => window.open('http://www.okinews.com/bbs/writeForm.html?mode=input&table=bbs_43&category=', '_blank')}
+                      onClick={() =>
+                        window.open(
+                          "http://www.okinews.com/bbs/writeForm.html?mode=input&table=bbs_43&category=",
+                          "_blank",
+                        )
+                      }
                       data-testid="button-request-coverage"
                     >
                       취재 요청하기
@@ -585,24 +666,28 @@ export default function AgendaDetailPage() {
                 <h3 className="text-lg font-semibold">참고링크</h3>
                 {agenda?.referenceLinks && agenda.referenceLinks.length > 0 ? (
                   agenda.referenceLinks.map((link, index) => (
-                    <Card 
-                      key={`link-${index}`} 
-                      className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                    <Card
+                      key={`link-${index}`}
+                      className="p-6 hover-elevate active-elevate-2 cursor-pointer"
                       data-testid={`card-reference-link-${index}`}
-                      onClick={() => window.open(link, '_blank')}
+                      onClick={() => window.open(link, "_blank")}
                     >
                       <div className="flex items-center gap-4">
                         <ExternalLink className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
                           <h4 className="font-medium break-all">{link}</h4>
-                          <p className="text-sm text-muted-foreground">외부 링크</p>
+                          <p className="text-sm text-muted-foreground">
+                            외부 링크
+                          </p>
                         </div>
                       </div>
                     </Card>
                   ))
                 ) : (
                   <Card className="p-6 text-center">
-                    <p className="text-muted-foreground">등록된 참고링크가 없습니다.</p>
+                    <p className="text-muted-foreground">
+                      등록된 참고링크가 없습니다.
+                    </p>
                   </Card>
                 )}
               </div>
@@ -611,24 +696,30 @@ export default function AgendaDetailPage() {
                 <h3 className="text-lg font-semibold">첨부파일</h3>
                 {agenda?.referenceFiles && agenda.referenceFiles.length > 0 ? (
                   agenda.referenceFiles.map((file, index) => (
-                    <Card 
-                      key={`file-${index}`} 
-                      className="p-6 hover-elevate active-elevate-2 cursor-pointer" 
+                    <Card
+                      key={`file-${index}`}
+                      className="p-6 hover-elevate active-elevate-2 cursor-pointer"
                       data-testid={`card-reference-file-${index}`}
-                      onClick={() => window.open(file, '_blank')}
+                      onClick={() => window.open(file, "_blank")}
                     >
                       <div className="flex items-center gap-4">
                         <FileText className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <h4 className="font-medium">{file.split('/').pop() || file}</h4>
-                          <p className="text-sm text-muted-foreground">첨부 파일</p>
+                          <h4 className="font-medium">
+                            {file.split("/").pop() || file}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            첨부 파일
+                          </p>
                         </div>
                       </div>
                     </Card>
                   ))
                 ) : (
                   <Card className="p-6 text-center">
-                    <p className="text-muted-foreground">등록된 첨부파일이 없습니다.</p>
+                    <p className="text-muted-foreground">
+                      등록된 첨부파일이 없습니다.
+                    </p>
                   </Card>
                 )}
               </div>
@@ -637,9 +728,9 @@ export default function AgendaDetailPage() {
                 <h3 className="text-lg font-semibold">타 지역 정책 사례</h3>
                 {agenda?.regionalCases && agenda.regionalCases.length > 0 ? (
                   agenda.regionalCases.map((caseItem, index) => (
-                    <Card 
-                      key={`case-${index}`} 
-                      className="p-6" 
+                    <Card
+                      key={`case-${index}`}
+                      className="p-6"
                       data-testid={`card-regional-case-${index}`}
                     >
                       <p className="text-sm">{caseItem}</p>
@@ -647,7 +738,9 @@ export default function AgendaDetailPage() {
                   ))
                 ) : (
                   <Card className="p-6 text-center">
-                    <p className="text-muted-foreground">등록된 타 지역 정책 사례가 없습니다.</p>
+                    <p className="text-muted-foreground">
+                      등록된 타 지역 정책 사례가 없습니다.
+                    </p>
                   </Card>
                 )}
               </div>
@@ -657,7 +750,11 @@ export default function AgendaDetailPage() {
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-agenda" closeButtonTestId="button-close-edit-dialog">
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          data-testid="dialog-edit-agenda"
+          closeButtonTestId="button-close-edit-dialog"
+        >
           <DialogHeader>
             <DialogTitle>안건 수정</DialogTitle>
             <DialogDescription>
@@ -691,8 +788,14 @@ export default function AgendaDetailPage() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-status">상태</Label>
-              <Select value={editedStatus} onValueChange={(value: any) => setEditedStatus(value)}>
-                <SelectTrigger id="edit-status" data-testid="select-edit-status">
+              <Select
+                value={editedStatus}
+                onValueChange={(value: any) => setEditedStatus(value)}
+              >
+                <SelectTrigger
+                  id="edit-status"
+                  data-testid="select-edit-status"
+                >
                   <SelectValue placeholder="상태를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
@@ -724,7 +827,7 @@ export default function AgendaDetailPage() {
                         value={link}
                         readOnly
                         className="w-full"
-                        style={{ textOverflow: 'ellipsis' }}
+                        style={{ textOverflow: "ellipsis" }}
                         title={link}
                         data-testid={`input-reference-link-${index}`}
                       />
@@ -767,7 +870,12 @@ export default function AgendaDetailPage() {
                   <div key={index} className="flex items-center gap-2 min-w-0">
                     <div className="flex-1 min-w-0 flex items-center gap-2 p-2 border rounded-md overflow-hidden">
                       <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm truncate min-w-0 flex-1 block" title={file.split('/').pop() || file}>{file.split('/').pop() || file}</span>
+                      <span
+                        className="text-sm truncate min-w-0 flex-1 block"
+                        title={file.split("/").pop() || file}
+                      >
+                        {file.split("/").pop() || file}
+                      </span>
                     </div>
                     <Button
                       size="icon"
@@ -796,7 +904,9 @@ export default function AgendaDetailPage() {
                     data-testid="button-upload-file"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {uploadFileMutation.isPending ? "업로드 중..." : "파일 업로드"}
+                    {uploadFileMutation.isPending
+                      ? "업로드 중..."
+                      : "파일 업로드"}
                   </Button>
                 </div>
               </div>
