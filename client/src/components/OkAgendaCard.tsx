@@ -76,7 +76,7 @@ export default function OkAgendaCard({
           {" "}
           {/* mt-auto: 아래로 밀어내기 */}
           <div
-            className="flex-col items-center gap-3 px-3 py-1.5 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full transition-colors cursor-default"
+            className="flex flex-col items-center gap-3 px-3 py-1.5 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full transition-colors cursor-default"
             onClick={(e) => e.stopPropagation()} // 트레이 눌렀을 때 카드 이동 방지
           >
             {/* 1. 북마크 버튼 (Button 컴포넌트 X -> 일반 button O) */}
