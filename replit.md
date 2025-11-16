@@ -3,6 +3,20 @@
 This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
 ## Recent Updates (2024-11-16)
+
+### Cluster Management Page Improvements
+- **Page Title Unification**: Changed both sidebar and page header from "클러스터 관리" to "주민 의견 관리" for consistency
+- **Cluster Search**: Added Combobox component with search functionality when adding uncategorized opinions to existing clusters - users can now search clusters by title instead of scrolling through dropdown
+- **Keyword Tags System**: 
+  - Added `tags` field (text array) to both clusters and agendas tables in database schema
+  - Tags display as outline badges below cluster/agenda summaries
+  - Supports keyword-based labeling for easier admin comprehension (e.g., "버스 증차", "응급 상황 불안")
+- **Layout Changes**:
+  - Changed from single-column to 2-column grid layout for cluster cards (responsive: 1 column on mobile, 2 on desktop)
+  - Moved action buttons ("안건으로 만들기", "의견 보기") below summary section for cleaner visual hierarchy
+- **Opinion Removal Confirmation**: Added AlertDialog confirmation when excluding opinions from clusters to prevent accidental deletions - dialog clearly shows "클러스터에서 제외 X" and explains that excluded opinions move to uncategorized
+
+## Previous Updates (2024-11-16)
 - **Admin Dashboard Analytics Enhancement**: Improved admin dashboard with enhanced analytics and insights
   - Replaced "오늘 신규 의견" card with "오늘의 주민 의견 동향" featuring weekly opinion trend bar chart
   - Chart highlights today's data in blue for easy identification

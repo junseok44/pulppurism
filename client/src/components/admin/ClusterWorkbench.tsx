@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +39,7 @@ type OpinionWithUser = Opinion & {
 
 function ClusterCard({ cluster }: { cluster: Cluster }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [opinionToRemove, setOpinionToRemove] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -87,69 +89,65 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
     <>
       <Card className="overflow-hidden" data-testid={`cluster-${cluster.id}`}>
         <div className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold">{cluster.title}</h3>
-                <Badge variant="secondary">클러스터</Badge>
-                {cluster.agendaId && (
-                  <Badge variant="default">안건 생성됨</Badge>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">{cluster.summary}</p>
-              {cluster.tags && cluster.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {cluster.tags.map((tag, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {cluster.opinionCount}개 의견
-                </span>
-                {cluster.similarity && (
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    유사도 {cluster.similarity}%
-                  </span>
-                )}
-              </div>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-semibold">{cluster.title}</h3>
+            <Badge variant="secondary">클러스터</Badge>
+            {cluster.agendaId && (
+              <Badge variant="default">안건 생성됨</Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">{cluster.summary}</p>
+          {cluster.tags && cluster.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {cluster.tags.map((tag, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
             </div>
-            <div className="flex gap-2">
-              {!cluster.agendaId && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setLocation(`/admin/agendas/new?clusterId=${cluster.id}`)}
-                  data-testid={`button-create-agenda-${cluster.id}`}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  안건으로 만들기
-                </Button>
-              )}
+          )}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <span className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              {cluster.opinionCount}개 의견
+            </span>
+            {cluster.similarity && (
+              <span className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                유사도 {cluster.similarity}%
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {!cluster.agendaId && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                data-testid={`button-toggle-${cluster.id}`}
+                onClick={() => setLocation(`/admin/agendas/new?clusterId=${cluster.id}`)}
+                data-testid={`button-create-agenda-${cluster.id}`}
               >
-                {isExpanded ? (
-                  <>
-                    <ChevronUp className="w-4 h-4 mr-2" />
-                    접기
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4 mr-2" />
-                    의견 보기
-                  </>
-                )}
+                <FileText className="w-4 h-4 mr-2" />
+                안건으로 만들기
               </Button>
-            </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              data-testid={`button-toggle-${cluster.id}`}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-2" />
+                  접기
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  의견 보기
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
@@ -195,8 +193,7 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeOpinionMutation.mutate(opinion.id)}
-                        disabled={removeOpinionMutation.isPending}
+                        onClick={() => setOpinionToRemove(opinion.id)}
                         data-testid={`button-remove-${opinion.id}`}
                         title="클러스터에서 제외"
                       >
@@ -216,6 +213,31 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
         </div>
       )}
     </Card>
+
+    <AlertDialog open={!!opinionToRemove} onOpenChange={(open) => !open && setOpinionToRemove(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>클러스터에서 제외</AlertDialogTitle>
+          <AlertDialogDescription>
+            이 의견을 클러스터에서 제외하시겠습니까? 제외된 의견은 미분류 의견으로 이동됩니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (opinionToRemove) {
+                removeOpinionMutation.mutate(opinionToRemove);
+                setOpinionToRemove(null);
+              }
+            }}
+            data-testid="confirm-remove-opinion"
+          >
+            클러스터에서 제외 X
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
@@ -381,15 +403,17 @@ export default function ClusterWorkbench() {
             </div>
           ) : clusters.length > 0 ? (
             <>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-muted-foreground">
                   유사도가 높은 순서로 정렬됨
                 </p>
               </div>
 
-              {clusters.map((cluster) => (
-                <ClusterCard key={cluster.id} cluster={cluster} />
-              ))}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {clusters.map((cluster) => (
+                  <ClusterCard key={cluster.id} cluster={cluster} />
+                ))}
+              </div>
             </>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
