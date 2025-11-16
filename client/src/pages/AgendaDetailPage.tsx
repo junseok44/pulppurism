@@ -33,6 +33,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Agenda, Category, Opinion, User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { SiGoogle, SiKakaotalk } from "react-icons/si";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -77,6 +78,16 @@ export default function AgendaDetailPage() {
   const [newReferenceLink, setNewReferenceLink] = useState("");
   const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [providers, setProviders] = useState<{google: boolean; kakao: boolean} | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/providers")
+      .then(res => res.json())
+      .then(data => setProviders(data))
+      .catch(() => setProviders({ google: false, kakao: false }));
+  }, []);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/auth/me"],
@@ -289,12 +300,7 @@ export default function AgendaDetailPage() {
 
   const handleCommentSubmit = () => {
     if (!user) {
-      toast({
-        title: "로그인이 필요합니다",
-        description: "의견을 작성하려면 로그인해주세요.",
-        variant: "destructive",
-      });
-      setLocation("/login");
+      setShowLoginDialog(true);
       return;
     }
     if (comment.trim()) {
@@ -304,12 +310,7 @@ export default function AgendaDetailPage() {
 
   const handleVote = (voteType: "agree" | "disagree" | "neutral" | null) => {
     if (!user) {
-      toast({
-        title: "로그인이 필요합니다",
-        description: "투표 기능을 사용하려면 로그인해주세요.",
-        variant: "destructive",
-      });
-      setLocation("/login");
+      setShowLoginDialog(true);
       return;
     }
     
@@ -317,6 +318,40 @@ export default function AgendaDetailPage() {
       deleteVoteMutation.mutate();
     } else {
       voteMutation.mutate(voteType);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/demo-login", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setShowLoginDialog(false);
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Demo login failed:", error);
+    }
+  };
+
+  const handleKakaoLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/demo-login", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setShowLoginDialog(false);
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Demo login failed:", error);
     }
   };
 
@@ -995,6 +1030,58 @@ export default function AgendaDetailPage() {
               {updateAgendaMutation.isPending ? "저장 중..." : "저장"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent data-testid="dialog-login">
+          <DialogHeader>
+            <DialogTitle>로그인</DialogTitle>
+            <DialogDescription>
+              {providers && (providers.google || providers.kakao)
+                ? "소셜 계정으로 간편하게 로그인하세요"
+                : "OAuth 인증 설정이 필요합니다"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          {providers && (providers.google || providers.kakao) ? (
+            <>
+              <div className="space-y-3">
+                {providers?.google && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    onClick={handleGoogleLogin}
+                    data-testid="button-google-login"
+                  >
+                    <SiGoogle className="w-5 h-5" />
+                    Google로 로그인
+                  </Button>
+                )}
+                {providers?.kakao && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    onClick={handleKakaoLogin}
+                    data-testid="button-kakao-login"
+                  >
+                    <SiKakaotalk className="w-5 h-5 text-yellow-500" />
+                    Kakao로 로그인
+                  </Button>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground text-center mt-4">
+                로그인하면 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              <p className="mb-3">OAuth 인증 키가 설정되지 않았습니다.</p>
+              <p className="text-xs">
+                관리자에게 문의하거나 환경 변수를 설정해주세요.
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
