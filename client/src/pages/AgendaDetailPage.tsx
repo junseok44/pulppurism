@@ -34,6 +34,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Agenda, Category, Opinion, User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { SiGoogle, SiKakaotalk } from "react-icons/si";
+import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -65,7 +66,7 @@ export default function AgendaDetailPage() {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [editedStatus, setEditedStatus] = useState<
-    "voting" | "reviewing" | "completed"
+    "voting" | "reviewing" | "passed" | "rejected"
   >("voting");
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
   const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>(
@@ -422,18 +423,6 @@ export default function AgendaDetailPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "voting":
-        return "투표중";
-      case "reviewing":
-        return "검토중";
-      case "completed":
-        return "답변 및 결과";
-      default:
-        return status;
-    }
-  };
 
   const getTimelineSteps = (status: string, createdAt: string) => {
     const createdDate = new Date(createdAt)
@@ -555,7 +544,9 @@ export default function AgendaDetailPage() {
                 <Badge variant="secondary">
                   {agenda.category?.name || "기타"}
                 </Badge>
-                <Badge variant="outline">{getStatusLabel(agenda.status)}</Badge>
+                <Badge className={`border ${getStatusBadgeClass(agenda.status)}`}>
+                  {getStatusLabel(agenda.status)}
+                </Badge>
               </div>
               <h1
                 className="text-3xl font-bold"
