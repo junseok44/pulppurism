@@ -6,9 +6,15 @@ import CategoryFilter from "@/components/CategoryFilter";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Filter, ChevronDown } from "lucide-react";
 import type { Agenda, Category } from "@shared/schema";
 import OkAgendaCard from "@/components/OkAgendaCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -17,11 +23,13 @@ interface AgendaWithCategory extends Agenda {
 }
 
 type AgendaStatus = "all" | "voting" | "reviewing" | "completed";
+type SortOption = "latest" | "views" | "votes";
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [statusFilter, setStatusFilter] = useState<AgendaStatus>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("latest");
 
   const {
     data: categories,
@@ -62,6 +70,34 @@ export default function AgendaListPage() {
       (agenda) => agenda.category?.name === selectedCategoryName
     );
   }
+
+  const sortedAgendas = [...filteredAgendas].sort((a, b) => {
+    switch (sortOption) {
+      case "latest":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "views":
+        return b.viewCount - a.viewCount;
+      case "votes":
+        return b.voteCount - a.voteCount;
+      default:
+        return 0;
+    }
+  });
+
+  const getStatusFilterLabel = () => {
+    switch (statusFilter) {
+      case "all":
+        return "전체";
+      case "voting":
+        return "투표중";
+      case "reviewing":
+        return "검토중";
+      case "completed":
+        return "완료";
+      default:
+        return "진행상황에 따라 보기";
+    }
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -142,42 +178,82 @@ export default function AgendaListPage() {
               </div>
             </div>
           )}
-          {/* 상태 필터 */}
-          <div className="flex justify-end mb-3">
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("all")}
-                data-testid="button-filter-all"
-              >
-                전체
-              </Button>
-              <Button
-                variant={statusFilter === "voting" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("voting")}
-                data-testid="button-filter-voting"
-              >
-                투표중
-              </Button>
-              <Button
-                variant={statusFilter === "reviewing" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("reviewing")}
-                data-testid="button-filter-reviewing"
-              >
-                검토중
-              </Button>
-              <Button
-                variant={statusFilter === "completed" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("completed")}
-                data-testid="button-filter-completed"
-              >
-                완료
-              </Button>
-            </div>
+          {/* 정렬 및 필터 */}
+          <div className="flex items-center justify-between mb-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  data-testid="button-sort-dropdown"
+                >
+                  {sortOption === "latest" && "최신순"}
+                  {sortOption === "views" && "조회수순"}
+                  {sortOption === "votes" && "투표순"}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" data-testid="dropdown-sort-menu">
+                <DropdownMenuItem 
+                  onClick={() => setSortOption("latest")}
+                  data-testid="menu-item-sort-latest"
+                >
+                  최신순
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortOption("views")}
+                  data-testid="menu-item-sort-views"
+                >
+                  조회수순
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortOption("votes")}
+                  data-testid="menu-item-sort-votes"
+                >
+                  투표순
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  data-testid="button-status-filter-dropdown"
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  {getStatusFilterLabel()}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" data-testid="dropdown-status-menu">
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("all")}
+                  data-testid="menu-item-filter-all"
+                >
+                  전체
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("voting")}
+                  data-testid="menu-item-filter-voting"
+                >
+                  투표중
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("reviewing")}
+                  data-testid="menu-item-filter-reviewing"
+                >
+                  검토중
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("completed")}
+                  data-testid="menu-item-filter-completed"
+                >
+                  완료
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* 카테고리 에러 체크 부분인데, 위에서 null로 막아둬서 무조건 통과됨 */}
@@ -208,8 +284,8 @@ export default function AgendaListPage() {
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-            ) : filteredAgendas.length > 0 ? (
-              filteredAgendas.map((agenda) => (
+            ) : sortedAgendas.length > 0 ? (
+              sortedAgendas.map((agenda) => (
                 <AgendaCard
                   key={agenda.id}
                   id={agenda.id}
