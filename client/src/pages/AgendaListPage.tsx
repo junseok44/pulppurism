@@ -98,8 +98,6 @@ export default function AgendaListPage() {
         return "투표중";
       case "reviewing":
         return "검토중";
-      case "completed":
-        return "완료";
       case "passed":
         return "통과";
       case "rejected":
@@ -115,8 +113,6 @@ export default function AgendaListPage() {
         return "투표중";
       case "reviewing":
         return "검토중";
-      case "completed":
-        return "완료";
       case "passed":
         return "통과";
       case "rejected":
@@ -298,12 +294,6 @@ export default function AgendaListPage() {
                   data-testid="menu-item-filter-reviewing"
                 >
                   검토중
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setStatusFilter("completed")}
-                  data-testid="menu-item-filter-completed"
-                >
-                  완료
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setStatusFilter("passed")}
