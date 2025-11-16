@@ -549,28 +549,28 @@ export default function AgendaDetailPage() {
                   {agenda.description}
                 </p>
               </div>
-                <div className="h-[20vh]">
-                  <VotingWidget
-                    agreeCount={voteStats?.agree || 0}
-                    neutralCount={voteStats?.neutral || 0}
-                    disagreeCount={voteStats?.disagree || 0}
-                    userVote={userVote?.voteType}
-                    onVote={handleVote}
-                    disabled={voteMutation.isPending}
-                  />
-                </div>
+              <div className="h-[30vh]">
+                <VotingWidget
+                  agreeCount={voteStats?.agree || 0}
+                  neutralCount={voteStats?.neutral || 0}
+                  disagreeCount={voteStats?.disagree || 0}
+                  userVote={userVote?.voteType}
+                  onVote={handleVote}
+                  disabled={voteMutation.isPending}
+                />
+              </div>
 
-                <Timeline steps={timelineSteps} />
+              <Timeline steps={timelineSteps} />
 
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">답변 및 결과</h2>
-                  <Card className="p-6">
-                    <p className="text-muted-foreground">
-                      현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
-                      등록됩니다.
-                    </p>
-                  </Card>
-                </div>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">답변 및 결과</h2>
+                <Card className="p-6">
+                  <p className="text-muted-foreground">
+                    현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
+                    등록됩니다.
+                  </p>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="opinions" className="space-y-4 mt-6 pb-32">
