@@ -159,18 +159,22 @@ export function setupAuth(app: Express) {
   }
 
   passport.serializeUser((user: Express.User, done) => {
+    console.log("[DEBUG serializeUser] Serializing user:", user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: string, done) => {
+    console.log("[DEBUG deserializeUser] Deserializing user ID:", id);
     try {
       const userResults = await db
         .select()
         .from(users)
         .where(eq(users.id, id))
         .limit(1);
+      console.log("[DEBUG deserializeUser] Found user:", userResults[0]?.id);
       done(null, userResults[0] || null);
     } catch (error) {
+      console.error("[DEBUG deserializeUser] Error:", error);
       done(error);
     }
   });
