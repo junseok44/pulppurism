@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -23,11 +23,13 @@ export default function NewAgendaForm() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [clusterId, setClusterId] = useState("");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlClusterId = urlParams.get('clusterId');
+  const searchParams = useMemo(() => new URLSearchParams(location.split('?')[1] || ''), [location]);
+  const urlClusterId = searchParams.get('clusterId');
+  const urlTitle = searchParams.get('title');
+  const urlSummary = searchParams.get('summary');
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -39,22 +41,20 @@ export default function NewAgendaForm() {
 
   const { data: selectedCluster, isLoading: clusterLoading } = useQuery<Cluster>({
     queryKey: ["/api/clusters", urlClusterId],
-    enabled: !!urlClusterId,
+    enabled: !!urlClusterId && !urlTitle && !urlSummary,
   });
 
   useEffect(() => {
-    console.log("URL Cluster ID:", urlClusterId);
-    console.log("Selected Cluster:", selectedCluster);
-    console.log("Cluster Loading:", clusterLoading);
-    
-    if (selectedCluster) {
-      console.log("Setting title to:", selectedCluster.title);
-      console.log("Setting description to:", selectedCluster.summary);
+    if (urlTitle && urlSummary && urlClusterId) {
+      setTitle(urlTitle);
+      setDescription(urlSummary);
+      setClusterId(urlClusterId);
+    } else if (selectedCluster) {
       setTitle(selectedCluster.title);
       setDescription(selectedCluster.summary);
       setClusterId(selectedCluster.id);
     }
-  }, [selectedCluster, urlClusterId, clusterLoading]);
+  }, [selectedCluster, urlClusterId, urlTitle, urlSummary, clusterLoading]);
 
   const createMutation = useMutation({
     mutationFn: async () => {

@@ -37,6 +37,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/active-agendas" component={AdminDashboard} />
       <Route path="/admin/opinions" component={AdminDashboard} />
+      <Route path="/admin/opinions/today" component={AdminDashboard} />
       <Route path="/admin/opinions/:subpage" component={AdminDashboard} />
       <Route path="/admin/agendas" component={AdminDashboard} />
       <Route path="/admin/agendas/:subpage" component={AdminDashboard} />

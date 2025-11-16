@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import ClusterWorkbench from "@/components/admin/ClusterWorkbench";
 import ReportManagement from "@/components/admin/ReportManagement";
 import AllOpinionsManagement from "@/components/admin/AllOpinionsManagement";
+import TodayOpinionsPage from "@/pages/admin/TodayOpinionsPage";
 import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Cluster, Opinion, Report } from "@shared/schema";
@@ -11,6 +12,7 @@ export default function AdminOpinionsPage() {
   const [, setLocation] = useLocation();
   const [matchClusters] = useRoute("/admin/opinions/clusters");
   const [matchReports] = useRoute("/admin/opinions/reports");
+  const [matchToday] = useRoute("/admin/opinions/today");
   const [matchAll] = useRoute("/admin/opinions/all");
 
   const { data: clusters = [] } = useQuery<Cluster[]>({
@@ -37,6 +39,10 @@ export default function AdminOpinionsPage() {
 
   if (matchReports) {
     return <ReportManagement />;
+  }
+
+  if (matchToday) {
+    return <TodayOpinionsPage />;
   }
 
   if (matchAll) {

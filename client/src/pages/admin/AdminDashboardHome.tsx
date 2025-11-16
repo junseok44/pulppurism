@@ -11,23 +11,25 @@ import {
   ArrowRight,
   Loader2,
   Database,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Report } from "@shared/schema";
-import { formatDistanceToNow } from "date-fns";
+import type { Report, Opinion } from "@shared/schema";
+import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useState } from "react";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
 
 type DashboardStats = {
@@ -58,9 +60,15 @@ type WeeklyOpinion = {
   isToday: boolean;
 };
 
+type OpinionWithUser = Opinion & {
+  username: string;
+  displayName: string | null;
+};
+
 export default function AdminDashboardHome() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/stats/dashboard"],
@@ -72,6 +80,11 @@ export default function AdminDashboardHome() {
 
   const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
     queryKey: ["/api/reports"],
+  });
+
+  const { data: clusterOpinions = [] } = useQuery<OpinionWithUser[]>({
+    queryKey: ["/api/clusters", expandedClusterId, "opinions"],
+    enabled: !!expandedClusterId,
   });
 
   const seedOpinionsMutation = useMutation({
@@ -142,27 +155,27 @@ export default function AdminDashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <Card className="p-6 md:col-span-2">
+        <Card className="p-6 md:col-span-2 hover-elevate active-elevate-2 cursor-pointer" onClick={() => setLocation("/admin/opinions/today")} data-testid="card-today-opinions">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-primary" />
             <p className="text-sm font-medium text-muted-foreground">오늘의 주민 의견 동향</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyOpinions}>
+              <LineChart data={weeklyOpinions}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                  {weeklyOpinions.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--muted))"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -180,10 +193,10 @@ export default function AdminDashboardHome() {
             <p className="text-xs text-muted-foreground mt-1">진행 중</p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" onClick={() => setLocation("/admin/opinions/reports")} data-testid="card-report-management">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-5 h-5 text-destructive" />
-              <p className="text-sm font-medium text-muted-foreground">미처리 신고</p>
+              <p className="text-sm font-medium text-muted-foreground">주민 의견 신고 관리</p>
             </div>
             <p className="text-3xl font-bold">{stats.pendingReports}</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -221,7 +234,7 @@ export default function AdminDashboardHome() {
               stats.recentClusters.map((cluster) => (
                 <Card
                   key={cluster.id}
-                  className="p-4 hover-elevate active-elevate-2"
+                  className="p-4"
                   data-testid={`cluster-card-${cluster.id}`}
                 >
                   <div className="space-y-2">
@@ -258,22 +271,76 @@ export default function AdminDashboardHome() {
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={() => setLocation("/admin/opinions/clusters")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedClusterId(
+                            expandedClusterId === cluster.id ? null : cluster.id
+                          );
+                        }}
                         data-testid={`button-view-cluster-${cluster.id}`}
                       >
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        의견 보기
+                        {expandedClusterId === cluster.id ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            의견 숨기기
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            의견 보기
+                          </>
+                        )}
                       </Button>
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => setLocation(`/admin/agendas/new?clusterId=${cluster.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/admin/agendas/new?clusterId=${cluster.id}&title=${encodeURIComponent(cluster.title)}&summary=${encodeURIComponent(cluster.summary)}`);
+                        }}
                         data-testid={`button-create-agenda-${cluster.id}`}
                       >
                         <FileText className="w-4 h-4 mr-2" />
                         안건 생성
                       </Button>
                     </div>
+
+                    {expandedClusterId === cluster.id && (
+                      <div className="mt-3 pt-3 border-t space-y-2">
+                        <p className="text-sm font-medium mb-2">관련 의견 ({clusterOpinions.length})</p>
+                        {clusterOpinions.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            의견을 불러오는 중...
+                          </p>
+                        ) : (
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {clusterOpinions.map((opinion) => (
+                              <div
+                                key={opinion.id}
+                                className="p-3 rounded-md bg-muted/50 hover-elevate cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocation(`/opinion/${opinion.id}`);
+                                }}
+                                data-testid={`opinion-${opinion.id}`}
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <p className="text-sm font-medium">
+                                    {opinion.displayName || opinion.username}
+                                  </p>
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(new Date(opinion.createdAt), "MM/dd HH:mm")}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {opinion.content}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))
