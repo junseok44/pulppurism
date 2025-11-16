@@ -80,6 +80,13 @@ export default function AgendaDetailPage() {
   const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [showOkinewsForm, setShowOkinewsForm] = useState(false);
+  const [showReferenceLinkForm, setShowReferenceLinkForm] = useState(false);
+  const [showRegionalCaseForm, setShowRegionalCaseForm] = useState(false);
+  const [tempOkinewsUrl, setTempOkinewsUrl] = useState("");
+  const [tempReferenceLink, setTempReferenceLink] = useState("");
+  const [tempRegionalCase, setTempRegionalCase] = useState("");
+  
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [providers, setProviders] = useState<{google: boolean; kakao: boolean} | null>(null);
 
@@ -679,7 +686,58 @@ export default function AgendaDetailPage() {
 
             <TabsContent value="references" className="space-y-6 mt-6">
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">옥천신문</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">옥천신문</h3>
+                  {user && !agenda?.okinewsUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowOkinewsForm(!showOkinewsForm)}
+                      data-testid="button-add-okinews"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  )}
+                </div>
+                {showOkinewsForm && (
+                  <Card className="p-4">
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="옥천신문 기사 URL을 입력하세요"
+                        value={tempOkinewsUrl}
+                        onChange={(e) => setTempOkinewsUrl(e.target.value)}
+                        data-testid="input-add-okinews-url"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (tempOkinewsUrl.trim()) {
+                            updateAgendaMutation.mutate({
+                              okinewsUrl: tempOkinewsUrl.trim(),
+                            });
+                            setTempOkinewsUrl("");
+                            setShowOkinewsForm(false);
+                          }
+                        }}
+                        disabled={!tempOkinewsUrl.trim() || updateAgendaMutation.isPending}
+                        data-testid="button-submit-okinews"
+                      >
+                        {updateAgendaMutation.isPending ? "추가 중..." : "추가"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowOkinewsForm(false);
+                          setTempOkinewsUrl("");
+                        }}
+                        data-testid="button-cancel-okinews"
+                      >
+                        취소
+                      </Button>
+                    </div>
+                  </Card>
+                )}
                 {agenda?.okinewsUrl ? (
                   <Card
                     className="p-6 hover-elevate active-elevate-2 cursor-pointer"
@@ -698,7 +756,7 @@ export default function AgendaDetailPage() {
                       </div>
                     </div>
                   </Card>
-                ) : (
+                ) : !showOkinewsForm ? (
                   <Card className="p-6 text-center">
                     <p className="text-muted-foreground mb-4">
                       아직 취재 전이에요. 취재를 요청해보세요.
@@ -716,11 +774,63 @@ export default function AgendaDetailPage() {
                       취재 요청하기
                     </Button>
                   </Card>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">참고링크</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">참고링크</h3>
+                  {user && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowReferenceLinkForm(!showReferenceLinkForm)}
+                      data-testid="button-add-reference-link"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  )}
+                </div>
+                {showReferenceLinkForm && (
+                  <Card className="p-4">
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="참고링크 URL을 입력하세요"
+                        value={tempReferenceLink}
+                        onChange={(e) => setTempReferenceLink(e.target.value)}
+                        data-testid="input-add-reference-link"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (tempReferenceLink.trim()) {
+                            const currentLinks = agenda?.referenceLinks || [];
+                            updateAgendaMutation.mutate({
+                              referenceLinks: [...currentLinks, tempReferenceLink.trim()],
+                            });
+                            setTempReferenceLink("");
+                            setShowReferenceLinkForm(false);
+                          }
+                        }}
+                        disabled={!tempReferenceLink.trim() || updateAgendaMutation.isPending}
+                        data-testid="button-submit-reference-link"
+                      >
+                        {updateAgendaMutation.isPending ? "추가 중..." : "추가"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowReferenceLinkForm(false);
+                          setTempReferenceLink("");
+                        }}
+                        data-testid="button-cancel-reference-link"
+                      >
+                        취소
+                      </Button>
+                    </div>
+                  </Card>
+                )}
                 {agenda?.referenceLinks && agenda.referenceLinks.length > 0 ? (
                   agenda.referenceLinks.map((link, index) => (
                     <Card
@@ -740,17 +850,55 @@ export default function AgendaDetailPage() {
                       </div>
                     </Card>
                   ))
-                ) : (
+                ) : !showReferenceLinkForm ? (
                   <Card className="p-6 text-center">
                     <p className="text-muted-foreground">
                       등록된 참고링크가 없습니다.
                     </p>
                   </Card>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">첨부파일</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">첨부파일</h3>
+                  {user && (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            uploadFileMutation.mutate(file);
+                            e.target.value = "";
+                          }
+                        }}
+                        data-testid="input-file-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadFileMutation.isPending}
+                        data-testid="button-add-file"
+                      >
+                        {uploadFileMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            업로드 중...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            추가
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
                 {agenda?.referenceFiles && agenda.referenceFiles.length > 0 ? (
                   agenda.referenceFiles.map((file, index) => (
                     <Card
@@ -782,7 +930,61 @@ export default function AgendaDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">타 지역 정책 사례</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">타 지역 정책 사례</h3>
+                  {user && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRegionalCaseForm(!showRegionalCaseForm)}
+                      data-testid="button-add-regional-case"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  )}
+                </div>
+                {showRegionalCaseForm && (
+                  <Card className="p-4">
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="타 지역 사례를 입력하세요 (예: 서울시 강남구 - 주민참여 예산제 운영)"
+                        value={tempRegionalCase}
+                        onChange={(e) => setTempRegionalCase(e.target.value)}
+                        rows={2}
+                        data-testid="input-add-regional-case"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={() => {
+                            if (tempRegionalCase.trim()) {
+                              const currentCases = agenda?.regionalCases || [];
+                              updateAgendaMutation.mutate({
+                                regionalCases: [...currentCases, tempRegionalCase.trim()],
+                              });
+                              setTempRegionalCase("");
+                              setShowRegionalCaseForm(false);
+                            }
+                          }}
+                          disabled={!tempRegionalCase.trim() || updateAgendaMutation.isPending}
+                          data-testid="button-submit-regional-case"
+                        >
+                          {updateAgendaMutation.isPending ? "추가 중..." : "추가"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowRegionalCaseForm(false);
+                            setTempRegionalCase("");
+                          }}
+                          data-testid="button-cancel-regional-case"
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
                 {agenda?.regionalCases && agenda.regionalCases.length > 0 ? (
                   agenda.regionalCases.map((caseItem, index) => (
                     <Card
@@ -793,13 +995,13 @@ export default function AgendaDetailPage() {
                       <p className="text-sm">{caseItem}</p>
                     </Card>
                   ))
-                ) : (
+                ) : !showRegionalCaseForm ? (
                   <Card className="p-6 text-center">
                     <p className="text-muted-foreground">
                       등록된 타 지역 정책 사례가 없습니다.
                     </p>
                   </Card>
-                )}
+                ) : null}
               </div>
             </TabsContent>
           </Tabs>
