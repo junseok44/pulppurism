@@ -6,7 +6,7 @@ interface VotingWidgetProps {
   neutralCount: number;
   disagreeCount: number;
   userVote?: "agree" | "neutral" | "disagree";
-  onVote?: (vote: "agree" | "neutral" | "disagree") => void;
+  onVote?: (vote: "agree" | "neutral" | "disagree" | null) => void;
   disabled?: boolean;
 }
 
@@ -30,9 +30,16 @@ export default function VotingWidget({
 
   const handleVote = (vote: "agree" | "neutral" | "disagree") => {
     if (disabled) return;
-    setSelectedVote(vote);
-    onVote?.(vote);
-    console.log("Voted:", vote);
+    
+    if (selectedVote === vote) {
+      setSelectedVote(undefined);
+      onVote?.(null);
+      console.log("Vote cancelled");
+    } else {
+      setSelectedVote(vote);
+      onVote?.(vote);
+      console.log("Voted:", vote);
+    }
   };
 
   return (

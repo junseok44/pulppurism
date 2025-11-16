@@ -1333,6 +1333,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(vote || null);
   });
 
+  app.delete("/api/votes/user/:userId/agenda/:agendaId", async (req, res) => {
+    try {
+      const vote = await storage.getVoteByUserAndAgenda(
+        req.params.userId,
+        req.params.agendaId,
+      );
+      
+      if (!vote) {
+        return res.status(404).json({ error: "Vote not found" });
+      }
+
+      await storage.deleteVote(vote.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete vote error:", error);
+      res.status(500).json({ error: "Failed to delete vote" });
+    }
+  });
+
   app.get("/api/clusters", async (req, res) => {
     const { limit, offset, status } = req.query;
     const clusters = await storage.getClusters({

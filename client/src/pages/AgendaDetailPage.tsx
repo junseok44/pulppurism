@@ -143,6 +143,23 @@ export default function AgendaDetailPage() {
     },
   });
 
+  const deleteVoteMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      await apiRequest("DELETE", `/api/votes/user/${user.id}/agenda/${agendaId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/agendas/${agendaId}/votes`],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/votes/user/${user?.id}/agenda/${agendaId}`],
+      });
+    },
+  });
+
   const bookmarkMutation = useMutation({
     mutationFn: async (isBookmarked: boolean) => {
       if (isBookmarked) {
@@ -285,7 +302,7 @@ export default function AgendaDetailPage() {
     }
   };
 
-  const handleVote = (voteType: "agree" | "disagree" | "neutral") => {
+  const handleVote = (voteType: "agree" | "disagree" | "neutral" | null) => {
     if (!user) {
       toast({
         title: "로그인이 필요합니다",
@@ -295,7 +312,12 @@ export default function AgendaDetailPage() {
       setLocation("/login");
       return;
     }
-    voteMutation.mutate(voteType);
+    
+    if (voteType === null) {
+      deleteVoteMutation.mutate();
+    } else {
+      voteMutation.mutate(voteType);
+    }
   };
 
   const handleEditClick = () => {
