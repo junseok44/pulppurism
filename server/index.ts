@@ -14,6 +14,8 @@ declare module 'http' {
   }
 }
 
+app.set('trust proxy', 1);
+
 app.use(session({
   store: new PgStore({
     conString: process.env.DATABASE_URL,
@@ -22,8 +24,9 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'civic-engagement-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     sameSite: 'lax',
