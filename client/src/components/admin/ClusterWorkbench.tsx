@@ -97,6 +97,15 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground mb-3">{cluster.summary}</p>
+              {cluster.tags && cluster.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {cluster.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Users className="w-4 h-4" />

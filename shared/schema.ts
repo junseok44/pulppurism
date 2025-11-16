@@ -99,6 +99,7 @@ export const agendas = pgTable("agendas", {
   referenceLinks: text("reference_links").array(),
   referenceFiles: text("reference_files").array(),
   regionalCases: text("regional_cases").array(),
+  tags: text("tags").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   okinews: boolean("okinews").notNull().default(false),
@@ -147,6 +148,7 @@ export const clusters = pgTable("clusters", {
   opinionCount: integer("opinion_count").notNull().default(0),
   similarity: integer("similarity"),
   agendaId: varchar("agenda_id").references(() => agendas.id),
+  tags: text("tags").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
