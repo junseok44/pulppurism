@@ -4,6 +4,28 @@ This project is a Korean civic engagement platform (주민참여 플랫폼) desi
 
 ## Recent Updates (2024-11-16)
 
+### Bulk Data Import Feature
+- **Admin Import Page**: Created dedicated import page (/admin/import) for importing external article data
+  - File upload interface with JSON file selection
+  - Pre-deletion warning alerts about destructive operation
+  - Real-time import progress with success/failure feedback
+  - Statistics display showing imported opinions and comments count
+  - Data format documentation with example JSON structure
+- **Backend Import API** (/api/admin/import-articles):
+  - Transaction-based processing with automatic rollback on failure
+  - Pre-validation before data deletion to ensure data integrity
+  - Korean datetime parsing utility (parseKoreanDateTime) for "YYYY-MM-DD HH:mm:ss" format
+  - Safe deletion order: opinionClusters → agendaBookmarks → clusters → comments → opinionLikes → opinions
+  - User creation with deduplication (caching by username)
+  - Individual article/comment error handling - continues import on item failures
+  - Returns detailed statistics: importedOpinions, importedComments, skippedArticles
+- **JSON Format Support**:
+  - Articles mapped to opinions table
+  - Comments mapped to comments table
+  - Preserves original timestamps and like counts
+  - Auto-creates users with provider='local' if not existing
+- **Admin Access**: Requires admin authentication, added "데이터 임포트" menu item to admin sidebar
+
 ### Cluster Management Page Improvements
 - **Page Title Unification**: Changed both sidebar and page header from "클러스터 관리" to "주민 의견 관리" for consistency
 - **Cluster Search**: Added Combobox component with search functionality when adding uncategorized opinions to existing clusters - users can now search clusters by title instead of scrolling through dropdown
