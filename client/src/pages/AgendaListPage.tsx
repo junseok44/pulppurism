@@ -16,9 +16,12 @@ interface AgendaWithCategory extends Agenda {
   isBookmarked?: boolean;
 }
 
+type AgendaStatus = "all" | "voting" | "reviewing" | "completed";
+
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
+  const [statusFilter, setStatusFilter] = useState<AgendaStatus>("all");
 
   const {
     data: categories,
@@ -45,24 +48,29 @@ export default function AgendaListPage() {
   });
 
   const allAgendas = agendas || [];
-  const filteredAgendas = selectedCategoryName
-    ? allAgendas.filter(
-        (agenda) => agenda.category?.name === selectedCategoryName,
-      )
-    : allAgendas;
+  
+  let filteredAgendas = allAgendas;
+  
+  if (statusFilter !== "all") {
+    filteredAgendas = filteredAgendas.filter(
+      (agenda) => agenda.status === statusFilter
+    );
+  }
+  
+  if (selectedCategoryName) {
+    filteredAgendas = filteredAgendas.filter(
+      (agenda) => agenda.category?.name === selectedCategoryName
+    );
+  }
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "draft":
-        return "초안";
-      case "active":
-        return "활성";
       case "voting":
-        return "투표 중";
-      case "closed":
-        return "종료";
-      case "implemented":
-        return "시행됨";
+        return "투표중";
+      case "reviewing":
+        return "검토중";
+      case "completed":
+        return "완료";
       default:
         return status;
     }
@@ -134,6 +142,44 @@ export default function AgendaListPage() {
               </div>
             </div>
           )}
+          {/* 상태 필터 */}
+          <div className="flex justify-end mb-3">
+            <div className="flex gap-2">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+                data-testid="button-filter-all"
+              >
+                전체
+              </Button>
+              <Button
+                variant={statusFilter === "voting" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("voting")}
+                data-testid="button-filter-voting"
+              >
+                투표중
+              </Button>
+              <Button
+                variant={statusFilter === "reviewing" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("reviewing")}
+                data-testid="button-filter-reviewing"
+              >
+                검토중
+              </Button>
+              <Button
+                variant={statusFilter === "completed" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("completed")}
+                data-testid="button-filter-completed"
+              >
+                완료
+              </Button>
+            </div>
+          </div>
+
           {/* 카테고리 에러 체크 부분인데, 위에서 null로 막아둬서 무조건 통과됨 */}
           {categoriesError ? (
             <div>카테고리 에러!</div>
