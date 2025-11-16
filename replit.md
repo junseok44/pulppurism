@@ -3,6 +3,13 @@
 This project is a Korean civic engagement platform (주민참여 플랫폼) designed to empower citizens to submit opinions, vote on agendas, and actively participate in local governance. It provides a public-facing interface for residents to engage with local issues and an administrative dashboard for content management, opinion clustering into agendas, and moderation. The application is a full-stack TypeScript project utilizing React for the frontend and Express for the backend, adhering to Material Design principles adapted for a Korean audience with a strong emphasis on accessibility and trust.
 
 ## Recent Updates (2024-11-16)
+- **Admin Dashboard Analytics Enhancement**: Improved admin dashboard with enhanced analytics and insights
+  - Replaced "오늘 신규 의견" card with "오늘의 주민 의견 동향" featuring weekly opinion trend bar chart
+  - Chart highlights today's data in blue for easy identification
+  - Removed "신규 가입자" card from main dashboard (retained in user management page)
+  - Added new "활발한 안건" page (/admin/active-agendas) showing top 20 most active agendas
+  - Activity scoring uses equal-weight formula: voteCount + commentCount + viewCount
+  - Backend APIs added: `/api/admin/stats/weekly-opinions` (7-day opinion trends), `/api/admin/stats/active-agendas` (top active agendas)
 - **Status Badge System Refactoring**: Completed comprehensive refactoring to remove "completed" status
   - Replaced single "completed" status with two distinct outcome statuses: `passed` (통과) and `rejected` (반려)
   - Final status set: `voting`, `reviewing`, `passed`, `rejected` (4 total statuses)
