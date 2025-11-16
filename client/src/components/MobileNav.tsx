@@ -42,47 +42,59 @@ export default function MobileNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border md:hidden z-50" data-testid="nav-mobile">
-        <div className="flex items-center justify-around h-16">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path;
-            return (
-              <Link key={item.path} href={item.path}>
-                <button
-                  className={`flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
-                  data-testid={`nav-${item.label}`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? "fill-current" : ""}`} />
-                  <span className="text-xs font-medium">{item.label}</span>
-                </button>
-              </Link>
-            );
-          })}
-          
-          {user ? (
-            <Link href="/my">
+        <div className="flex items-center h-16">
+          <div className="flex-1 flex justify-center">
+            <Link href="/">
               <button
                 className={`flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg ${
-                  location === "/my" ? "text-primary" : "text-muted-foreground"
+                  location === "/" ? "text-primary" : "text-muted-foreground"
                 }`}
-                data-testid="nav-마이페이지"
+                data-testid="nav-안건"
               >
-                <User className={`w-5 h-5 ${location === "/my" ? "fill-current" : ""}`} />
-                <span className="text-xs font-medium">마이페이지</span>
+                <FileText className={`w-5 h-5 ${location === "/" ? "fill-current" : ""}`} />
+                <span className="text-xs font-medium">안건</span>
               </button>
             </Link>
-          ) : (
-            <button
-              onClick={() => setShowLoginDialog(true)}
-              className="flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg text-muted-foreground"
-              data-testid="nav-로그인"
-            >
-              <LogIn className="w-5 h-5" />
-              <span className="text-xs font-medium">로그인</span>
-            </button>
-          )}
+          </div>
+          
+          <div className="flex-1 flex justify-center">
+            <Link href="/opinions">
+              <button
+                className={`flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg ${
+                  location === "/opinions" ? "text-primary" : "text-muted-foreground"
+                }`}
+                data-testid="nav-주민의견"
+              >
+                <MessageSquare className={`w-5 h-5 ${location === "/opinions" ? "fill-current" : ""}`} />
+                <span className="text-xs font-medium">주민의견</span>
+              </button>
+            </Link>
+          </div>
+          
+          <div className="flex-1 flex justify-center">
+            {user ? (
+              <Link href="/my">
+                <button
+                  className={`flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg ${
+                    location === "/my" ? "text-primary" : "text-muted-foreground"
+                  }`}
+                  data-testid="nav-마이페이지"
+                >
+                  <User className={`w-5 h-5 ${location === "/my" ? "fill-current" : ""}`} />
+                  <span className="text-xs font-medium">마이페이지</span>
+                </button>
+              </Link>
+            ) : (
+              <button
+                onClick={() => setShowLoginDialog(true)}
+                className="flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg text-muted-foreground"
+                data-testid="nav-로그인"
+              >
+                <LogIn className="w-5 h-5" />
+                <span className="text-xs font-medium">로그인</span>
+              </button>
+            )}
+          </div>
         </div>
       </nav>
 
