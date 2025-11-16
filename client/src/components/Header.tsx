@@ -47,7 +47,9 @@ export default function Header() {
       });
       if (res.ok) {
         setShowLoginDialog(false);
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       }
     } catch (error) {
       console.error("Demo login failed:", error);
@@ -62,7 +64,9 @@ export default function Header() {
       });
       if (res.ok) {
         setShowLoginDialog(false);
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       }
     } catch (error) {
       console.error("Demo login failed:", error);
