@@ -28,6 +28,7 @@ export default function NewAgendaForm() {
   const [regionalCases, setRegionalCases] = useState<string[]>([]);
   const [newReferenceLink, setNewReferenceLink] = useState("");
   const [newRegionalCase, setNewRegionalCase] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [, setLocation] = useLocation();
   const search = useSearch();
   const { toast } = useToast();
@@ -98,6 +99,18 @@ export default function NewAgendaForm() {
         await apiRequest("PATCH", `/api/clusters/${clusterId}`, {
           agendaId: agenda.id,
         });
+      }
+
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formData = new FormData();
+          formData.append("file", file);
+          await fetch(`/api/agendas/${agenda.id}/files`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+        }
       }
 
       return agenda;
@@ -317,6 +330,43 @@ export default function NewAgendaForm() {
                       <Plus className="w-4 h-4 mr-2" />
                       추가
                     </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>첨부파일</Label>
+                <div className="space-y-2">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        value={file.name}
+                        readOnly
+                        data-testid={`selected-file-${index}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                        data-testid={`button-remove-file-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          setSelectedFiles([...selectedFiles, ...Array.from(files)]);
+                          e.target.value = "";
+                        }
+                      }}
+                      data-testid="input-file"
+                    />
                   </div>
                 </div>
               </div>
