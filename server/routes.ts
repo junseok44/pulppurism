@@ -253,14 +253,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.login(user, (err) => {
         if (err) {
+          console.error("Login error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        res.json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName,
-          avatarUrl: user.avatarUrl,
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ error: "Session save failed" });
+          }
+          res.json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+          });
         });
       });
     } catch (error) {
@@ -298,14 +305,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.login(user, (err) => {
         if (err) {
+          console.error("Login error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        res.json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName,
-          avatarUrl: user.avatarUrl,
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ error: "Session save failed" });
+          }
+          res.json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+          });
         });
       });
     } catch (error) {
