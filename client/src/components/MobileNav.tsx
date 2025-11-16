@@ -24,12 +24,32 @@ export default function MobileNav() {
       .catch(() => setProviders({ google: false, kakao: false }));
   }, []);
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/demo-login", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Demo login failed:", error);
+    }
   };
 
-  const handleKakaoLogin = () => {
-    window.location.href = "/api/auth/kakao";
+  const handleKakaoLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/demo-login", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Demo login failed:", error);
+    }
   };
 
   const hasAnyProvider = providers && (providers.google || providers.kakao);

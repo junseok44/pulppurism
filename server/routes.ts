@@ -272,6 +272,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/auth/demo-login", async (req, res) => {
+    try {
+      const randomId = randomBytes(4).toString("hex");
+      const demoEmail = `demo_${randomId}@example.com`;
+      const demoUsername = `데모사용자${randomId.substring(0, 4)}`;
+
+      const newUsers = await db
+        .insert(users)
+        .values({
+          username: demoUsername,
+          email: demoEmail,
+          displayName: demoUsername,
+          provider: "local",
+        })
+        .returning();
+
+      const user = newUsers[0];
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+        });
+      });
+    } catch (error) {
+      console.error("Demo login error:", error);
+      res.status(500).json({ error: "Demo login failed" });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
