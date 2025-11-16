@@ -80,7 +80,7 @@ export default function NewAgendaForm() {
         title,
         description,
         categoryId,
-        status: "active",
+        status: "voting",
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });

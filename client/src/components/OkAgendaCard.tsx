@@ -76,32 +76,31 @@ export default function OkAgendaCard({
           {" "}
           {/* mt-auto: 아래로 밀어내기 */}
           <div
-            className="flex flex-col items-center gap-3 px-3 py-1.5 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full transition-colors cursor-default"
+            className="flex flex-col gap-1.5 items-center justify-center cursor-default"
             onClick={(e) => e.stopPropagation()} // 트레이 눌렀을 때 카드 이동 방지
           >
-            {/* 1. 북마크 버튼 (Button 컴포넌트 X -> 일반 button O) */}
-            <div className="flex items-center gap-1.5 text-white/90">
+            {/* 1. 북마크 '원' 버튼 */}
+            <div className="flex flex-col items-center justify-center gap-0.5 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-9 h-9 transition-colors cursor-default">
               <button
-                onClick={handleBookmarkClick} // 👈 아까 만든 함수 연결!
+                onClick={handleBookmarkClick}
                 className="group flex items-center justify-center outline-none"
               >
                 <Bookmark
                   className={`w-4 h-4 transition-transform group-active:scale-90 ${
-                    // 👈 이제 props(isBookmarked)가 아니라 내 상태(marked)를 씀!
                     marked
                       ? "fill-white text-white"
                       : "text-white/70 group-hover:text-white"
                   }`}
                 />
               </button>
-              {/* 댓글 아이콘 옆에 북마크 숫자(count) 보여주기 */}
-              {/* 👇 북마크 숫자도 같이 보고 싶으면 아래 코드 추가 */}
-              <span className="text-xs font-medium text-white">{count}</span>
+              {/* leading-none으로 글자 높이를 타이트하게 잡음 */}
+              <span className="text-xs font-medium text-white leading-none">
+                {count}
+              </span>
             </div>
-            {/* 얇은 구분선 (옵션) */}
-            <div className="w-[1px] h-3 bg-white/20"></div>
-            {/* 2. 댓글 아이콘 */}
-            <div className="flex items-center gap-1.5 text-white/90">
+
+            {/* 2. 댓글 '원' 버튼 */}
+            <div className="flex flex-col items-center justify-center gap-0.5 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-9 h-9 transition-colors cursor-default">
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="text-xs font-medium pt-[1px] leading-none">
                 {commentCount}
