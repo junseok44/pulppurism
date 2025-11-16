@@ -30,7 +30,6 @@ export default function SuccessAgendaPage() {
       "충북 보은군 - 면 단위 보건지소 확대 운영으로 주민 만족도 85% 상승",
       "경북 영양군 - 순회 진료 시스템 구축으로 의료 접근성 개선",
     ],
-    customSteps: ["예산 편성", "부지 선정", "건축 공사"],
     voteStats: {
       total: 487,
       agree: 412,
@@ -51,18 +50,6 @@ export default function SuccessAgendaPage() {
     },
     {
       label: "검토중",
-      status: "completed" as const,
-    },
-    {
-      label: "예산 편성",
-      status: "completed" as const,
-    },
-    {
-      label: "부지 선정",
-      status: "completed" as const,
-    },
-    {
-      label: "건축 공사",
       status: "completed" as const,
     },
     {
