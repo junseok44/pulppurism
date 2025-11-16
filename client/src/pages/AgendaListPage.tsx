@@ -178,8 +178,22 @@ export default function AgendaListPage() {
               </div>
             </div>
           )}
+          {/* 카테고리 필터 */}
+          {categoriesError ? (
+            <div>카테고리 에러!</div>
+          ) : !categoriesLoading && categories ? (
+            <CategoryFilter
+              categories={categories.map((c) => ({
+                name: c.name,
+                icons: c.icon,
+              }))}
+              selected={selectedCategoryName}
+              onSelect={setSelectedCategoryName}
+            />
+          ) : null}
+
           {/* 정렬 및 필터 */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 mt-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -255,20 +269,6 @@ export default function AgendaListPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          {/* 카테고리 에러 체크 부분인데, 위에서 null로 막아둬서 무조건 통과됨 */}
-          {categoriesError ? (
-            <div>카테고리 에러!</div>
-          ) : !categoriesLoading && categories ? ( // 👈 1. 로딩 중인지 확인! 2. 데이터 있는지 확인!
-            <CategoryFilter
-              categories={categories.map((c) => ({
-                name: c.name,
-                icons: c.icon,
-              }))}
-              selected={selectedCategoryName}
-              onSelect={setSelectedCategoryName}
-            />
-          ) : null}
         </div>
         <div className="flex-1">
           <div className="max-w-5xl mx-auto w-full px-4 py-6 space-y-4">
