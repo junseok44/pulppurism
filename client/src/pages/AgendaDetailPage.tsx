@@ -549,16 +549,15 @@ export default function AgendaDetailPage() {
                   {agenda.description}
                 </p>
               </div>
-              <div className="h-[30vh]">
-                <VotingWidget
-                  agreeCount={voteStats?.agree || 0}
-                  neutralCount={voteStats?.neutral || 0}
-                  disagreeCount={voteStats?.disagree || 0}
-                  userVote={userVote?.voteType}
-                  onVote={handleVote}
-                  disabled={voteMutation.isPending}
-                />
-              </div>
+              
+              <VotingWidget
+                agreeCount={voteStats?.agree || 0}
+                neutralCount={voteStats?.neutral || 0}
+                disagreeCount={voteStats?.disagree || 0}
+                userVote={userVote?.voteType}
+                onVote={handleVote}
+                disabled={voteMutation.isPending}
+              />
 
               <Timeline steps={timelineSteps} />
 
