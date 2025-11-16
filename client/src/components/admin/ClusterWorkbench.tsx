@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -319,7 +320,7 @@ export default function ClusterWorkbench() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-2">클러스터 관리</h2>
+          <h2 className="text-2xl font-bold mb-2">주민 의견 관리</h2>
           <p className="text-muted-foreground">
             AI가 분류한 의견 클러스터를 관리하고 안건을 생성합니다
           </p>
@@ -538,18 +539,18 @@ export default function ClusterWorkbench() {
           </DialogHeader>
           <div>
             <Label htmlFor="select-cluster">클러스터 선택</Label>
-            <Select value={selectedClusterId} onValueChange={setSelectedClusterId}>
-              <SelectTrigger data-testid="select-target-cluster">
-                <SelectValue placeholder="클러스터 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {clusters.map((cluster) => (
-                  <SelectItem key={cluster.id} value={cluster.id}>
-                    {cluster.title} ({cluster.opinionCount}개 의견)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={selectedClusterId}
+              onValueChange={setSelectedClusterId}
+              options={clusters.map((cluster) => ({
+                value: cluster.id,
+                label: `${cluster.title} (${cluster.opinionCount}개 의견)`,
+              }))}
+              placeholder="클러스터 선택"
+              searchPlaceholder="클러스터 제목 검색..."
+              emptyText="클러스터를 찾을 수 없습니다"
+              data-testid="select-target-cluster"
+            />
           </div>
           <DialogFooter>
             <Button

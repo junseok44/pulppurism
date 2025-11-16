@@ -33,7 +33,7 @@ function AppSidebar() {
       isActive: location === "/admin",
     },
     {
-      title: "의견 관리",
+      title: "주민 의견 관리",
       url: "/admin/opinions",
       icon: MessageSquare,
       isActive: location.startsWith("/admin/opinions"),
