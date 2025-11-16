@@ -114,9 +114,21 @@ export default function NewOpinionPage() {
         avatarUrl: user!.avatarUrl,
       };
       
+      // Update for infinite query structure
       queryClient.setQueryData(
         ["/api/opinions"],
-        (old: any[]) => [optimisticOpinion, ...(old || [])]
+        (old: any) => {
+          if (!old) return { pages: [[optimisticOpinion]], pageParams: [0] };
+          
+          // For infinite query data structure
+          if (old.pages) {
+            const newPages = [[optimisticOpinion, ...old.pages[0]], ...old.pages.slice(1)];
+            return { ...old, pages: newPages };
+          }
+          
+          // Fallback for regular query (shouldn't happen but just in case)
+          return [optimisticOpinion, ...(old || [])];
+        }
       );
       
       return { previousOpinions };
