@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,7 @@ export default function AllAgendasManagement() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editStatus, setEditStatus] = useState<"voting" | "reviewing" | "passed" | "rejected">("reviewing");
+  const [editResponse, setEditResponse] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -56,6 +57,12 @@ export default function AllAgendasManagement() {
   const { data: agendas = [], isLoading } = useQuery<Agenda[]>({
     queryKey: ["/api/agendas"],
   });
+
+  useEffect(() => {
+    if (editStatus !== "passed" && editStatus !== "rejected") {
+      setEditResponse("");
+    }
+  }, [editStatus]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/agendas/${id}`),
@@ -76,7 +83,7 @@ export default function AllAgendasManagement() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; title?: string; description?: string; status?: string }) => {
+    mutationFn: async (data: { id: string; title?: string; description?: string; status?: string; response?: string | null }) => {
       const { id, ...updateData } = data;
       const response = await apiRequest("PATCH", `/api/agendas/${id}`, updateData);
       return response.json();
@@ -121,17 +128,27 @@ export default function AllAgendasManagement() {
     setEditTitle(agenda.title);
     setEditDescription(agenda.description);
     setEditStatus(agenda.status as "voting" | "reviewing" | "passed" | "rejected");
+    setEditResponse(agenda.response || "");
     setEditDialogOpen(true);
   };
 
   const handleSaveEdit = () => {
     if (!editingAgenda) return;
-    updateMutation.mutate({
+    
+    const updateData: { id: string; title: string; description: string; status: string; response?: string | null } = {
       id: editingAgenda.id,
       title: editTitle,
       description: editDescription,
       status: editStatus,
-    });
+    };
+    
+    if (editStatus === "passed" || editStatus === "rejected") {
+      updateData.response = editResponse.trim() || null;
+    } else {
+      updateData.response = null;
+    }
+    
+    updateMutation.mutate(updateData);
   };
 
   if (isLoading) {
@@ -317,6 +334,24 @@ export default function AllAgendasManagement() {
                 </SelectContent>
               </Select>
             </div>
+            {(editStatus === "passed" || editStatus === "rejected") && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  답변 {editStatus === "passed" ? "(통과 사유)" : "(반려 사유)"}
+                </label>
+                <Textarea
+                  value={editResponse}
+                  onChange={(e) => setEditResponse(e.target.value)}
+                  placeholder={
+                    editStatus === "passed"
+                      ? "안건이 통과된 사유와 향후 진행 계획을 입력하세요."
+                      : "안건이 반려된 사유를 입력하세요."
+                  }
+                  rows={4}
+                  data-testid="textarea-edit-response"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
