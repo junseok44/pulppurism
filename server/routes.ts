@@ -45,6 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
+    console.log("[DEBUG /api/auth/me] Session ID:", req.sessionID);
+    console.log("[DEBUG /api/auth/me] Session data:", JSON.stringify(req.session));
+    console.log("[DEBUG /api/auth/me] req.user:", req.user);
+    console.log("[DEBUG /api/auth/me] Cookies:", req.headers.cookie);
+    
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
