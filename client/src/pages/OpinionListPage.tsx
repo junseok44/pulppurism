@@ -2,12 +2,13 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import OpinionCard from "@/components/OpinionCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useEffect, useRef } from "react";
 
 interface OpinionWithUser {
   id: string;
@@ -20,13 +21,53 @@ interface OpinionWithUser {
   avatarUrl: string | null;
 }
 
+const PAGE_SIZE = 20;
+
 export default function OpinionListPage() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const { data: opinions = [], isLoading } = useQuery<OpinionWithUser[]>({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<OpinionWithUser[]>({
     queryKey: ["/api/opinions"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await fetch(
+        `/api/opinions?limit=${PAGE_SIZE}&offset=${pageParam}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch opinions");
+      return response.json();
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
+    },
+    initialPageParam: 0,
   });
+
+  const opinions = data?.pages.flatMap((page) => page) ?? [];
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -46,23 +87,40 @@ export default function OpinionListPage() {
                 아직 등록된 의견이 없습니다. 첫 번째로 의견을 제안해보세요!
               </div>
             ) : (
-              opinions.map((opinion) => (
-                <OpinionCard
-                  key={opinion.id}
-                  id={opinion.id}
-                  authorName={opinion.displayName || opinion.username}
-                  authorAvatar={opinion.avatarUrl || undefined}
-                  content={opinion.content}
-                  likeCount={opinion.likes}
-                  commentCount={0}
-                  timestamp={formatDistanceToNow(new Date(opinion.createdAt), {
-                    addSuffix: true,
-                    locale: ko,
-                  })}
-                  isAuthor={user?.id === opinion.userId}
-                  onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                />
-              ))
+              <>
+                {opinions.map((opinion) => (
+                  <OpinionCard
+                    key={opinion.id}
+                    id={opinion.id}
+                    authorName={opinion.displayName || opinion.username}
+                    authorAvatar={opinion.avatarUrl || undefined}
+                    content={opinion.content}
+                    likeCount={opinion.likes}
+                    commentCount={0}
+                    timestamp={formatDistanceToNow(new Date(opinion.createdAt), {
+                      addSuffix: true,
+                      locale: ko,
+                    })}
+                    isAuthor={user?.id === opinion.userId}
+                    onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                  />
+                ))}
+                
+                {/* Infinite scroll trigger */}
+                <div ref={loadMoreRef} className="py-8">
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>더 많은 의견을 불러오는 중...</span>
+                    </div>
+                  )}
+                  {!hasNextPage && opinions.length > 0 && (
+                    <div className="text-center text-muted-foreground">
+                      모든 의견을 불러왔습니다
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
