@@ -17,6 +17,8 @@ import OpinionDetailPage from "@/pages/OpinionDetailPage";
 import NewOpinionPage from "@/pages/NewOpinionPage";
 import SearchPage from "@/pages/SearchPage";
 import AdminDashboard from "@/pages/AdminDashboard";
+import SuccessPage from "@/pages/SuccessPage";
+import SuccessAgendaPage from "@/pages/SuccessAgendaPage";
 
 function Router() {
   return (
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/opinion/new" component={NewOpinionPage} />
       <Route path="/opinion/:id" component={OpinionDetailPage} />
       <Route path="/search" component={SearchPage} />
+      <Route path="/success/agenda" component={SuccessAgendaPage} />
+      <Route path="/success" component={SuccessPage} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/active-agendas" component={AdminDashboard} />
       <Route path="/admin/opinions" component={AdminDashboard} />

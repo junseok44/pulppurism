@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -76,8 +76,10 @@ export default function AgendaDetailPage() {
     [],
   );
   const [editedRegionalCases, setEditedRegionalCases] = useState<string[]>([]);
+  const [editedCustomSteps, setEditedCustomSteps] = useState<string[]>([]);
   const [newReferenceLink, setNewReferenceLink] = useState("");
   const [newRegionalCase, setNewRegionalCase] = useState("");
+  const [newCustomStep, setNewCustomStep] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showOkinewsForm, setShowOkinewsForm] = useState(false);
@@ -250,12 +252,14 @@ export default function AgendaDetailPage() {
       referenceLinks?: string[];
       referenceFiles?: string[];
       regionalCases?: string[];
+      customSteps?: string[];
     }) => {
       const res = await apiRequest("PATCH", `/api/agendas/${agendaId}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
+      setNewCustomStep("");
       setEditDialogOpen(false);
       toast({
         title: "안건이 수정되었습니다",
@@ -378,11 +382,19 @@ export default function AgendaDetailPage() {
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
       setEditedRegionalCases(agenda.regionalCases || []);
+      setEditedCustomSteps(agenda.customSteps || []);
       setEditDialogOpen(true);
     }
   };
 
   const handleSaveEdit = () => {
+    const finalCustomSteps = [...editedCustomSteps];
+    if (newCustomStep.trim()) {
+      finalCustomSteps.push(newCustomStep.trim());
+    }
+    
+    console.log("handleSaveEdit - Saving agenda with customSteps:", finalCustomSteps);
+    
     updateAgendaMutation.mutate({
       title: editedTitle,
       description: editedDescription,
@@ -391,6 +403,7 @@ export default function AgendaDetailPage() {
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
       regionalCases: editedRegionalCases,
+      customSteps: finalCustomSteps,
     });
   };
 
@@ -423,6 +436,17 @@ export default function AgendaDetailPage() {
     setEditedRegionalCases(editedRegionalCases.filter((_, i) => i !== index));
   };
 
+  const handleAddCustomStep = () => {
+    if (newCustomStep.trim()) {
+      setEditedCustomSteps([...editedCustomSteps, newCustomStep.trim()]);
+      setNewCustomStep("");
+    }
+  };
+
+  const handleRemoveCustomStep = (index: number) => {
+    setEditedCustomSteps(editedCustomSteps.filter((_, i) => i !== index));
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -431,7 +455,7 @@ export default function AgendaDetailPage() {
   };
 
 
-  const getTimelineSteps = (status: string, createdAt: string) => {
+  const getTimelineSteps = (status: string, createdAt: string, customSteps?: string[]) => {
     const createdDate = new Date(createdAt)
       .toLocaleDateString("ko-KR", {
         year: "numeric",
@@ -442,6 +466,7 @@ export default function AgendaDetailPage() {
       .replace(/\.$/, "");
 
     const isCompleted = status === "passed" || status === "rejected";
+    const isReviewing = status === "reviewing";
     const resultLabel = status === "passed" ? "통과" : status === "rejected" ? "반려" : "결과";
 
     const steps = [
@@ -468,19 +493,44 @@ export default function AgendaDetailPage() {
               ? ("completed" as const)
               : ("upcoming" as const),
       },
-      {
-        label: resultLabel,
-        status:
-          isCompleted ? ("current" as const) : ("upcoming" as const),
-      },
     ];
+
+    if (customSteps && customSteps.length > 0) {
+      customSteps.forEach((customStep, index) => {
+        let stepStatus: "completed" | "current" | "upcoming";
+        
+        if (isCompleted) {
+          stepStatus = "completed";
+        } else if (isReviewing) {
+          stepStatus = index === 0 ? "current" : "upcoming";
+        } else {
+          stepStatus = "upcoming";
+        }
+        
+        steps.push({
+          label: customStep,
+          status: stepStatus,
+        });
+      });
+    }
+
+    steps.push({
+      label: resultLabel,
+      status:
+        isCompleted ? ("current" as const) : ("upcoming" as const),
+    });
 
     return steps;
   };
 
-  const timelineSteps = agenda
-    ? getTimelineSteps(agenda.status, String(agenda.createdAt))
-    : [];
+  const timelineSteps = useMemo(() => {
+    if (!agenda) return [];
+    console.log("AgendaDetailPage - Calculating timeline steps", {
+      status: agenda.status,
+      customSteps: agenda.customSteps,
+    });
+    return getTimelineSteps(agenda.status, String(agenda.createdAt), agenda.customSteps || []);
+  }, [agenda]);
 
   if (!match || !agendaId) {
     return (
@@ -1064,6 +1114,51 @@ export default function AgendaDetailPage() {
                   <SelectItem value="rejected">반려</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>커스텀 정책 단계</Label>
+              <p className="text-sm text-muted-foreground">
+                검토 중과 결과 사이에 들어갈 추가 단계를 입력하세요 (예: 예산 편성, 공사 진행 등)
+              </p>
+              <div className="space-y-2">
+                {editedCustomSteps.map((step, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={step}
+                      readOnly
+                      className="flex-1"
+                      data-testid={`input-custom-step-${index}`}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleRemoveCustomStep(index)}
+                      data-testid={`button-remove-custom-step-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newCustomStep}
+                    onChange={(e) => setNewCustomStep(e.target.value)}
+                    placeholder="예: 예산 편성"
+                    className="flex-1"
+                    data-testid="input-add-custom-step"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleAddCustomStep}
+                    disabled={!newCustomStep.trim()}
+                    data-testid="button-add-custom-step"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    추가
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

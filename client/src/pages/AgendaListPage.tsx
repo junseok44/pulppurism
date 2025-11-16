@@ -183,7 +183,7 @@ export default function AgendaListPage() {
                 {spotlightAgendas.map((agenda) => (
                   <div
                     key={agenda.id}
-                    className="w-[42vw] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[240px] snap-center"
+                    className="w-[55vw] md:w-[18vw] md:min-w-[220px] h-[28vh] md:h-[50vh] md:min-h-[180px] snap-center"
                   >
                     <OkAgendaCard
                       id={agenda.id}
@@ -209,7 +209,7 @@ export default function AgendaListPage() {
             <CategoryFilter
               categories={categories.map((c) => ({
                 name: c.name,
-                icons: c.icon,
+                icons: c.icon, // CategoryFilter는 icons를 prop으로 받음
               }))}
               selected={selectedCategoryName}
               onSelect={setSelectedCategoryName}
