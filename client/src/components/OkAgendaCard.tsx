@@ -56,10 +56,9 @@ export default function OkAgendaCard({
     >
       {/* --- 2. 윗줄 --- */}
       {/* * flex (가로) / justify-between (양쪽 정렬) / items-start (위로 정렬)
-        * 버그의 원인이었던 래퍼(wrapper)들 싹 제거!
-      */}
+       * 버그의 원인이었던 래퍼(wrapper)들 싹 제거!
+       */}
       <div className="w-full flex justify-between items-start">
-
         {/* 2a. 윗줄 - 왼쪽 (카테고리) - 모바일(text-[10px]), 데스크탑(md:text-xs) */}
         <Badge
           variant="secondary"
@@ -89,7 +88,7 @@ export default function OkAgendaCard({
                 }`}
               />
             </button>
-            {/* 숫자 크기: 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+            {/* 숫자 크기: 모바일(text-[9px]), 데스크탑(md:text-[10px]) */}
             <span className="text-[9px] md:text-[10px] font-medium text-white leading-none">
               {count}
             </span>
@@ -99,7 +98,7 @@ export default function OkAgendaCard({
           <div className="flex flex-col items-center justify-center gap-0.2 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-8 h-8 md:w-9 md:h-9 transition-colors cursor-default">
             {/* 아이콘 크기: 모바일(w-3 h-3), 데스크탑(md:w-3.5 md:h-3.5) */}
             <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5" />
-            {/* 숫자 크기: 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+            {/* 숫자 크기: 모바일(text-[9px]), 데스크탑(md:text-[10px]) */}
             <span className="text-[9px] md:text-[10px] font-medium pt-[1px] leading-none">
               {commentCount}
             </span>
@@ -109,9 +108,9 @@ export default function OkAgendaCard({
 
       {/* --- 3. 아랫줄 --- */}
       {/*
-        * flex-1: 윗줄을 제외한 '남은 공간 전부'를 차지함 (핵심!)
-        * justify-end: 내용물(제목, 내용 등)을 이 '아랫줄' 공간의 맨 아래에 붙임
-      */}
+       * flex-1: 윗줄을 제외한 '남은 공간 전부'를 차지함 (핵심!)
+       * justify-end: 내용물(제목, 내용 등)을 이 '아랫줄' 공간의 맨 아래에 붙임
+       */}
       <div className="self-stretch flex-1 flex flex-col justify-end items-start gap-1 md:gap-1.5">
         {/* 3a. 상태 + 오키뉴스 (이건 text-[10px] 유지해도 될 듯) */}
         <div className="flex justify-start items-center gap-2.5">
