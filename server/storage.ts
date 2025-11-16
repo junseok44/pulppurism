@@ -340,6 +340,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCluster(id: string): Promise<boolean> {
+    // Delete in correct order to avoid foreign key constraint violations
+    // 1. Delete opinion_clusters references (this makes opinions unclustered again)
+    await db.delete(opinionClusters).where(eq(opinionClusters.clusterId, id));
+    
+    // 2. Finally delete the cluster itself
     const result = await db.delete(clusters).where(eq(clusters.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }

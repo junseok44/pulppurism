@@ -27,6 +27,7 @@ import {
   FileText,
   Link2,
   X,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
@@ -40,6 +41,7 @@ type OpinionWithUser = Opinion & {
 function ClusterCard({ cluster }: { cluster: Cluster }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [opinionToRemove, setOpinionToRemove] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -79,6 +81,27 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
       toast({
         title: "의견 제외 실패",
         description: "의견 제외 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteClusterMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/clusters/${cluster.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions/unclustered"] });
+      toast({
+        title: "클러스터 삭제 완료",
+        description: "클러스터가 삭제되었고, 포함된 의견들이 미분류로 이동되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "클러스터 삭제 실패",
+        description: "클러스터 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     },
@@ -147,6 +170,15 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                   의견 보기
                 </>
               )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              data-testid={`button-delete-cluster-${cluster.id}`}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              삭제
             </Button>
           </div>
         </div>
@@ -234,6 +266,35 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
             data-testid="confirm-remove-opinion"
           >
             클러스터에서 제외 X
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>클러스터 삭제</AlertDialogTitle>
+          <AlertDialogDescription>
+            이 클러스터를 삭제하시겠습니까? 클러스터에 포함된 {cluster.opinionCount}개의 의견은 미분류 의견으로 이동됩니다.
+            {cluster.agendaId && (
+              <span className="block mt-2 text-destructive font-medium">
+                주의: 이 클러스터는 이미 안건으로 생성되었습니다.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              deleteClusterMutation.mutate();
+              setShowDeleteDialog(false);
+            }}
+            data-testid="confirm-delete-cluster"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            삭제
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
