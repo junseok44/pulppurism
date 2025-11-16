@@ -35,6 +35,7 @@ function Router() {
       <Route path="/opinion/:id" component={OpinionDetailPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/active-agendas" component={AdminDashboard} />
       <Route path="/admin/opinions" component={AdminDashboard} />
       <Route path="/admin/opinions/:subpage" component={AdminDashboard} />
       <Route path="/admin/agendas" component={AdminDashboard} />

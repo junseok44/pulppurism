@@ -20,6 +20,7 @@ import AdminDashboardHome from "@/pages/admin/AdminDashboardHome";
 import AdminOpinionsPage from "@/pages/admin/AdminOpinionsPage";
 import AdminAgendasPage from "@/pages/admin/AdminAgendasPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import ActiveAgendasPage from "@/pages/admin/ActiveAgendasPage";
 
 function AppSidebar() {
   const [location] = useLocation();
@@ -89,6 +90,8 @@ export default function AdminDashboard() {
   const renderContent = () => {
     if (location === "/admin" || location === "/admin/") {
       return <AdminDashboardHome />;
+    } else if (location === "/admin/active-agendas") {
+      return <ActiveAgendasPage />;
     } else if (location.startsWith("/admin/opinions")) {
       return <AdminOpinionsPage />;
     } else if (location.startsWith("/admin/agendas")) {
