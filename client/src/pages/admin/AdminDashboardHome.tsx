@@ -19,6 +19,16 @@ import { useToast } from "@/hooks/use-toast";
 import type { Report } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 type DashboardStats = {
   today: {
@@ -41,12 +51,23 @@ type DashboardStats = {
   }>;
 };
 
+type WeeklyOpinion = {
+  date: string;
+  day: string;
+  count: number;
+  isToday: boolean;
+};
+
 export default function AdminDashboardHome() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/stats/dashboard"],
+  });
+
+  const { data: weeklyOpinions = [], isLoading: weeklyLoading } = useQuery<WeeklyOpinion[]>({
+    queryKey: ["/api/admin/stats/weekly-opinions"],
   });
 
   const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
@@ -75,7 +96,7 @@ export default function AdminDashboardHome() {
 
   const pendingReports = reports.filter((r) => r.status === "pending");
 
-  if (statsLoading || reportsLoading) {
+  if (statsLoading || reportsLoading || weeklyLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -120,48 +141,56 @@ export default function AdminDashboardHome() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <Card className="p-6 md:col-span-2">
+          <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">오늘 신규 의견</p>
+            <p className="text-sm font-medium text-muted-foreground">오늘의 주민 의견 동향</p>
           </div>
-          <p className="text-3xl font-bold">{stats.today.newOpinions}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            주간: {stats.week.newOpinions}건
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyOpinions}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                  {weeklyOpinions.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--muted))"}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            오늘 접수된 의견: {stats.today.newOpinions}건 (주간 총 {stats.week.newOpinions}건)
           </p>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">신규 가입자</p>
-          </div>
-          <p className="text-3xl font-bold">{stats.today.newUsers}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            주간: {stats.week.newUsers}명
-          </p>
-        </Card>
+        <div className="space-y-4">
+          <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer" onClick={() => setLocation("/admin/active-agendas")} data-testid="card-active-agendas">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <p className="text-sm font-medium text-muted-foreground">활발한 안건</p>
+            </div>
+            <p className="text-3xl font-bold">{stats.activeAgendas}</p>
+            <p className="text-xs text-muted-foreground mt-1">진행 중</p>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">활발한 안건</p>
-          </div>
-          <p className="text-3xl font-bold">{stats.activeAgendas}</p>
-          <p className="text-xs text-muted-foreground mt-1">진행 중</p>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-5 h-5 text-destructive" />
-            <p className="text-sm font-medium text-muted-foreground">미처리 신고</p>
-          </div>
-          <p className="text-3xl font-bold">{stats.pendingReports}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {pendingReports.length}건 대기 중
-          </p>
-        </Card>
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <p className="text-sm font-medium text-muted-foreground">미처리 신고</p>
+            </div>
+            <p className="text-3xl font-bold">{stats.pendingReports}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {pendingReports.length}건 대기 중
+            </p>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

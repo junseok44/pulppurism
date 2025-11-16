@@ -1726,8 +1726,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         agendasWithStats.map(async (agenda) => {
           const commentCountResult = await db
             .select({ count: sql<number>`count(*)::int` })
-            .from(comments)
-            .innerJoin(opinions, eq(comments.opinionId, opinions.id))
+            .from(dbComments)
+            .innerJoin(opinions, eq(dbComments.opinionId, opinions.id))
             .innerJoin(opinionClusters, eq(opinions.id, opinionClusters.opinionId))
             .innerJoin(clusters, eq(opinionClusters.clusterId, clusters.id))
             .where(eq(clusters.agendaId, agenda.id));
