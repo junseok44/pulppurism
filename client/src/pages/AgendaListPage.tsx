@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
@@ -22,14 +22,20 @@ interface AgendaWithCategory extends Agenda {
   isBookmarked?: boolean;
 }
 
-type AgendaStatus = "all" | "voting" | "reviewing" | "completed";
+type AgendaStatus = "all" | "voting" | "reviewing" | "completed" | "passed" | "rejected";
 type SortOption = "latest" | "views" | "votes";
+type SpotlightSection = "voting" | "passed" | "rejected";
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [statusFilter, setStatusFilter] = useState<AgendaStatus>("all");
   const [sortOption, setSortOption] = useState<SortOption>("latest");
+
+  const spotlightSection = useMemo<SpotlightSection>(() => {
+    const sections: SpotlightSection[] = ["voting", "passed", "rejected"];
+    return sections[Math.floor(Math.random() * sections.length)];
+  }, []);
 
   const {
     data: categories,
@@ -94,6 +100,10 @@ export default function AgendaListPage() {
         return "검토중";
       case "completed":
         return "완료";
+      case "passed":
+        return "통과";
+      case "rejected":
+        return "반려";
       default:
         return "진행상황에 따라 보기";
     }
@@ -107,15 +117,44 @@ export default function AgendaListPage() {
         return "검토중";
       case "completed":
         return "완료";
+      case "passed":
+        return "통과";
+      case "rejected":
+        return "반려";
       default:
         return status;
     }
   };
 
+  const getSpotlightConfig = () => {
+    switch (spotlightSection) {
+      case "voting":
+        return {
+          emoji: "🔥",
+          title: "투표 진행 중",
+          testId: "button-view-all-voting",
+        };
+      case "passed":
+        return {
+          emoji: "✅",
+          title: "통과 된 안건",
+          testId: "button-view-all-passed",
+        };
+      case "rejected":
+        return {
+          emoji: "❌",
+          title: "반려 된 안건",
+          testId: "button-view-all-rejected",
+        };
+    }
+  };
+
+  const spotlightConfig = getSpotlightConfig();
+
   const isLoading = categoriesLoading || agendasLoading;
   const hasError = categoriesError || agendasError;
-  const votingAgendas = allAgendas.filter(
-    (agenda) => agenda.status === "voting",
+  const spotlightAgendas = allAgendas.filter(
+    (agenda) => agenda.status === spotlightSection,
   );
 
   return (
@@ -136,34 +175,34 @@ export default function AgendaListPage() {
               <Search className="w-5 h-5" />
             </Button>
           </div>
-          {votingAgendas.length > 0 && (
+          {spotlightAgendas.length > 0 && (
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  🔥 투표 진행 중
+                  {spotlightConfig.emoji} {spotlightConfig.title}
                 </h2>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setLocation("/agendas/voting")}
+                  onClick={() => {
+                    setStatusFilter(spotlightSection);
+                    document.getElementById('agenda-list-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   className="text-muted-foreground text-sm"
-                  data-testid="button-view-all-voting"
+                  data-testid={spotlightConfig.testId}
                 >
                   더보기
                 </Button>
               </div>
               <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
-                {votingAgendas.map((agenda) => (
+                {spotlightAgendas.map((agenda) => (
                   <div
                     key={agenda.id}
-                    // 👇 모바일: 화면 너비의 85% 차지 (옆에 다음 카드가 살짝 보여서 넘기고 싶게 만듦)
-                    // // 👇 PC(md): 너무 커지면 안 되니까 360px 정도로 고정
                     className="w-[42vw] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[180px] snap-center"
                   >
                     <OkAgendaCard
                       id={agenda.id}
                       title={agenda.title}
-                      // ★ 여기가 핵심! 객체에서 .name만 쏙 빼서 넣어줘야 해!
                       category={agenda.category?.name || "카테고리 없음"}
                       status={getStatusLabel(agenda.status)}
                       content={agenda.description}
@@ -266,11 +305,23 @@ export default function AgendaListPage() {
                 >
                   완료
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("passed")}
+                  data-testid="menu-item-filter-passed"
+                >
+                  통과
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setStatusFilter("rejected")}
+                  data-testid="menu-item-filter-rejected"
+                >
+                  반려
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1" id="agenda-list-section">
           <div className="max-w-5xl mx-auto w-full px-4 py-6 space-y-4">
             {/* 안건 에러 체크 부분 */}
             {hasError && agendasError ? (

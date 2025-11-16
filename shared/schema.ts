@@ -78,6 +78,8 @@ export const agendaStatusEnum = pgEnum("agenda_status", [
   "voting",
   "reviewing",
   "completed",
+  "passed",
+  "rejected",
 ]);
 
 export const agendas = pgTable("agendas", {
