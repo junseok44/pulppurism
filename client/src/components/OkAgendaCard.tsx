@@ -49,101 +49,92 @@ export default function OkAgendaCard({
   };
 
   return (
-    // 1. inline-flex -> flex 로 변경 (레이아웃 안정화)
-    // 2. onClick 추가 (카드 클릭하면 이동해야지!)
+    // 1. 카드 전체: 모바일(gap-2, p-4), 데스크탑(md:gap-4, md:p-6)
     <div
       onClick={onClick}
-      className="w-full h-full self-stretch px-5 py-6 bg-blend-multiply bg-gradient-to-b from-neutral-200/50 to-neutral-700/50 rounded-[10px] flex flex-col justify-start items-start gap-2.5 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+      className="w-full h-full self-stretch px-4 py-4 md:px-5 md:py-6 bg-blend-multiply bg-gradient-to-b from-neutral-200/50 to-neutral-700/50 rounded-[10px] flex flex-col justify-start items-start gap-2 md:gap-4 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
     >
-      <div className="h-full w-full flex">
-        {" "}
-        {/*category+alpha*/}
-        <div className="self-stretch flex-col">
-          {/*얘네는 세로로 배치 */}
-          <div className="self-stretch py-[3px] inline-flex justify-start items-start gap-2.5 overflow-hidden">
-            {/* 카테고리 뱃지 */}
-            <Badge
-              variant="secondary"
-              className="font-medium bg-white/20 text-white hover:bg-white/30 border-0"
-              data-testid={`badge-category-${id}`}
-            >
-              {category}
-            </Badge>
-          </div>
-          <div className="self-stretch flex-1 relative"></div>
-        </div>
-        <div className="w-full flex justify-end mb-auto">
-          {" "}
-          {/* mt-auto: 아래로 밀어내기 */}
-          <div
-            className="flex flex-col gap-1.5 items-center justify-center cursor-default"
-            onClick={(e) => e.stopPropagation()} // 트레이 눌렀을 때 카드 이동 방지
-          >
-            {/* 1. 북마크 '원' 버튼 */}
-            <div className="flex flex-col items-center justify-center gap-0.5 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-9 h-9 transition-colors cursor-default">
-              <button
-                onClick={handleBookmarkClick}
-                className="group flex items-center justify-center outline-none"
-              >
-                <Bookmark
-                  className={`w-4 h-4 transition-transform group-active:scale-90 ${
-                    marked
-                      ? "fill-white text-white"
-                      : "text-white/70 group-hover:text-white"
-                  }`}
-                />
-              </button>
-              {/* leading-none으로 글자 높이를 타이트하게 잡음 */}
-              <span className="text-xs font-medium text-white leading-none">
-                {count}
-              </span>
-            </div>
+      {/* --- 2. 윗줄 --- */}
+      {/* * flex (가로) / justify-between (양쪽 정렬) / items-start (위로 정렬)
+        * 버그의 원인이었던 래퍼(wrapper)들 싹 제거!
+      */}
+      <div className="w-full flex justify-between items-start">
 
-            {/* 2. 댓글 '원' 버튼 */}
-            <div className="flex flex-col items-center justify-center gap-0.5 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-9 h-9 transition-colors cursor-default">
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="text-xs font-medium pt-[1px] leading-none">
-                {commentCount}
-              </span>
-            </div>
+        {/* 2a. 윗줄 - 왼쪽 (카테고리) - 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+        <Badge
+          variant="secondary"
+          className="font-medium bg-white/20 text-white hover:bg-white/30 border-0 text-[10px] md:text-xs"
+          data-testid={`badge-category-${id}`}
+        >
+          {category}
+        </Badge>
+
+        {/* 2b. 윗줄 - 오른쪽 (버튼 트레이) - 모바일(gap-1), 데스크탑(md:gap-1.5) */}
+        <div
+          className="flex flex-col gap-1 md:gap-1.5 items-center justify-center cursor-default"
+          onClick={(e) => e.stopPropagation()} // 트레이 눌렀을 때 카드 이동 방지
+        >
+          {/* 1. 북마크 '원' 버튼 - 모바일(w-8 h-8), 데스크탑(md:w-9 md:h-9) */}
+          <div className="flex flex-col items-center justify-center gap-0.2 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-8 h-8 md:w-9 md:h-9 transition-colors cursor-default">
+            <button
+              onClick={handleBookmarkClick}
+              className="group flex items-center justify-center outline-none"
+            >
+              {/* 아이콘 크기: 모바일(w-3.5 h-3.5), 데스크탑(md:w-4 md:h-4) */}
+              <Bookmark
+                className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-transform group-active:scale-90 ${
+                  marked
+                    ? "fill-white text-white"
+                    : "text-white/70 group-hover:text-white"
+                }`}
+              />
+            </button>
+            {/* 숫자 크기: 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+            <span className="text-[9px] md:text-[10px] font-medium text-white leading-none">
+              {count}
+            </span>
+          </div>
+
+          {/* 2. 댓글 '원' 버튼 - 모바일(w-8 h-8), 데스크탑(md:w-9 md:h-9) */}
+          <div className="flex flex-col items-center justify-center gap-0.2 text-white/90 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full w-8 h-8 md:w-9 md:h-9 transition-colors cursor-default">
+            {/* 아이콘 크기: 모바일(w-3 h-3), 데스크탑(md:w-3.5 md:h-3.5) */}
+            <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            {/* 숫자 크기: 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+            <span className="text-[9px] md:text-[10px] font-medium pt-[1px] leading-none">
+              {commentCount}
+            </span>
           </div>
         </div>
       </div>
-      <div className="self-stretch flex flex-col justify-end items-center gap-4">
-        <div className="self-stretch inline-flex justify-center items-center">
-          <div className="flex-1 py-1 inline-flex flex-col justify-center items-start gap-1.5 overflow-hidden">
-            <div className="self-stretch flex flex-col justify-start items-start gap-px">
-              <div className="inline-flex justify-center items-center gap-2.5 overflow-hidden">
-                {/*여기부터는 하단에 붙은 내용들 중 가장 윗줄... 왼->오 정렬됨*/}
-                <Badge className={`text-[10px] ${getStatusBadgeClass(status)}`}>
-                  {getStatusLabel(status)}
-                </Badge>
 
-                {/* 4. okinews 조건부 렌더링! (true일 때만 보여라!) */}
-                {okinews && (
-                  <div className="px-1.5 bg-primary rounded-[3px] inline-flex flex-col justify-center items-center gap-2.5 overflow-hidden">
-                    <div className="justify-start text-ok_white1 text-[10px] font-medium font-['Pretendard_Variable'] leading-5">
-                      옥천신문 보도
-                    </div>
-                  </div>
-                )}
+      {/* --- 3. 아랫줄 --- */}
+      {/*
+        * flex-1: 윗줄을 제외한 '남은 공간 전부'를 차지함 (핵심!)
+        * justify-end: 내용물(제목, 내용 등)을 이 '아랫줄' 공간의 맨 아래에 붙임
+      */}
+      <div className="self-stretch flex-1 flex flex-col justify-end items-start gap-1 md:gap-1.5">
+        {/* 3a. 상태 + 오키뉴스 (이건 text-[10px] 유지해도 될 듯) */}
+        <div className="flex justify-start items-center gap-2.5">
+          <Badge className={`text-[10px] ${getStatusBadgeClass(status)}`}>
+            {getStatusLabel(status)}
+          </Badge>
+          {okinews && (
+            <div className="px-1.5 bg-primary rounded-[3px] flex justify-center items-center">
+              <div className="text-ok_white1 text-[10px] font-medium leading-5">
+                옥천신문 보도
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="self-stretch flex flex-col justify-start items-start gap-px">
-              <div className="self-stretch inline-flex justify-center items-center gap-2.5 overflow-hidden">
-                {/* line-clamp-3 추가해서 글자 넘침 방지 */}
-                <div className="flex-1 justify-start text-ok_white1 text-[10px] font-medium font-['Pretendard_Variable'] leading-4 line-clamp-3">
-                  {content}
-                </div>
-              </div>
-            </div>
+        {/* 3b. 내용 - 모바일(text-[10px]), 데스크탑(md:text-xs) */}
+        <div className="self-stretch justify-start text-ok_white1 text-[10px] md:text-xs font-medium leading-4 md:leading-5 line-clamp-3">
+          {content}
+        </div>
 
-            {/* 제목 */}
-            <div className="self-stretch justify-start text-white text-2xl font-extrabold font-['Pretendard_Variable'] leading-7 line-clamp-2">
-              {title}
-            </div>
-          </div>
+        {/* 3c. 제목 - 모바일(text-lg leading-6), 데스크탑(md:text-2xl md:leading-7) */}
+        <div className="self-stretch justify-start font-extrabold text-white text-lg leading-6 md:text-2xl md:font-extrabold md:leading-7 line-clamp-2">
+          {title}
         </div>
       </div>
     </div>
