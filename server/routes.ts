@@ -2004,6 +2004,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to parse Korean datetime format
+  function parseKoreanDateTime(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    
+    // Format: "2025-11-08 19:55:53" -> ISO format
+    const isoFormat = dateStr.replace(" ", "T");
+    const parsed = new Date(isoFormat);
+    
+    // Check if date is valid
+    if (isNaN(parsed.getTime())) {
+      console.warn(`Invalid date format: ${dateStr}, using current date`);
+      return new Date();
+    }
+    
+    return parsed;
+  }
+
+  // Admin - Import articles from JSON
+  app.post("/api/admin/import-articles", requireAuth, async (req, res) => {
+    try {
+      const currentUser = req.user as any;
+      if (!currentUser?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const articles = req.body.articles;
+      if (!Array.isArray(articles)) {
+        return res.status(400).json({ error: "Invalid data format" });
+      }
+
+      // Validate data before deletion
+      const validationErrors: string[] = [];
+      for (let i = 0; i < articles.length; i++) {
+        const article = articles[i];
+        if (!article["게시물 내용"]) {
+          validationErrors.push(`Article ${i + 1}: Missing content`);
+        }
+      }
+
+      if (validationErrors.length > 0) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validationErrors,
+        });
+      }
+
+      let importedOpinions = 0;
+      let importedComments = 0;
+      let skippedArticles = 0;
+      const userCache = new Map<string, string>(); // username -> userId
+
+      // Use transaction for safe deletion and import
+      await db.transaction(async (tx) => {
+        // Step 1: Delete existing data in correct order
+        await tx.delete(opinionClusters);
+        await tx.delete(agendaBookmarks);
+        await tx.delete(clusters);
+        await tx.delete(dbComments);
+        await tx.delete(opinionLikes);
+        await tx.delete(opinions);
+
+        // Step 2: Process each article
+        for (const article of articles) {
+          try {
+            // Get or create author user
+            const authorUsername = article["게시물 작성자"] || "익명";
+            let authorUserId = userCache.get(authorUsername);
+
+            if (!authorUserId) {
+              // Check if user exists
+              const [existingUser] = await tx
+                .select()
+                .from(users)
+                .where(eq(users.username, authorUsername))
+                .limit(1);
+
+              if (existingUser) {
+                authorUserId = existingUser.id;
+              } else {
+                // Create new user
+                const [newUser] = await tx
+                  .insert(users)
+                  .values({
+                    username: authorUsername,
+                    displayName: authorUsername,
+                    provider: "local",
+                  })
+                  .returning();
+                authorUserId = newUser.id;
+              }
+              userCache.set(authorUsername, authorUserId);
+            }
+
+            // Create opinion from article
+            const opinionContent = article["게시물 내용"] || "";
+            const createdAt = parseKoreanDateTime(article["게시물 작성 일시"]);
+
+            const [newOpinion] = await tx
+              .insert(opinions)
+              .values({
+                userId: authorUserId,
+                content: opinionContent,
+                createdAt: createdAt,
+              })
+              .returning();
+
+            importedOpinions++;
+
+            // Step 3: Process comments
+            const comments = article["댓글"] || [];
+            for (const comment of comments) {
+              try {
+                const commentAuthorUsername = comment["댓글 작성자"] || "익명";
+                let commentAuthorId = userCache.get(commentAuthorUsername);
+
+                if (!commentAuthorId) {
+                  const [existingUser] = await tx
+                    .select()
+                    .from(users)
+                    .where(eq(users.username, commentAuthorUsername))
+                    .limit(1);
+
+                  if (existingUser) {
+                    commentAuthorId = existingUser.id;
+                  } else {
+                    const [newUser] = await tx
+                      .insert(users)
+                      .values({
+                        username: commentAuthorUsername,
+                        displayName: commentAuthorUsername,
+                        provider: "local",
+                      })
+                      .returning();
+                    commentAuthorId = newUser.id;
+                  }
+                  userCache.set(commentAuthorUsername, commentAuthorId);
+                }
+
+                const commentCreatedAt = parseKoreanDateTime(comment["댓글 작성 일시"]);
+
+                await tx.insert(dbComments).values({
+                  opinionId: newOpinion.id,
+                  userId: commentAuthorId,
+                  content: comment["댓글 내용"] || "",
+                  likes: comment["댓글 좋아요"] || 0,
+                  createdAt: commentCreatedAt,
+                });
+
+                importedComments++;
+              } catch (commentError) {
+                console.error(`Failed to import comment:`, commentError);
+                // Continue with other comments
+              }
+            }
+          } catch (articleError) {
+            console.error(`Failed to import article:`, articleError);
+            skippedArticles++;
+            // Continue with other articles
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        importedOpinions,
+        importedComments,
+        skippedArticles,
+        message: `${importedOpinions}개 의견, ${importedComments}개 댓글이 임포트되었습니다.${skippedArticles > 0 ? ` (${skippedArticles}개 게시물 스킵됨)` : ''}`,
+      });
+    } catch (error) {
+      console.error("Failed to import articles:", error);
+      res.status(500).json({ error: "Failed to import articles" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

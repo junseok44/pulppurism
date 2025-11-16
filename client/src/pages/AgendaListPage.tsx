@@ -62,25 +62,27 @@ export default function AgendaListPage() {
   });
 
   const allAgendas = agendas || [];
-  
+
   let filteredAgendas = allAgendas;
-  
+
   if (statusFilter !== "all") {
     filteredAgendas = filteredAgendas.filter(
-      (agenda) => agenda.status === statusFilter
+      (agenda) => agenda.status === statusFilter,
     );
   }
-  
+
   if (selectedCategoryName) {
     filteredAgendas = filteredAgendas.filter(
-      (agenda) => agenda.category?.name === selectedCategoryName
+      (agenda) => agenda.category?.name === selectedCategoryName,
     );
   }
 
   const sortedAgendas = [...filteredAgendas].sort((a, b) => {
     switch (sortOption) {
       case "latest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       case "views":
         return b.viewCount - a.viewCount;
       case "votes":
@@ -167,7 +169,9 @@ export default function AgendaListPage() {
                   size="sm"
                   onClick={() => {
                     setStatusFilter(spotlightSection);
-                    document.getElementById('agenda-list-section')?.scrollIntoView({ behavior: 'smooth' });
+                    document
+                      .getElementById("agenda-list-section")
+                      ?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="text-muted-foreground text-sm"
                   data-testid={spotlightConfig.testId}
@@ -179,7 +183,7 @@ export default function AgendaListPage() {
                 {spotlightAgendas.map((agenda) => (
                   <div
                     key={agenda.id}
-                    className="w-[42vw] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[180px] snap-center"
+                    className="w-[42vw] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[240px] snap-center"
                   >
                     <OkAgendaCard
                       id={agenda.id}
@@ -216,8 +220,8 @@ export default function AgendaListPage() {
           <div className="flex items-center justify-between mb-3 mt-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   data-testid="button-sort-dropdown"
                 >
@@ -227,20 +231,23 @@ export default function AgendaListPage() {
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" data-testid="dropdown-sort-menu">
-                <DropdownMenuItem 
+              <DropdownMenuContent
+                align="start"
+                data-testid="dropdown-sort-menu"
+              >
+                <DropdownMenuItem
                   onClick={() => setSortOption("latest")}
                   data-testid="menu-item-sort-latest"
                 >
                   최신순
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setSortOption("views")}
                   data-testid="menu-item-sort-views"
                 >
                   조회수순
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setSortOption("votes")}
                   data-testid="menu-item-sort-votes"
                 >
@@ -251,8 +258,8 @@ export default function AgendaListPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   data-testid="button-status-filter-dropdown"
                 >
@@ -261,32 +268,35 @@ export default function AgendaListPage() {
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" data-testid="dropdown-status-menu">
-                <DropdownMenuItem 
+              <DropdownMenuContent
+                align="end"
+                data-testid="dropdown-status-menu"
+              >
+                <DropdownMenuItem
                   onClick={() => setStatusFilter("all")}
                   data-testid="menu-item-filter-all"
                 >
                   전체
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setStatusFilter("voting")}
                   data-testid="menu-item-filter-voting"
                 >
                   투표중
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setStatusFilter("reviewing")}
                   data-testid="menu-item-filter-reviewing"
                 >
                   검토중
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setStatusFilter("passed")}
                   data-testid="menu-item-filter-passed"
                 >
                   통과
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setStatusFilter("rejected")}
                   data-testid="menu-item-filter-rejected"
                 >
