@@ -1049,7 +1049,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceLinks: agendas.referenceLinks,
           referenceFiles: agendas.referenceFiles,
           regionalCases: agendas.regionalCases,
-          customSteps: agendas.customSteps,
           createdAt: agendas.createdAt,
           updatedAt: agendas.updatedAt,
           category: categories,
