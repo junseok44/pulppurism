@@ -308,6 +308,12 @@ export default function AgendaDetailPage() {
     }
   };
 
+  const handleCommentFocus = () => {
+    if (!user) {
+      setShowLoginDialog(true);
+    }
+  };
+
   const handleVote = (voteType: "agree" | "disagree" | "neutral" | null) => {
     if (!user) {
       setShowLoginDialog(true);
@@ -661,6 +667,7 @@ export default function AgendaDetailPage() {
                     placeholder="이 안건에 대한 의견을 입력하세요..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
+                    onFocus={handleCommentFocus}
                     className="min-h-12 resize-none"
                     data-testid="input-agenda-comment"
                   />

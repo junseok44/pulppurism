@@ -1139,10 +1139,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const opinion = await storage.createOpinion(opinionData);
 
-      const agendaClusters = await db
+      let agendaClusters = await db
         .select()
         .from(clusters)
         .where(eq(clusters.agendaId, agendaId));
+
+      if (agendaClusters.length === 0) {
+        const agenda = await db
+          .select()
+          .from(agendas)
+          .where(eq(agendas.id, agendaId))
+          .limit(1);
+
+        if (agenda.length > 0) {
+          const defaultCluster = await db
+            .insert(clusters)
+            .values({
+              title: "일반 의견",
+              summary: "이 안건에 대한 일반 의견들입니다.",
+              categoryId: agenda[0].categoryId,
+              agendaId: agendaId,
+              status: "pending",
+              opinionCount: 0,
+            })
+            .returning();
+
+          agendaClusters = defaultCluster;
+        }
+      }
 
       if (agendaClusters.length > 0) {
         for (const cluster of agendaClusters) {
