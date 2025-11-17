@@ -1193,13 +1193,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/agendas", async (req, res) => {
     try {
+      console.log("POST /api/agendas - Request body:", JSON.stringify(req.body, null, 2));
       const data = insertAgendaSchema.parse(req.body);
+      console.log("POST /api/agendas - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.createAgenda(data);
       res.status(201).json(agenda);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("POST /api/agendas - Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: error.errors });
       }
+      console.error("POST /api/agendas - Error:", error);
       res.status(500).json({ error: "Failed to create agenda" });
     }
   });
