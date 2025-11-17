@@ -263,6 +263,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAgenda(id: string): Promise<boolean> {
+    // First, update clusters that reference this agenda (set agendaId to null)
+    await db.update(clusters).set({ agendaId: null }).where(eq(clusters.agendaId, id));
+    
+    // Delete related votes
+    await db.delete(votes).where(eq(votes.agendaId, id));
+    
+    // Delete related bookmarks
+    await db.delete(agendaBookmarks).where(eq(agendaBookmarks.agendaId, id));
+    
+    // Delete related reports
+    await db.delete(reports).where(eq(reports.agendaId, id));
+    
+    // Finally, delete the agenda
     const result = await db.delete(agendas).where(eq(agendas.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
