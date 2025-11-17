@@ -295,11 +295,11 @@ export const insertAgendaSchema = createInsertSchema(agendas)
       .string()
       .optional()
       .transform((val) => (val ? new Date(val) : undefined)),
-    okinewsUrl: z.string().optional().nullable(),
-    referenceLinks: z.array(z.string().url()).optional(),
-    referenceFiles: z.array(z.string()).optional(),
-    regionalCases: z.array(z.string()).optional(),
-    response: z.string().optional().nullable(),
+    okinewsUrl: z.string().nullish(),
+    referenceLinks: z.array(z.string().url()).nullish(),
+    referenceFiles: z.array(z.string()).nullish(),
+    regionalCases: z.array(z.string()).nullish(),
+    response: z.string().nullish(),
   });
 export const updateAgendaSchema = insertAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({
