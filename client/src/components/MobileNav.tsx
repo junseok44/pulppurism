@@ -25,38 +25,12 @@ export default function MobileNav() {
       .catch(() => setProviders({ google: false, kakao: false }));
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      const res = await fetch("/api/auth/demo-login", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        setShowLoginDialog(false);
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      }
-    } catch (error) {
-      console.error("Demo login failed:", error);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
   };
 
-  const handleKakaoLogin = async () => {
-    try {
-      const res = await fetch("/api/auth/demo-login", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        setShowLoginDialog(false);
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      }
-    } catch (error) {
-      console.error("Demo login failed:", error);
-    }
+  const handleKakaoLogin = () => {
+    window.location.href = "/api/auth/kakao";
   };
 
   const hasAnyProvider = providers && (providers.google || providers.kakao);
