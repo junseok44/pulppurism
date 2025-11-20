@@ -1,3 +1,5 @@
+import 'dotenv/config';  
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -5,8 +7,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./auth";
 
-const app = express();
 const PgStore = connectPgSimple(session);
+
+const app = express();
 
 declare module 'http' {
   interface IncomingMessage {
@@ -17,6 +20,9 @@ declare module 'http' {
 app.set('trust proxy', 1);
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+// 세션 스토어 설정 (Neon 호환성 문제로 메모리 스토어 사용)
+// Neon 데이터베이스는 WebSocket 연결만 지원하므로 connect-pg-simple과 호환되지 않음
 
 app.use(session({
   store: new PgStore({
@@ -81,8 +87,9 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    console.error('[Express Error Handler]', err);
     res.status(status).json({ message });
-    throw err;
+    // throw err 제거 - 서버가 크래시되지 않도록 함
   });
 
   // importantly only setup vite in development and after
@@ -102,7 +109,6 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });

@@ -45,11 +45,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
-    console.log("[DEBUG /api/auth/me] Session ID:", req.sessionID);
-    console.log("[DEBUG /api/auth/me] Session data:", JSON.stringify(req.session));
-    console.log("[DEBUG /api/auth/me] req.user:", req.user);
-    console.log("[DEBUG /api/auth/me] Cookies:", req.headers.cookie);
-    
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -93,25 +88,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       passport.authenticate("google", (err: any, user: any, info: any) => {
         if (err) {
-          console.error("Authentication error:", err);
+          console.error("[Google OAuth] Authentication error:", err);
           return res.redirect("/");
         }
         if (!user) {
+          console.error("[Google OAuth] No user returned from authentication");
           return res.redirect("/");
         }
 
+        console.log("[Google OAuth] User authenticated:", user.id, user.username, user.email);
+
         req.session.regenerate((err) => {
           if (err) {
-            console.error("Session regeneration failed:", err);
+            console.error("[Google OAuth] Session regeneration failed:", err);
             return res.redirect("/");
           }
 
           req.login(user, (err) => {
             if (err) {
-              console.error("Login failed:", err);
+              console.error("[Google OAuth] Login failed:", err);
               return res.redirect("/");
             }
-            res.redirect("/");
+            console.log("[Google OAuth] User logged in, session ID:", req.sessionID);
+            // 세션 저장 시도 (실패해도 계속 진행)
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                console.error("[Google OAuth] Session save error (non-critical):", saveErr);
+              } else {
+                console.log("[Google OAuth] Session saved successfully");
+              }
+              res.redirect("/");
+            });
           });
         });
       })(req, res, next);
@@ -140,25 +147,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       passport.authenticate("kakao", (err: any, user: any, info: any) => {
         if (err) {
-          console.error("Authentication error:", err);
+          console.error("[Kakao OAuth] Authentication error:", err);
           return res.redirect("/");
         }
         if (!user) {
+          console.error("[Kakao OAuth] No user returned from authentication");
           return res.redirect("/");
         }
 
+        console.log("[Kakao OAuth] User authenticated:", user.id, user.username, user.email);
+
         req.session.regenerate((err) => {
           if (err) {
-            console.error("Session regeneration failed:", err);
+            console.error("[Kakao OAuth] Session regeneration failed:", err);
             return res.redirect("/");
           }
 
           req.login(user, (err) => {
             if (err) {
-              console.error("Login failed:", err);
+              console.error("[Kakao OAuth] Login failed:", err);
               return res.redirect("/");
             }
-            res.redirect("/");
+            console.log("[Kakao OAuth] User logged in, session ID:", req.sessionID);
+            // 세션 저장 시도 (실패해도 계속 진행)
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                console.error("[Kakao OAuth] Session save error (non-critical):", saveErr);
+              } else {
+                console.log("[Kakao OAuth] Session saved successfully");
+              }
+              res.redirect("/");
+            });
           });
         });
       })(req, res, next);
@@ -211,12 +230,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .status(500)
             .json({ error: "Login failed after registration" });
         }
-        res.status(201).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName,
-          avatarUrl: user.avatarUrl,
+        // 세션 저장 시도 (실패해도 계속 진행)
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error (non-critical):", saveErr);
+          }
+          res.status(201).json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+          });
         });
       });
     } catch (error) {
@@ -261,10 +286,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Login error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save error:", err);
-            return res.status(500).json({ error: "Session save failed" });
+        // 세션 저장 시도 (실패해도 계속 진행)
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error (non-critical):", saveErr);
+            // 세션 저장 실패해도 로그인은 성공한 것으로 처리
           }
           res.json({
             id: user.id,
@@ -286,7 +312,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/demo-login", async (req, res) => {
     try {
-      console.log("[DEBUG] Demo login started");
       const tempUsers = await db
         .select()
         .from(users)
@@ -296,7 +321,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user;
       if (tempUsers.length > 0) {
         user = tempUsers[0];
-        console.log("[DEBUG] Found existing temp user:", user.id);
       } else {
         const newUsers = await db
           .insert(users)
@@ -308,40 +332,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .returning();
         user = newUsers[0];
-        console.log("[DEBUG] Created new temp user:", user.id);
       }
 
-      console.log("[DEBUG] Calling req.login with user:", user.id);
       req.login(user, (err) => {
         if (err) {
           console.error("[ERROR] Login error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        console.log("[DEBUG] req.login successful, session ID:", req.sessionID);
-        console.log("[DEBUG] req.user after login:", req.user);
-        console.log("[DEBUG] Calling req.session.save");
         req.session.save((err) => {
           if (err) {
             console.error("[ERROR] Session save error:", err);
             return res.status(500).json({ error: "Session save failed" });
           }
-          console.log("[DEBUG] Session saved successfully");
-          console.log("[DEBUG] Session data:", JSON.stringify(req.session));
-          console.log("[DEBUG] Session cookie:", req.session.cookie);
           
-          const response = {
+          res.json({
             id: user.id,
             username: user.username,
             email: user.email,
             displayName: user.displayName,
             avatarUrl: user.avatarUrl,
-          };
-          
-          res.on('finish', () => {
-            console.log("[DEBUG] Response headers:", res.getHeaders());
           });
-          
-          res.json(response);
         });
       });
     } catch (error) {
