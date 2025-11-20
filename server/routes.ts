@@ -2011,11 +2011,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
     try {
-      const file = await objectStorageService.searchPublicObject(filePath);
-      if (!file) {
+      const object = await objectStorageService.searchPublicObject(filePath);
+      if (!object) {
         return res.status(404).json({ error: "File not found" });
       }
-      objectStorageService.downloadObject(file, res);
+      objectStorageService.downloadObject(object.bucket, object.key, res);
     } catch (error) {
       console.error("Error searching for public object:", error);
       return res.status(500).json({ error: "Internal server error" });
