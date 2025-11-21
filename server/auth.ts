@@ -32,6 +32,12 @@ async function handleOAuthUser(profile: OAuthProfile) {
   const avatarUrl = profile.photos?.[0]?.value;
   const displayName = profile.displayName;
 
+  console.log(`[handleOAuthUser] Processing ${profile.provider} user:`, {
+    id: profile.id,
+    email,
+    displayName,
+  });
+
   let user;
 
   if (profile.provider === "google") {
@@ -41,6 +47,9 @@ async function handleOAuthUser(profile: OAuthProfile) {
       .where(eq(users.googleId, profile.id))
       .limit(1);
     user = existingUsers[0];
+    if (user) {
+      console.log(`[handleOAuthUser] Found existing Google user:`, user.id, user.username);
+    }
   } else {
     const existingUsers = await db
       .select()
@@ -48,9 +57,13 @@ async function handleOAuthUser(profile: OAuthProfile) {
       .where(eq(users.kakaoId, profile.id))
       .limit(1);
     user = existingUsers[0];
+    if (user) {
+      console.log(`[handleOAuthUser] Found existing Kakao user:`, user.id, user.username);
+    }
   }
 
   if (!user) {
+    console.log(`[handleOAuthUser] Creating new ${profile.provider} user`);
     let username = email?.split("@")[0] || `${profile.provider}_user`;
     let attempt = 0;
     const maxAttempts = 10;
@@ -76,6 +89,7 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
         const newUsers = await db.insert(users).values(insertData).returning();
         user = newUsers[0];
+        console.log(`[handleOAuthUser] Created new user:`, user.id, user.username, user.email);
         break;
       } catch (error: any) {
         if (error.code === "23505") {
@@ -84,6 +98,7 @@ async function handleOAuthUser(profile: OAuthProfile) {
             throw new Error("Failed to generate unique username");
           }
         } else {
+          console.error(`[handleOAuthUser] Error creating user:`, error);
           throw error;
         }
       }
@@ -99,9 +114,11 @@ export function setupAuth(app: Express) {
   const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
   const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
 
+  // 동적으로 포트를 가져오거나 환경 변수에서 가져옴
+  const port = process.env.PORT || '5000';
   const baseUrl = process.env.REPLIT_DEV_DOMAIN
     ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : "http://localhost:5000";
+    : `http://localhost:${port}`;
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(
@@ -159,24 +176,78 @@ export function setupAuth(app: Express) {
   }
 
   passport.serializeUser((user: Express.User, done) => {
-    console.log("[DEBUG serializeUser] Serializing user:", user.id);
     done(null, user.id);
   });
 
+  // 간단한 메모리 캐시 (개발 환경에서만 사용)
+  const userCache = new Map<string, { user: any; timestamp: number }>();
+  const CACHE_TTL = 60000; // 1분
+
   passport.deserializeUser(async (id: string, done) => {
-    console.log("[DEBUG deserializeUser] Deserializing user ID:", id);
-    try {
-      const userResults = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, id))
-        .limit(1);
-      console.log("[DEBUG deserializeUser] Found user:", userResults[0]?.id);
-      done(null, userResults[0] || null);
-    } catch (error) {
-      console.error("[DEBUG deserializeUser] Error:", error);
-      done(error);
+    // 캐시 확인
+    const cached = userCache.get(id);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      done(null, cached.user);
+      return;
     }
+
+    let retries = 2; // 재시도 횟수 감소
+    let lastError: any = null;
+    
+    while (retries > 0) {
+      try {
+        // 타임아웃을 3초로 단축
+        const userResults = await Promise.race([
+          db
+            .select()
+            .from(users)
+            .where(eq(users.id, id))
+            .limit(1),
+          new Promise<any[]>((_, reject) => 
+            setTimeout(() => reject(new Error("Database query timeout")), 3000)
+          )
+        ]);
+        
+        const user = userResults[0];
+        if (user) {
+          // 성공 시 캐시에 저장
+          userCache.set(id, { user, timestamp: Date.now() });
+          done(null, user);
+          return;
+        } else {
+          done(null, null);
+          return;
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = error?.message || String(error);
+        const errorCode = error?.code || '';
+        
+        retries--;
+        
+        // ETIMEDOUT이나 WebSocket 에러인 경우에만 재시도
+        const isRetryableError = 
+          errorCode === 'ETIMEDOUT' || 
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('WebSocket') ||
+          errorMessage.includes('ErrorEvent') ||
+          errorMessage.includes('EHOSTUNREACH') ||
+          (error?.errors && Array.isArray(error.errors));
+        
+        if (retries > 0 && isRetryableError) {
+          // 재시도 전 대기 (짧은 대기 시간)
+          await new Promise(resolve => setTimeout(resolve, 500));
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    // 모든 재시도 실패 시 null 반환 (세션 무효화)
+    // 에러를 done에 전달하지 않고 null을 반환하여 서버가 크래시되지 않도록 함
+    // 에러 로깅을 최소화 (너무 많은 에러 로그 방지)
+    done(null, null);
   });
 
   app.use(passport.initialize());

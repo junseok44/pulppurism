@@ -1,26 +1,17 @@
-import { Storage, File } from "@google-cloud/storage";
+import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { Response } from "express";
-import { randomUUID } from "crypto";
+import { Readable } from "stream";
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
-
-export const objectStorageClient = new Storage({
+// S3 클라이언트 생성
+export const s3Client = new S3Client({
+  region: process.env.AWS_REGION || "ap-northeast-2",
   credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
   },
-  projectId: "",
 });
+
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -34,7 +25,7 @@ export class ObjectStorageService {
   constructor() {}
 
   getPublicObjectSearchPaths(): Array<string> {
-    const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
+    const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || S3_BUCKET_NAME;
     const paths = Array.from(
       new Set(
         pathsStr
@@ -45,54 +36,91 @@ export class ObjectStorageService {
     );
     if (paths.length === 0) {
       throw new Error(
-        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
-          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+        "PUBLIC_OBJECT_SEARCH_PATHS or S3_BUCKET_NAME not set. " +
+          "Set S3_BUCKET_NAME env var with your S3 bucket name."
       );
     }
     return paths;
   }
 
-  async searchPublicObject(filePath: string): Promise<File | null> {
+  async searchPublicObject(filePath: string): Promise<{ bucket: string; key: string } | null> {
     for (const searchPath of this.getPublicObjectSearchPaths()) {
-      const fullPath = `${searchPath}/${filePath}`;
+      const bucketName = searchPath.startsWith("/") ? searchPath.slice(1) : searchPath;
+      const key = filePath.startsWith("/") ? filePath.slice(1) : filePath;
 
-      const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
-
-      const [exists] = await file.exists();
-      if (exists) {
-        return file;
+      try {
+        const command = new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        });
+        await s3Client.send(command);
+        return { bucket: bucketName, key };
+      } catch (error: unknown) {
+        const err = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+        if (err.name !== "NotFound" && err.$metadata?.httpStatusCode !== 404) {
+          console.error("Error checking object:", error);
+        }
       }
     }
 
     return null;
   }
 
-  async downloadObject(file: File, res: Response, cacheTtlSec: number = 3600) {
+  async downloadObject(
+    bucket: string,
+    key: string,
+    res: Response,
+    cacheTtlSec: number = 3600
+  ) {
     try {
-      const [metadata] = await file.getMetadata();
-      
+      const command = new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+
+      const response = await s3Client.send(command);
+
       res.set({
-        "Content-Type": metadata.contentType || "application/octet-stream",
-        "Content-Length": metadata.size,
+        "Content-Type": response.ContentType || "application/octet-stream",
+        "Content-Length": response.ContentLength?.toString() || "0",
         "Cache-Control": `public, max-age=${cacheTtlSec}`,
       });
 
-      const stream = file.createReadStream();
-
-      stream.on("error", (err) => {
-        console.error("Stream error:", err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: "Error streaming file" });
+      // AWS SDK v3의 Body는 ReadableStream 또는 Blob일 수 있음
+      if (response.Body) {
+        // ReadableStream을 Node.js Readable로 변환
+        if (response.Body instanceof Readable) {
+          response.Body.on("error", (err) => {
+            console.error("Stream error:", err);
+            if (!res.headersSent) {
+              res.status(500).json({ error: "Error streaming file" });
+            }
+          });
+          response.Body.pipe(res);
+        } else {
+          // Blob이나 다른 타입인 경우
+          const stream = Readable.fromWeb(response.Body as any);
+          stream.on("error", (err) => {
+            console.error("Stream error:", err);
+            if (!res.headersSent) {
+              res.status(500).json({ error: "Error streaming file" });
+            }
+          });
+          stream.pipe(res);
         }
-      });
-
-      stream.pipe(res);
-    } catch (error) {
+      } else {
+        throw new Error("Invalid response body type");
+      }
+    } catch (error: any) {
       console.error("Error downloading file:", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Error downloading file" });
+      if (error.name === "NoSuchKey" || error.name === "NotFound" || error.$metadata?.httpStatusCode === 404) {
+        if (!res.headersSent) {
+          res.status(404).json({ error: "File not found" });
+        }
+      } else {
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error downloading file" });
+        }
       }
     }
   }
@@ -103,42 +131,24 @@ export class ObjectStorageService {
       throw new Error("No public object search paths configured");
     }
 
-    const fullPath = `${searchPaths[0]}/${filePath}`;
-    const { bucketName, objectName } = parseObjectPath(fullPath);
-    
-    const bucket = objectStorageClient.bucket(bucketName);
-    const file = bucket.file(objectName);
-    
-    await file.save(buffer, {
-      metadata: {
-        contentType: getContentType(filePath),
-      },
+    const bucketName = searchPaths[0].startsWith("/") 
+      ? searchPaths[0].slice(1) 
+      : searchPaths[0];
+    const key = filePath.startsWith("/") ? filePath.slice(1) : filePath;
+
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: buffer,
+      ContentType: getContentType(filePath),
     });
 
-    return fullPath;
+    await s3Client.send(command);
+
+    return `/${bucketName}/${key}`;
   }
 }
 
-function parseObjectPath(path: string): {
-  bucketName: string;
-  objectName: string;
-} {
-  if (!path.startsWith("/")) {
-    path = `/${path}`;
-  }
-  const pathParts = path.split("/");
-  if (pathParts.length < 3) {
-    throw new Error("Invalid path: must contain at least a bucket name");
-  }
-
-  const bucketName = pathParts[1];
-  const objectName = pathParts.slice(2).join("/");
-
-  return {
-    bucketName,
-    objectName,
-  };
-}
 
 function getContentType(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase();
