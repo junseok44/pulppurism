@@ -35,56 +35,54 @@ export default function VotingWidget({
   };
 
   return (
-    <div className="space-y-4" data-testid="widget-voting">
-      <h3 className="font-semibold text-lg">투표하기</h3>
-      <div className="w-full h-[14vh] md:h-[28vh] flex items-center gap-2.5">
+    <div className="space-y-3" data-testid="widget-voting">
+      <h3 className="font-semibold text-base">투표하기</h3>
+      <div className="w-full h-16 flex items-center gap-2">
         <div
-          className={`flex-1 h-full px-5 bg-neutral-300 dark:bg-neutral-700 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 h-full px-3 py-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg flex flex-row items-center justify-center gap-2 ${
             disabled
               ? "opacity-50 cursor-not-allowed"
-              : "cursor-pointer hover-elevate active-elevate-2"
-          } ${userVote === "agree" ? "ring-2 ring-green-700" : ""}`}
+              : "cursor-pointer hover:bg-neutral-400 dark:hover:bg-neutral-600 active:scale-95 transition-all"
+          } ${userVote === "agree" ? "ring-2 ring-green-700 bg-green-100 dark:bg-green-900" : ""}`}
           onClick={() => handleVote("agree")}
           data-testid="button-vote-agree"
         >
-          <div className="w-6 h-6 rounded-full border-[5px] border-green-700"></div>
-          <div className="text-center text-green-700 text-base font-black h-5 flex items-center justify-center">
-            찬성한다
+          <div className="w-4 h-4 rounded-full border-2 border-green-700"></div>
+          <div className="text-center text-green-700 text-sm font-semibold">
+            찬성
           </div>
         </div>
 
         <div
-          className={`flex-1 h-full px-5 bg-amber-200 dark:bg-amber-300 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 h-full px-3 py-2 bg-amber-200 dark:bg-amber-300 rounded-lg flex flex-row items-center justify-center gap-2 ${
             disabled
               ? "opacity-50 cursor-not-allowed"
-              : "cursor-pointer hover-elevate active-elevate-2"
-          } ${userVote === "neutral" ? "ring-2 ring-amber-500" : ""}`}
+              : "cursor-pointer hover:bg-amber-300 dark:hover:bg-amber-400 active:scale-95 transition-all"
+          } ${userVote === "neutral" ? "ring-2 ring-amber-500 bg-amber-100 dark:bg-amber-800" : ""}`}
           onClick={() => handleVote("neutral")}
           data-testid="button-vote-neutral"
         >
-          <div className="w-6 h-6 relative overflow-hidden">
-            <div className="w-6 h-0 absolute top-3 left-0 border-t-[5px] border-amber-500"></div>
-          </div>
-          <div className="text-center text-amber-500 dark:text-amber-600 text-base font-black h-5 flex items-center justify-center">
-            중립이다
+          <div className="w-4 h-0 border-t-2 border-amber-500"></div>
+          <div className="text-center text-amber-500 dark:text-amber-600 text-sm font-semibold">
+            중립
           </div>
         </div>
 
         <div
-          className={`flex-1 h-full px-5 bg-rose-300 dark:bg-rose-400 rounded-xl flex flex-col justify-center items-center gap-1 overflow-hidden ${
+          className={`flex-1 h-full px-3 py-2 bg-rose-300 dark:bg-rose-400 rounded-lg flex flex-row items-center justify-center gap-2 ${
             disabled
               ? "opacity-50 cursor-not-allowed"
-              : "cursor-pointer hover-elevate active-elevate-2"
-          } ${userVote === "disagree" ? "ring-2 ring-red-600" : ""}`}
+              : "cursor-pointer hover:bg-rose-400 dark:hover:bg-rose-500 active:scale-95 transition-all"
+          } ${userVote === "disagree" ? "ring-2 ring-red-600 bg-rose-100 dark:bg-rose-900" : ""}`}
           onClick={() => handleVote("disagree")}
           data-testid="button-vote-disagree"
         >
-          <div className="w-5 h-5 relative">
-            <div className="w-7 h-0 absolute top-2.5 left-[-3px] rotate-45 border-t-[5px] border-red-600"></div>
-            <div className="w-7 h-0 absolute top-2.5 left-[-3px] -rotate-45 border-t-[5px] border-red-600"></div>
+          <div className="w-4 h-4 relative">
+            <div className="w-3 h-0 absolute top-2 left-0.5 rotate-45 border-t-2 border-red-600"></div>
+            <div className="w-3 h-0 absolute top-2 left-0.5 -rotate-45 border-t-2 border-red-600"></div>
           </div>
-          <div className="text-center text-red-600 text-base font-black h-5 flex items-center justify-center">
-            반대한다
+          <div className="text-center text-red-600 text-sm font-semibold">
+            반대
           </div>
         </div>
       </div>

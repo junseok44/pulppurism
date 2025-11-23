@@ -13,6 +13,8 @@ import LikedOpinionsPage from "@/pages/LikedOpinionsPage";
 import MyAgendasPage from "@/pages/MyAgendasPage";
 import BookmarkedAgendasPage from "@/pages/BookmarkedAgendasPage";
 import AgendaDetailPage from "@/pages/AgendaDetailPage";
+import AgendaOpinionsPage from "@/pages/AgendaOpinionsPage";
+import AgendaReferencesPage from "@/pages/AgendaReferencesPage";
 import OpinionDetailPage from "@/pages/OpinionDetailPage";
 import NewOpinionPage from "@/pages/NewOpinionPage";
 import SearchPage from "@/pages/SearchPage";
@@ -32,6 +34,8 @@ function Router() {
       <Route path="/my/liked" component={LikedOpinionsPage} />
       <Route path="/my/agendas" component={MyAgendasPage} />
       <Route path="/my/bookmarks" component={BookmarkedAgendasPage} />
+      <Route path="/agendas/:id/opinions" component={AgendaOpinionsPage} />
+      <Route path="/agendas/:id/references" component={AgendaReferencesPage} />
       <Route path="/agendas/:id" component={AgendaDetailPage} />
       <Route path="/opinion/new" component={NewOpinionPage} />
       <Route path="/opinion/:id" component={OpinionDetailPage} />
