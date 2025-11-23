@@ -2,12 +2,9 @@ import 'dotenv/config';
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./auth";
-
-const PgStore = connectPgSimple(session);
 
 const app = express();
 
@@ -23,12 +20,11 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // 세션 스토어 설정 (Neon 호환성 문제로 메모리 스토어 사용)
 // Neon 데이터베이스는 WebSocket 연결만 지원하므로 connect-pg-simple과 호환되지 않음
+// DB 연결 실패 시 서버가 크래시되지 않도록 메모리 스토어 사용
+// 주의: 메모리 스토어는 서버 재시작 시 세션이 사라지고, 여러 인스턴스 간 공유되지 않음
 
 app.use(session({
-  store: new PgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-  }),
+  // store를 지정하지 않으면 기본적으로 메모리 스토어 사용
   secret: process.env.SESSION_SECRET || 'civic-engagement-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -78,6 +74,17 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// 전역 에러 핸들러 - 처리되지 않은 Promise rejection 방지
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('[Unhandled Rejection]', reason);
+  // 서버가 크래시되지 않도록 에러만 로깅
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[Uncaught Exception]', error);
+  // 서버가 크래시되지 않도록 에러만 로깅
 });
 
 (async () => {
