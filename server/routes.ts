@@ -909,6 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/agendas", async (req, res) => {
     try {
       const { limit, offset, status, categoryId } = req.query;
+      const userId = req.user?.id;
 
       const conditions = [];
       if (status) {
@@ -935,9 +936,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: agendas.updatedAt,
           category: categories,
           okinews: agendas.okinews,
+          bookmarkId: agendaBookmarks.id,
+          bookmarkCount: sql<number>`(
+            SELECT COUNT(*)::int
+            FROM ${agendaBookmarks}
+            WHERE ${agendaBookmarks.agendaId} = ${agendas.id}
+          )`.as("bookmarkCount"),
         })
         .from(agendas)
-        .leftJoin(categories, eq(agendas.categoryId, categories.id));
+        .leftJoin(categories, eq(agendas.categoryId, categories.id))
+        .leftJoin(
+          agendaBookmarks,
+          userId
+            ? and(
+                eq(agendaBookmarks.agendaId, agendas.id),
+                eq(agendaBookmarks.userId, userId),
+              )
+            : sql`false`,
+        );
 
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as any;
@@ -953,7 +969,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const results = await query;
-      res.json(results);
+      
+      // 북마크 정보 처리
+      const processedResults = results.map((result: any) => {
+        const isBookmarked = !!result.bookmarkId;
+        const { bookmarkId, ...rest } = result;
+        return {
+          ...rest,
+          isBookmarked,
+          bookmarkCount: result.bookmarkCount || 0,
+        };
+      });
+      
+      res.json(processedResults);
     } catch (error) {
       console.error("Error fetching agendas:", error);
       res.status(500).json({ error: "Failed to fetch agendas" });
@@ -1304,7 +1332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const existing = await storage.getAgendaBookmark(userId, req.params.id);
       if (existing) {
-        return res.status(400).json({ error: "Already bookmarked" });
+        // 이미 북마크가 있으면 성공으로 처리 (idempotent)
+        return res.status(200).json({ success: true });
       }
 
       await storage.createAgendaBookmark({ userId, agendaId: req.params.id });
@@ -1318,7 +1347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
 
-      await storage.deleteAgendaBookmark(userId, req.params.id);
+      const deleted = await storage.deleteAgendaBookmark(userId, req.params.id);
+      // 북마크가 없어도 성공으로 처리 (idempotent)
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to remove bookmark" });
