@@ -91,13 +91,13 @@ export default function Header() {
                   <div className="flex-1 overflow-y-auto px-8">
                     <div className="flex flex-col">
                       {navItems.map((item) => (
-                        <Link key={item.path} href={item.path}>
-                          <a
-                            className="py-5 border-b border-[#EBE8E0] text-xl font-medium text-black-n1 flex items-center gap-3 hover:text-ok_sub1 transition-colors"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            {item.label}
-                          </a>
+                        <Link 
+                          key={item.path} 
+                          href={item.path}
+                          className="py-5 border-b border-[#EBE8E0] text-xl font-medium text-black-n1 flex items-center gap-3 hover:text-ok_sub1 transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {item.label}
                         </Link>
                       ))}
                     </div>
@@ -153,15 +153,15 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-8" data-testid="nav-desktop">
             {/* 👇 하드코딩 대신 navItems.map 사용! */}
             {navItems.map((item) => (
-              <Link key={item.path} href={item.path}>
-                <a 
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    isActive(item.path) ? "text-primary font-bold" : "text-muted-foreground"
-                  }`}
-                  data-testid={`nav-${item.label}`}
-                >
-                  {item.label}
-                </a>
+              <Link 
+                key={item.path} 
+                href={item.path}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(item.path) ? "text-primary font-bold" : "text-muted-foreground"
+                }`}
+                data-testid={`nav-${item.label}`}
+              >
+                {item.label}
               </Link>
             ))}
           </nav>

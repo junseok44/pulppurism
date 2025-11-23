@@ -10,7 +10,7 @@ import { Bookmark, Edit, ArrowLeft, Share2, Copy, MessageCircle } from "lucide-r
 import { useLocation } from "wouter";
 import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 import type { Agenda, Category, User } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface AgendaHeaderProps {
   agenda: Agenda & { category?: Category; isBookmarked?: boolean };
@@ -38,6 +38,70 @@ export default function AgendaHeader({
   const shareTitle = agenda.title;
   const shareText = agenda.description || agenda.title;
 
+  // 카카오 SDK 초기화
+  useEffect(() => {
+    const initKakaoSDK = () => {
+      if (typeof window === "undefined" || !window.Kakao) {
+        return false;
+      }
+
+      // 이미 초기화되어 있으면 성공
+      if (window.Kakao.isInitialized()) {
+        return true;
+      }
+
+      // 환경 변수에서 JavaScript 키 가져오기
+      const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY || "";
+      if (!kakaoKey) {
+        return false;
+      }
+
+      try {
+        window.Kakao.init(kakaoKey);
+        return window.Kakao.isInitialized();
+      } catch (error) {
+        return false;
+      }
+    };
+
+    // 스크립트가 이미 로드되어 있으면 바로 초기화 시도
+    if (initKakaoSDK()) {
+      return;
+    }
+
+    // 스크립트가 로드될 때까지 기다리는 함수
+    const waitForKakaoSDK = (retries = 50) => {
+      if (retries <= 0) {
+        return;
+      }
+
+      if (typeof window !== "undefined" && window.Kakao) {
+        initKakaoSDK();
+      } else {
+        setTimeout(() => waitForKakaoSDK(retries - 1), 100);
+      }
+    };
+
+    // HTML에 이미 스크립트가 있는지 확인
+    const existingScript = document.querySelector('script[src*="kakao"]');
+    if (existingScript) {
+      // 스크립트가 이미 있으면 로드될 때까지 기다림
+      waitForKakaoSDK();
+    } else {
+      // 스크립트가 없으면 동적으로 로드
+      const script = document.createElement('script');
+      script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js';
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      
+      script.onload = () => {
+        initKakaoSDK();
+      };
+
+      document.head.appendChild(script);
+    }
+  }, []);
+
   const handleShare = async (platform: 'kakao' | 'copy') => {
     if (platform === 'copy') {
       try {
@@ -45,15 +109,66 @@ export default function AgendaHeader({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error('Failed to copy:', err);
+        // 클립보드 복사 실패 시 무시
       }
       return;
     }
 
     if (platform === 'kakao') {
-      // 카카오톡 링크 공유 (카카오톡 앱이 설치되어 있으면 앱으로, 없으면 웹으로)
-      const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/shortlink?url=${encodeURIComponent(shareUrl)}`;
-      window.open(kakaoUrl, '_blank', 'width=600,height=600');
+      if (typeof window === "undefined" || !window.Kakao) {
+        alert("카카오톡 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.");
+        return;
+      }
+
+      if (!window.Kakao.isInitialized()) {
+        const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY || "";
+        if (kakaoKey) {
+          try {
+            window.Kakao.init(kakaoKey);
+          } catch (error) {
+            alert("카카오톡 SDK 초기화에 실패했습니다. 환경 변수를 확인해주세요.");
+            return;
+          }
+        } else {
+          alert("카카오톡 SDK 키가 설정되지 않았습니다.");
+          return;
+        }
+      }
+
+      // Kakao.Link 또는 Kakao.Share 사용 (SDK 버전에 따라 다름)
+      const kakaoShare = window.Kakao.Share || window.Kakao.Link;
+      
+      if (!kakaoShare || !kakaoShare.sendDefault) {
+        alert("카카오톡 공유 기능을 사용할 수 없습니다. SDK 버전을 확인해주세요.");
+        return;
+      }
+
+      try {
+        kakaoShare.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: agenda.title,
+            description: agenda.description || '내용을 확인해보세요.',
+            imageUrl: 
+              'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop', // 기본 이미지 또는 안건 대표 이미지
+            link: {
+              mobileWebUrl: shareUrl,
+              webUrl: shareUrl,
+            },
+          },
+          buttons: [
+            {
+              title: '자세히 보기',
+              link: {
+                mobileWebUrl: shareUrl,
+                webUrl: shareUrl,
+              },
+            },
+          ],
+        });
+      } catch (error) {
+        alert("카카오톡 공유 중 오류가 발생했습니다.");
+      }
     }
   };
 
@@ -68,9 +183,7 @@ export default function AgendaHeader({
         });
       } catch (err) {
         // 사용자가 공유를 취소한 경우 무시
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
+        // AbortError는 무시
       }
     } else {
       // Web Share API를 지원하지 않는 경우 링크 복사
