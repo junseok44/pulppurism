@@ -13,6 +13,10 @@ export default {
       colors: {
         //okinews color
         ok_white1:"#ffffff",
+        ok_gray2:"var(--ok_gray2)",
+        ok_gray1:"var(--ok_gray1)",  
+        primary_hov:"var(--primary_hov)",
+        ok_sub1:"var(--ok_sub1)",
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",

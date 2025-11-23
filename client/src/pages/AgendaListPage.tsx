@@ -141,7 +141,7 @@ export default function AgendaListPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col pb-20 md:pb-0">
+    <div className="h-screen flex flex-col pb-20 md:pb-0" bg-background>
       <Header />
       <div className="flex-1 flex flex-col overflow-y-auto">
         <div className="max-w-5xl mx-auto w-full px-4 pt-6">
