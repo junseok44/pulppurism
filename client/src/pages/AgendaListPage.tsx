@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Search, Loader2, Filter, ChevronDown } from "lucide-react";
 import type { Agenda, Category } from "@shared/schema";
 import OkAgendaCard from "@/components/OkAgendaCard";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/useUser";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +34,8 @@ export default function AgendaListPage() {
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [statusFilter, setStatusFilter] = useState<AgendaStatus>("all");
   const [sortOption, setSortOption] = useState<SortOption>("latest");
+  const { toast } = useToast();
+  const { user } = useUser();
 
   const spotlightSection = useMemo<SpotlightSection>(() => {
     const sections: SpotlightSection[] = ["voting", "passed", "rejected"];
@@ -133,6 +138,69 @@ export default function AgendaListPage() {
   };
 
   const spotlightConfig = getSpotlightConfig();
+
+  const bookmarkMutation = useMutation({
+    mutationFn: async ({ agendaId, isBookmarked }: { agendaId: string; isBookmarked: boolean }) => {
+      if (isBookmarked) {
+        await apiRequest("DELETE", `/api/agendas/${agendaId}/bookmark`);
+      } else {
+        await apiRequest("POST", `/api/agendas/${agendaId}/bookmark`);
+      }
+    },
+    onMutate: async ({ agendaId, isBookmarked }) => {
+      // Optimistic update: 즉시 UI 업데이트
+      await queryClient.cancelQueries({ queryKey: [agendasQueryKey] });
+      
+      const previousAgendas = queryClient.getQueryData<AgendaWithCategory[]>([agendasQueryKey]);
+      
+      if (previousAgendas) {
+        const updatedAgendas = previousAgendas.map((agenda) =>
+          agenda.id === agendaId
+            ? {
+                ...agenda,
+                isBookmarked: !isBookmarked,
+                bookmarkCount: isBookmarked
+                  ? (agenda.bookmarkCount || 0) - 1
+                  : (agenda.bookmarkCount || 0) + 1,
+              }
+            : agenda
+        );
+        queryClient.setQueryData<AgendaWithCategory[]>([agendasQueryKey], updatedAgendas);
+      }
+      
+      return { previousAgendas };
+    },
+    onError: (err, variables, context) => {
+      // 에러 발생 시 이전 상태로 롤백
+      if (context?.previousAgendas) {
+        queryClient.setQueryData([agendasQueryKey], context.previousAgendas);
+      }
+      console.error("북마크 에러:", err);
+      toast({
+        title: "북마크 실패",
+        description: err instanceof Error ? err.message : "북마크 상태를 변경하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: () => {
+      // 성공 시 쿼리 무효화하여 서버 데이터와 동기화
+      queryClient.invalidateQueries({ queryKey: [agendasQueryKey] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agendas/bookmarked"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me/stats"] });
+    },
+  });
+
+  const handleBookmarkClick = (agendaId: string, isBookmarked: boolean) => {
+    if (!user) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "북마크 기능을 사용하려면 로그인해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    bookmarkMutation.mutate({ agendaId, isBookmarked });
+  };
 
   const isLoading = categoriesLoading || agendasLoading;
   const hasError = categoriesError || agendasError;
@@ -332,6 +400,7 @@ export default function AgendaListPage() {
                   bookmarkCount={agenda.bookmarkCount || 0}
                   isBookmarked={agenda.isBookmarked || false}
                   onClick={() => setLocation(`/agendas/${agenda.id}`)}
+                  onBookmarkClick={() => handleBookmarkClick(agenda.id, agenda.isBookmarked || false)}
                 />
               ))
             ) : (

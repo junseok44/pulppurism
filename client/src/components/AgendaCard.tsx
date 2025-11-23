@@ -13,6 +13,7 @@ interface AgendaCardProps {
   bookmarkCount: number;
   isBookmarked?: boolean;
   onClick?: () => void;
+  onBookmarkClick?: (e: React.MouseEvent) => void;
 }
 
 export default function AgendaCard({
@@ -24,6 +25,7 @@ export default function AgendaCard({
   bookmarkCount,
   isBookmarked = false,
   onClick,
+  onBookmarkClick,
 }: AgendaCardProps) {
 
   return (
@@ -46,12 +48,12 @@ export default function AgendaCard({
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
-              console.log("Bookmark toggled");
+              onBookmarkClick?.(e);
             }}
             data-testid={`button-bookmark-${id}`}
-            className="flex-shrink-0"
+            className="flex-shrink-0 w-12 h-12 hover:bg-primary/10 transition-colors"
           >
-            <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current text-primary" : ""}`} />
+            <Bookmark className={`w-6 h-6 ${isBookmarked ? "fill-current text-primary" : ""}`} />
           </Button>
         </div>
 

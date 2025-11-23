@@ -2,7 +2,17 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    let text: string;
+    // 204 No Content는 본문이 없으므로 statusText만 사용
+    if (res.status === 204) {
+      text = res.statusText;
+    } else {
+      try {
+        text = (await res.text()) || res.statusText;
+      } catch {
+        text = res.statusText;
+      }
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }
