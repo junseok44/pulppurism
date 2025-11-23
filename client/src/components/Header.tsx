@@ -56,7 +56,7 @@ export default function Header() {
           
           <div className="flex items-center gap-3">
             
-            {/* 👇 [모바일 메뉴] 사진처럼 전체 화면을 덮는 베이지색 카드 스타일 */}
+            {/* 👇 [모바일 메뉴]카드 스타일 */}
             <div className="md:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -129,7 +129,7 @@ export default function Header() {
                         onClick={() => { setShowLoginDialog(true); setIsMobileMenuOpen(false); }}
                         className="w-full h-14 rounded-full bg-primary hover:bg-primary_hov text-white text-lg font-bold shadow-none"
                       >
-                        Login
+                        로그인
                       </Button>
                     )}
                   </div>
@@ -184,10 +184,56 @@ export default function Header() {
         </header>
       </div>
 
-      {/* 로그인 다이얼로그 (변동 없음) */}
+      {/* 👇 2. 로그인 다이얼로그 (이게 꼭 있어야 해!) */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-         {/* ... (기존 다이얼로그 내용) ... */}
-         <DialogContent><DialogHeader><DialogTitle>로그인</DialogTitle></DialogHeader>{/* ...내용... */}</DialogContent>
+        <DialogContent 
+        data-testid="dialog-login"
+        className = "bg-ok_gray1 sm:rounded-lg"
+        >
+          <DialogHeader>
+            <DialogTitle>로그인</DialogTitle>
+            <DialogDescription>
+              {hasAnyProvider
+                ? "소셜 계정으로 간편하게 로그인하세요"
+                : "OAuth 인증 설정이 필요합니다"}
+            </DialogDescription>
+          </DialogHeader>
+          {hasAnyProvider ? (
+            <>
+              <div className="space-y-3">
+                {providers?.google && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12"
+                    onClick={handleGoogleLogin}
+                    data-testid="button-google-login"
+                  >
+                    <SiGoogle className="w-5 h-5" />
+                    Google로 로그인
+                  </Button>
+                )}
+                {providers?.kakao && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12"
+                    onClick={handleKakaoLogin}
+                    data-testid="button-kakao-login"
+                  >
+                    <SiKakaotalk className="w-5 h-5 text-yellow-500" />
+                    Kakao로 로그인
+                  </Button>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground text-center mt-4">
+                로그인하면 서비스 이용약관에 동의하게 됩니다
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              <p className="mb-3">OAuth 인증 키가 설정되지 않았습니다.</p>
+            </div>
+          )}
+        </DialogContent>
       </Dialog>
     </>
   );
