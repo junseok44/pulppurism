@@ -45,6 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
+    console.log("[GET /api/auth/me] Request:", {
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+      session: req.session,
+    });
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -1838,6 +1843,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to fetch user stats:", error);
       res.status(500).json({ error: "Failed to fetch user stats" });
+    }
+  });
+
+  app.patch("/api/users/me", requireAuth, async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const schema = z.object({
+        displayName: z.string().min(1).max(50).optional(),
+        avatarUrl: z.string().url().optional(),
+      });
+
+      const data = schema.parse(req.body);
+
+      const userId = req.user.id;
+
+      // 데이터베이스에서 사용자 존재 확인 및 업데이트
+      const [updatedUser] = await db
+        .update(users)
+        .set(data)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("[PATCH /api/users/me] Error:", error);
+      res.status(500).json({ error: "Failed to update user profile" });
     }
   });
 

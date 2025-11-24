@@ -204,9 +204,12 @@ export function setupAuth(app: Express) {
   const CACHE_TTL = 60000; // 1분
 
   passport.deserializeUser(async (id: string, done) => {
+    console.log(`[deserializeUser] Attempting to deserialize user: ${id}`);
+    
     // 캐시 확인
     const cached = userCache.get(id);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`[deserializeUser] Found cached user: ${id}`);
       done(null, cached.user);
       return;
     }
@@ -232,9 +235,14 @@ export function setupAuth(app: Express) {
         if (user) {
           // 성공 시 캐시에 저장
           userCache.set(id, { user, timestamp: Date.now() });
+          console.log(`[deserializeUser] Successfully deserialized user: ${id}`, {
+            username: user.username,
+            displayName: user.displayName,
+          });
           done(null, user);
           return;
         } else {
+          console.error(`[deserializeUser] User not found in database: ${id}`);
           done(null, null);
           return;
         }
@@ -242,6 +250,12 @@ export function setupAuth(app: Express) {
         lastError = error;
         const errorMessage = error?.message || String(error);
         const errorCode = error?.code || '';
+        
+        console.error(`[deserializeUser] Error (retries left: ${retries}):`, {
+          id,
+          error: errorMessage,
+          code: errorCode,
+        });
         
         retries--;
         
@@ -265,8 +279,9 @@ export function setupAuth(app: Express) {
     }
     
     // 모든 재시도 실패 시 null 반환 (세션 무효화)
-    // 에러를 done에 전달하지 않고 null을 반환하여 서버가 크래시되지 않도록 함
-    // 에러 로깅을 최소화 (너무 많은 에러 로그 방지)
+    console.error(`[deserializeUser] Failed to deserialize user after retries: ${id}`, {
+      lastError: lastError?.message || lastError,
+    });
     done(null, null);
   });
 
@@ -275,7 +290,7 @@ export function setupAuth(app: Express) {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user && req.user.id) {
     return next();
   }
   res.status(401).json({ error: "Not authenticated" });
