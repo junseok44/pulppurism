@@ -18,7 +18,7 @@ export default {
         primary_hov:"var(--primary_hov)",
         ok_sub1:"var(--ok_sub1)",
         // Flat / base colors (regular buttons)
-        background: "hsl(var(--background) / <alpha-value>)",
+        background: "var(--background)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
