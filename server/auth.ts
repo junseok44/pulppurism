@@ -27,6 +27,16 @@ interface OAuthProfile {
   provider: "google" | "kakao";
 }
 
+// 랜덤 문자열 생성 함수 (소문자 3자리)
+function generateRandomString(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  for (let i = 0; i < 3; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 async function handleOAuthUser(profile: OAuthProfile) {
   const email = profile.emails?.[0]?.value;
   const avatarUrl = profile.photos?.[0]?.value;
@@ -64,19 +74,21 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
   if (!user) {
     console.log(`[handleOAuthUser] Creating new ${profile.provider} user`);
-    let username = email?.split("@")[0] || `${profile.provider}_user`;
+    // "익명 주민 abc" 형식으로 username 생성
     let attempt = 0;
     const maxAttempts = 10;
 
     while (attempt < maxAttempts) {
-      const suffix = attempt === 0 ? "" : `_${Date.now().toString(36).slice(-4)}`;
-      const candidateUsername = `${username}${suffix}`;
+      const randomSuffix = generateRandomString();
+      const candidateUsername = `익명 주민 ${randomSuffix}`;
+      // displayName이 없으면 username과 동일하게 설정
+      const finalDisplayName = displayName || candidateUsername;
 
       try {
         const insertData: any = {
           username: candidateUsername,
           email,
-          displayName,
+          displayName: finalDisplayName, // 카카오 닉네임 또는 "익명 주민 abc"
           avatarUrl,
           provider: profile.provider,
         };
@@ -89,7 +101,7 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
         const newUsers = await db.insert(users).values(insertData).returning();
         user = newUsers[0];
-        console.log(`[handleOAuthUser] Created new user:`, user.id, user.username, user.email);
+        console.log(`[handleOAuthUser] Created new user:`, user.id, user.username, user.displayName, user.email);
         break;
       } catch (error: any) {
         if (error.code === "23505") {
@@ -157,9 +169,17 @@ export function setupAuth(app: Express) {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const kakaoAccount = (profile as any)._json?.kakao_account;
+            // 카카오 닉네임 우선 사용 (kakao_account.profile.nickname이 더 정확함)
+            const kakaoNickname = kakaoAccount?.profile?.nickname || profile.displayName;
+            console.log(`[Kakao OAuth] Profile data:`, {
+              profileId: profile.id,
+              profileDisplayName: profile.displayName,
+              kakaoNickname: kakaoAccount?.profile?.nickname,
+              finalDisplayName: kakaoNickname,
+            });
             const user = await handleOAuthUser({
               id: profile.id,
-              displayName: profile.displayName || kakaoAccount?.profile?.nickname,
+              displayName: kakaoNickname, // 카카오 닉네임 사용
               emails: kakaoAccount?.email ? [{ value: kakaoAccount.email }] : undefined,
               photos: kakaoAccount?.profile?.profile_image_url 
                 ? [{ value: kakaoAccount.profile.profile_image_url }] 
@@ -184,9 +204,12 @@ export function setupAuth(app: Express) {
   const CACHE_TTL = 60000; // 1분
 
   passport.deserializeUser(async (id: string, done) => {
+    console.log(`[deserializeUser] Attempting to deserialize user: ${id}`);
+    
     // 캐시 확인
     const cached = userCache.get(id);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`[deserializeUser] Found cached user: ${id}`);
       done(null, cached.user);
       return;
     }
@@ -212,9 +235,14 @@ export function setupAuth(app: Express) {
         if (user) {
           // 성공 시 캐시에 저장
           userCache.set(id, { user, timestamp: Date.now() });
+          console.log(`[deserializeUser] Successfully deserialized user: ${id}`, {
+            username: user.username,
+            displayName: user.displayName,
+          });
           done(null, user);
           return;
         } else {
+          console.error(`[deserializeUser] User not found in database: ${id}`);
           done(null, null);
           return;
         }
@@ -222,6 +250,12 @@ export function setupAuth(app: Express) {
         lastError = error;
         const errorMessage = error?.message || String(error);
         const errorCode = error?.code || '';
+        
+        console.error(`[deserializeUser] Error (retries left: ${retries}):`, {
+          id,
+          error: errorMessage,
+          code: errorCode,
+        });
         
         retries--;
         
@@ -245,8 +279,9 @@ export function setupAuth(app: Express) {
     }
     
     // 모든 재시도 실패 시 null 반환 (세션 무효화)
-    // 에러를 done에 전달하지 않고 null을 반환하여 서버가 크래시되지 않도록 함
-    // 에러 로깅을 최소화 (너무 많은 에러 로그 방지)
+    console.error(`[deserializeUser] Failed to deserialize user after retries: ${id}`, {
+      lastError: lastError?.message || lastError,
+    });
     done(null, null);
   });
 
@@ -255,7 +290,7 @@ export function setupAuth(app: Express) {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user && req.user.id) {
     return next();
   }
   res.status(401).json({ error: "Not authenticated" });

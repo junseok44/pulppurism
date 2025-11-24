@@ -18,7 +18,20 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/hooks/useUser";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserStats {
   myOpinionsCount: number;
@@ -30,6 +43,9 @@ interface UserStats {
 export default function MyPage() {
   const { user, logout } = useUser();
   const [, setLocation] = useLocation();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const { toast } = useToast();
 
   const {
     data: stats,
@@ -39,6 +55,62 @@ export default function MyPage() {
     queryKey: ["/api/users/me/stats"],
     enabled: !!user,
   });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { displayName: string }) => {
+      if (!user || !user.id) {
+        throw new Error("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+      }
+
+      console.log("[MyPage] Updating profile:", {
+        userId: user.id,
+        displayName: data.displayName,
+      });
+
+      try {
+        const response = await apiRequest("PATCH", "/api/users/me", data);
+        const result = await response.json();
+        console.log("[MyPage] Profile update response:", result);
+        return result;
+      } catch (error: any) {
+        console.error("[MyPage] Profile update error:", error);
+        throw error;
+      }
+    },
+    onSuccess: (updatedUser) => {
+      console.log("[MyPage] Profile update success:", updatedUser);
+      // 쿼리 데이터 직접 업데이트 (React Query가 자동으로 리렌더링함)
+      queryClient.setQueryData(["/api/auth/me"], updatedUser);
+      setIsEditDialogOpen(false);
+      setDisplayName("");
+      toast({
+        title: "프로필이 업데이트되었습니다",
+        description: "닉네임이 성공적으로 변경되었습니다.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("[MyPage] Profile update error:", error);
+      const errorMessage = error?.message || "프로필 업데이트 중 오류가 발생했습니다.";
+      toast({
+        variant: "destructive",
+        title: "업데이트 실패",
+        description: errorMessage,
+      });
+    },
+  });
+
+  const handleEditClick = () => {
+    if (user) {
+      setDisplayName(user.displayName || user.username || "");
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSave = () => {
+    if (displayName.trim()) {
+      updateProfileMutation.mutate({ displayName: displayName.trim() });
+    }
+  };
 
   if (!user) {
     return (
@@ -95,7 +167,12 @@ export default function MyPage() {
       <div className="max-w-4xl mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">마이페이지</h2>
-          <Button variant="outline" size="sm" data-testid="button-edit-profile">
+          <Button
+            variant="outline"
+            size="sm"
+            data-testid="button-edit-profile"
+            onClick={handleEditClick}
+          >
             <User className="w-4 h-4 mr-2" />
             프로필 수정
           </Button>
@@ -319,6 +396,50 @@ export default function MyPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-profile">
+          <DialogHeader>
+            <DialogTitle>프로필 수정</DialogTitle>
+            <DialogDescription>
+              표시될 닉네임을 변경할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">닉네임</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="닉네임을 입력하세요"
+                maxLength={50}
+                data-testid="input-display-name"
+              />
+              <p className="text-sm text-muted-foreground">
+                최대 50자까지 입력 가능합니다.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!displayName.trim() || updateProfileMutation.isPending}
+              data-testid="button-save-profile"
+            >
+              {updateProfileMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <MobileNav />
     </div>
   );
