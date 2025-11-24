@@ -21,11 +21,13 @@ import SearchPage from "@/pages/SearchPage";
 import AdminDashboard from "@/pages/AdminDashboard";
 import SuccessPage from "@/pages/SuccessPage";
 import SuccessAgendaPage from "@/pages/SuccessAgendaPage";
+import HomePage from "@/pages/HomePage";
+import HowTo from "@/pages/HowTo";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={AgendaListPage} />
+      <Route path="/" component={HomePage} />
       <Route path="/agendas" component={AgendaListPage} />
       <Route path="/agendas/voting" component={VotingAgendasPage} />
       <Route path="/opinions" component={OpinionListPage} />
@@ -50,6 +52,7 @@ function Router() {
       <Route path="/admin/agendas" component={AdminDashboard} />
       <Route path="/admin/agendas/:subpage" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminDashboard} />
+      <Route path="/howto" component={HowTo}/>
       <Route component={NotFound} />
     </Switch>
   );

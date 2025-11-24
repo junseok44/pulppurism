@@ -45,7 +45,7 @@ export default function MobileNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border md:hidden z-50" data-testid="nav-mobile">
         <div className="flex items-center h-16">
           <div className="flex-1 flex justify-center">
-            <Link href="/">
+            <Link href="/agendas">
               <button
                 className={`flex flex-col items-center justify-center gap-1 px-6 py-2 hover-elevate active-elevate-2 rounded-lg ${
                   location === "/" ? "text-primary" : "text-muted-foreground"
