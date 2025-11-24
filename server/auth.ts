@@ -27,6 +27,16 @@ interface OAuthProfile {
   provider: "google" | "kakao";
 }
 
+// 랜덤 문자열 생성 함수 (소문자 3자리)
+function generateRandomString(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  for (let i = 0; i < 3; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 async function handleOAuthUser(profile: OAuthProfile) {
   const email = profile.emails?.[0]?.value;
   const avatarUrl = profile.photos?.[0]?.value;
@@ -64,19 +74,21 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
   if (!user) {
     console.log(`[handleOAuthUser] Creating new ${profile.provider} user`);
-    let username = email?.split("@")[0] || `${profile.provider}_user`;
+    // "익명 주민 abc" 형식으로 username 생성
     let attempt = 0;
     const maxAttempts = 10;
 
     while (attempt < maxAttempts) {
-      const suffix = attempt === 0 ? "" : `_${Date.now().toString(36).slice(-4)}`;
-      const candidateUsername = `${username}${suffix}`;
+      const randomSuffix = generateRandomString();
+      const candidateUsername = `익명 주민 ${randomSuffix}`;
+      // displayName이 없으면 username과 동일하게 설정
+      const finalDisplayName = displayName || candidateUsername;
 
       try {
         const insertData: any = {
           username: candidateUsername,
           email,
-          displayName,
+          displayName: finalDisplayName, // 카카오 닉네임 또는 "익명 주민 abc"
           avatarUrl,
           provider: profile.provider,
         };
@@ -89,7 +101,7 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
         const newUsers = await db.insert(users).values(insertData).returning();
         user = newUsers[0];
-        console.log(`[handleOAuthUser] Created new user:`, user.id, user.username, user.email);
+        console.log(`[handleOAuthUser] Created new user:`, user.id, user.username, user.displayName, user.email);
         break;
       } catch (error: any) {
         if (error.code === "23505") {
@@ -157,9 +169,17 @@ export function setupAuth(app: Express) {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const kakaoAccount = (profile as any)._json?.kakao_account;
+            // 카카오 닉네임 우선 사용 (kakao_account.profile.nickname이 더 정확함)
+            const kakaoNickname = kakaoAccount?.profile?.nickname || profile.displayName;
+            console.log(`[Kakao OAuth] Profile data:`, {
+              profileId: profile.id,
+              profileDisplayName: profile.displayName,
+              kakaoNickname: kakaoAccount?.profile?.nickname,
+              finalDisplayName: kakaoNickname,
+            });
             const user = await handleOAuthUser({
               id: profile.id,
-              displayName: profile.displayName || kakaoAccount?.profile?.nickname,
+              displayName: kakaoNickname, // 카카오 닉네임 사용
               emails: kakaoAccount?.email ? [{ value: kakaoAccount.email }] : undefined,
               photos: kakaoAccount?.profile?.profile_image_url 
                 ? [{ value: kakaoAccount.profile.profile_image_url }] 
