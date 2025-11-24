@@ -55,96 +55,23 @@ export default function Header() {
         <header className="pointer-events-auto w-full max-w-6xl bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">
           
           <div className="flex items-center gap-3">
-            
-            {/* 👇 [모바일 메뉴]카드 스타일 */}
-            <div className="md:hidden">
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="-ml-2 rounded-full">
-                    <Menu className="w-6 h-6 text-black-n1" />
-                  </Button>
-                </SheetTrigger>
-                
-                {/* 👇 SheetContent 부분 전체 교체! */}
-                <SheetContent 
-                  side="bottom"
-                  // 1. [&>button]:hidden -> 이게 핵심! Shadcn이 자동으로 만드는 닫기 버튼(오른쪽 위)을 숨김.
-                  className="h-[96%] w-[96%] left-[2%] right-[2%] bottom-[2%] rounded-[32px] bg-ok_gray2 border-none p-0 focus:outline-none flex flex-col [&>button]:hidden"
-                >
-                  {/* 1. 상단 헤더 (왼쪽 X + 중앙 로고) */}
-                  <div className="flex items-center justify-between px-6 py-6">
-                    {/* 왼쪽 커스텀 X 버튼 */}
-                    <SheetClose asChild>
-                      <button className="p-2 -ml-2 hover:bg-black/5 rounded-full transition-colors">
-                        <X className="w-6 h-6 text-black-n1" />
-                      </button>
-                    </SheetClose>
-                    
-                    <span className="text-2xl font-bold tracking-tighter text-black-n1 font-['Pretendard_Variable'] absolute left-1/2 -translate-x-1/2">
-                      옥천광장
-                    </span>
-                    
-                    <div className="w-10" /> {/* 균형 맞추기용 빈 공간 */}
-                  </div>
-
-                  {/* 2. 메뉴 리스트 (스크롤 영역) */}
-                  <div className="flex-1 overflow-y-auto px-8">
-                    <div className="flex flex-col">
-                      {navItems.map((item) => (
-                        <Link 
-                          key={item.path} 
-                          href={item.path}
-                          className="py-5 border-b border-[#EBE8E0] text-xl font-medium text-black-n1 flex items-center gap-3 hover:text-ok_sub1 transition-colors"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. 하단 버튼 영역 (Buy Now 삭제됨!) */}
-                  <div className="p-6 flex flex-col gap-4 mt-auto">
-                    
-                    {user ? (
-                      // ✅ 로그인 상태: [마이페이지 (주황색)] + [로그아웃 (작게)]
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => { setLocation("/my"); setIsMobileMenuOpen(false); }}
-                          className="flex-1 h-14 rounded-full bg-primary hover:bg-primary_hov text-white text-lg font-bold shadow-none"
-                        >
-                          마이페이지
-                        </Button>
-                        <Button 
-                          onClick={() => { logout(); setIsMobileMenuOpen(false); }}
-                          variant="ghost"
-                          className="h-14 w-14 rounded-full text-muted-foreground hover:bg-black/5"
-                        >
-                          <LogOut className="w-6 h-6" />
-                        </Button>
-                      </div>
-                    ) : (
-                      // ✅ 비로그인 상태: [Login (주황색)] 하나만 크게!
-                      <Button 
-                        onClick={() => { setShowLoginDialog(true); setIsMobileMenuOpen(false); }}
-                        className="w-full h-14 rounded-full bg-primary hover:bg-primary_hov text-white text-lg font-bold shadow-none"
-                      >
-                        로그인
-                      </Button>
-                    )}
-                  </div>
-
-                </SheetContent>
-              </Sheet>
-            </div>
-
             {/* PC 로고 */}
             <Link href="/">
               <div className="flex items-center gap-2 cursor-pointer group" data-testid="logo">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="text-primary-foreground font-bold text-lg">주</span>
-                </div>
-                <h1 className="text-lg font-bold tracking-tight hidden sm:block">주민참여</h1>
+                
+                {/* 👇 [수정] 기존 동그라미 div 삭제하고 img 태그로 교체! */}
+                <img 
+                  src="/icons/title.png"  // 👈 여기에 네 파일 경로를 적어! (예: /icons/logo.png)
+                  alt="Logo"
+                  // object-contain: 이미지가 찌그러지지 않게 비율 유지
+                  className="w-auto h-5 object-contain group-hover:scale-110 transition-transform"
+                />
+
+                {/* 👇 옆에 글씨('주민참여')는 남겨둘게. (이미지에 글씨까지 포함돼있으면 이 줄 삭제해!) */}
+                <h1 className="font-bagel text-xl hidden sm:block">
+                  풀뿌리광장
+                </h1>
+                
               </div>
             </Link>
           </div>

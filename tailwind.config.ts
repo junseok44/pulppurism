@@ -92,6 +92,7 @@ export default {
         sans: ["Pretendard","Noto Sans KR", "Inter", "sans-serif"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        bagel: ["BagelFat"],
       },
       keyframes: {
         "accordion-down": {
