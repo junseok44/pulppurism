@@ -4,7 +4,7 @@ import { Mic, MessageSquare, Sparkles, Vote, FileText, ArrowRight } from "lucide
 
 export default function HowToPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
       
       <main className="container mx-auto px-4 py-20 max-w-4xl">
