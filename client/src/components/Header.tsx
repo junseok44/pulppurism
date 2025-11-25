@@ -31,6 +31,7 @@ export default function Header() {
     { path: "/howto", label: "이용방법"},
     { path: "/agendas", label: "안건보기"},
     { path: "/opinions", label: "주민의 목소리" },
+    { path: "/policy", label: "정책실현현황"}
   ];
 
   const isActive = (path: string) => {
@@ -52,7 +53,7 @@ export default function Header() {
     <>
       {/* 헤더 컨테이너 */}
       <div className="bg-transparent sticky top-0 z-50 w-full flex flex-col items-center pt-4 px-4 pointer-events-none" data-testid="header-main">    
-        <header className="bg-ok_gray1 pointer-events-auto w-full max-w-6xl bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">    
+        <header className="bg-ok_gray1 pointer-events-auto w-full bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">    
           <div className="flex items-center gap-3">
             {/* PC 로고 */}
             <Link href="/">

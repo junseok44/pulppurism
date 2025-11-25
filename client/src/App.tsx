@@ -23,6 +23,7 @@ import SuccessPage from "@/pages/SuccessPage";
 import SuccessAgendaPage from "@/pages/SuccessAgendaPage";
 import HomePage from "@/pages/HomePage";
 import HowTo from "@/pages/HowTo";
+import AgendaToPolicy from "@/pages/AgendaToPolicy"
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/admin/agendas/:subpage" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminDashboard} />
       <Route path="/howto" component={HowTo}/>
+      <Route path="/policy" component={AgendaToPolicy}/>
       <Route component={NotFound} />
     </Switch>
   );
