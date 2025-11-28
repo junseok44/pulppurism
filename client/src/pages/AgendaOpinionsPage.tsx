@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -29,6 +29,11 @@ export default function AgendaOpinionsPage() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const { user } = useUser();
+
+  // 페이지 진입 시 스크롤을 맨 위로 이동
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [agendaId]);
 
   const {
     data: agenda,

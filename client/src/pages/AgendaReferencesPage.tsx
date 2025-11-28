@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Trash2, Upload, ExternalLink, FileText } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,6 +34,11 @@ export default function AgendaReferencesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useUser();
+
+  // 페이지 진입 시 스크롤을 맨 위로 이동
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [agendaId]);
 
   const {
     data: agenda,
