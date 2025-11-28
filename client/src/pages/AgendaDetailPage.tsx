@@ -55,6 +55,16 @@ interface Vote {
   voteType: "agree" | "disagree" | "neutral";
 }
 
+interface ExecutionTimelineItem {
+  id: string;
+  agendaId: string;
+  userId: string;
+  authorName: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
 export default function AgendaDetailPage() {
   const [, setLocation] = useLocation();
   const [comment, setComment] = useState("");
@@ -80,6 +90,18 @@ export default function AgendaDetailPage() {
   const [newReferenceLink, setNewReferenceLink] = useState("");
   const [newRegionalCase, setNewRegionalCase] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [timelineItems, setTimelineItems] = useState<
+    Array<{
+      id: string;
+      authorName: string;
+      content: string;
+      image: File | null;
+      date: string;
+      imagePreview?: string;
+      existingImageUrl?: string; // 기존 아이템의 이미지 URL
+    }>
+  >([]);
+  const timelineImageInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   
   const [showOkinewsForm, setShowOkinewsForm] = useState(false);
   const [showReferenceLinkForm, setShowReferenceLinkForm] = useState(false);
@@ -136,6 +158,13 @@ export default function AgendaDetailPage() {
   >({
     queryKey: [`/api/agendas/${agendaId}/opinions`],
     enabled: !!agendaId,
+  });
+
+  const { data: executionTimelineItems = [], isLoading: executionTimelineLoading } = useQuery<
+    ExecutionTimelineItem[]
+  >({
+    queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
+    enabled: !!agendaId && agenda?.status === "executing",
   });
 
   const voteMutation = useMutation({
@@ -333,6 +362,174 @@ export default function AgendaDetailPage() {
     },
   });
 
+  const saveTimelineItemsMutation = useMutation({
+    mutationFn: async (items: Array<{ id?: string; authorName: string; content: string; image?: File; date: string; existingImageUrl?: string; imagePreview?: string }>) => {
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const isExisting = item.id && !item.id.startsWith("temp-");
+          
+          if (isExisting) {
+            // 기존 아이템 수정 (PATCH)
+            const formData = new FormData();
+            formData.append("authorName", item.authorName);
+            formData.append("content", item.content);
+            formData.append("createdAt", item.date);
+            if (item.image) {
+              formData.append("image", item.image);
+            } else if (!item.existingImageUrl && item.imagePreview) {
+              // 기존 이미지가 있었는데 제거된 경우
+              formData.append("removeImage", "true");
+            }
+            
+            const res = await fetch(`/api/agendas/${agendaId}/execution-timeline/${item.id}`, {
+              method: "PATCH",
+              body: formData,
+              credentials: "include",
+            });
+            
+            const contentType = res.headers.get("content-type") || "";
+            const responseText = await res.text();
+            
+            if (!res.ok) {
+              let errorMessage = `Failed to update timeline item (${res.status} ${res.statusText})`;
+              if (contentType.includes("application/json")) {
+                try {
+                  const errorData = JSON.parse(responseText);
+                  errorMessage = errorData.error?.message || errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                  console.error("Failed to parse error JSON:", e);
+                }
+              }
+              throw new Error(errorMessage);
+            }
+            
+            if (!contentType.includes("application/json")) {
+              throw new Error("Server returned non-JSON response");
+            }
+            
+            return JSON.parse(responseText);
+          } else {
+            // 새 아이템 생성 (POST)
+            const formData = new FormData();
+            formData.append("authorName", item.authorName);
+            formData.append("content", item.content);
+            formData.append("createdAt", item.date);
+            if (item.image) {
+              formData.append("image", item.image);
+            }
+            
+            const res = await fetch(`/api/agendas/${agendaId}/execution-timeline`, {
+              method: "POST",
+              body: formData,
+              credentials: "include",
+            });
+            
+            const contentType = res.headers.get("content-type") || "";
+            const responseText = await res.text();
+            
+            if (!res.ok) {
+              let errorMessage = `Failed to add timeline item (${res.status} ${res.statusText})`;
+              if (contentType.includes("application/json")) {
+                try {
+                  const errorData = JSON.parse(responseText);
+                  errorMessage = errorData.error?.message || errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                  console.error("Failed to parse error JSON:", e);
+                }
+              }
+              throw new Error(errorMessage);
+            }
+            
+            if (!contentType.includes("application/json")) {
+              throw new Error("Server returned non-JSON response");
+            }
+            
+            return JSON.parse(responseText);
+          }
+        })
+      );
+      return results;
+    },
+    onSuccess: async () => {
+      // 모든 변경사항 저장 후 목록 새로고침
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
+      });
+      
+      // 편집 다이얼로그가 열려있으면 목록도 새로고침
+      if (editDialogOpen) {
+        try {
+          const res = await fetch(`/api/agendas/${agendaId}/execution-timeline`, {
+            credentials: "include",
+          });
+          if (res.ok) {
+            const updatedItems: ExecutionTimelineItem[] = await res.json();
+            if (updatedItems && updatedItems.length > 0) {
+              setTimelineItems(
+                updatedItems.map((item) => ({
+                  id: item.id,
+                  authorName: item.authorName,
+                  content: item.content,
+                  image: null,
+                  date: new Date(item.createdAt).toISOString().slice(0, 10),
+                  imagePreview: item.imageUrl || undefined,
+                  existingImageUrl: item.imageUrl || undefined,
+                }))
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Failed to refresh timeline items in dialog:", error);
+        }
+      }
+      
+      toast({
+        title: "저장 완료",
+        description: "실행 과정이 성공적으로 저장되었습니다.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error saving timeline items:", error);
+      const errorMessage = error?.message || "실행 과정 저장 중 오류가 발생했습니다.";
+      toast({
+        title: "저장 실패",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTimelineItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const res = await fetch(`/api/agendas/${agendaId}/execution-timeline/${itemId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete timeline item");
+      }
+    },
+    onSuccess: (_, itemId) => {
+      // 편집 다이얼로그에서도 제거
+      setTimelineItems(timelineItems.filter((item) => item.id !== itemId));
+      queryClient.invalidateQueries({
+        queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
+      });
+      toast({
+        title: "삭제 완료",
+        description: "실행 과정이 성공적으로 삭제되었습니다.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting timeline item:", error);
+      toast({
+        title: "삭제 실패",
+        description: "실행 과정 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCommentSubmit = () => {
     if (!user) {
       setShowLoginDialog(true);
@@ -380,12 +577,31 @@ export default function AgendaDetailPage() {
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
       setEditedRegionalCases(agenda.regionalCases || []);
+      
+      // 실행 중 상태일 때 기존 실행 과정 불러오기
+      if (agenda.status === "executing" && executionTimelineItems.length > 0) {
+        setTimelineItems(
+          executionTimelineItems.map((item) => ({
+            id: item.id,
+            authorName: item.authorName,
+            content: item.content,
+            image: null,
+            date: new Date(item.createdAt).toISOString().slice(0, 10),
+            imagePreview: item.imageUrl || undefined,
+            existingImageUrl: item.imageUrl || undefined,
+          }))
+        );
+      } else {
+        setTimelineItems([]);
+      }
+      
       setEditDialogOpen(true);
     }
   };
 
-  const handleSaveEdit = () => {
-    updateAgendaMutation.mutate({
+  const handleSaveEdit = async () => {
+    // 안건 정보 저장
+    await updateAgendaMutation.mutateAsync({
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
@@ -397,6 +613,26 @@ export default function AgendaDetailPage() {
       referenceFiles: editedReferenceFiles,
       regionalCases: editedRegionalCases,
     });
+
+    // 실행 중 상태일 때 실행 과정도 저장
+    if (editedStatus === "executing" && timelineItems.length > 0) {
+      const validItems = timelineItems.filter(
+        (item) => item.content.trim() && item.authorName.trim()
+      );
+      if (validItems.length > 0) {
+        await saveTimelineItemsMutation.mutateAsync(
+          validItems.map((item) => ({
+            id: item.id,
+            authorName: item.authorName.trim(),
+            content: item.content.trim(),
+            image: item.image || undefined,
+            date: item.date,
+            existingImageUrl: item.existingImageUrl,
+            imagePreview: item.imagePreview,
+          }))
+        );
+      }
+    }
   };
 
   const handleAddReferenceLink = () => {
@@ -810,6 +1046,90 @@ export default function AgendaDetailPage() {
                 )}
               </Card>
             </div>
+
+            {/* 실행 중 타임라인 */}
+            {agenda.status === "executing" && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">실행 과정</h2>
+                {executionTimelineLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : executionTimelineItems.length > 0 ? (
+                  <div className="space-y-6">
+                    {[...executionTimelineItems].sort((a, b) => {
+                      const dateA = new Date(a.createdAt).getTime();
+                      const dateB = new Date(b.createdAt).getTime();
+                      return dateA - dateB; // 오름차순 (오래된 것부터)
+                    }).map((item, index) => (
+                      <div key={item.id} className="relative">
+                        {/* 단계 번호와 연결선 */}
+                        <div className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm border-4 border-background shadow-md">
+                              {index + 1}
+                            </div>
+                            {index < executionTimelineItems.length - 1 && (
+                              <div className="w-0.5 h-full min-h-16 bg-muted-foreground/20 mt-2"></div>
+                            )}
+                          </div>
+                          
+                          <Card className="flex-1 p-6">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-lg">{item.authorName}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(item.createdAt).toLocaleDateString("ko-KR", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })}
+                                  </p>
+                                </div>
+                                {user?.isAdmin && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      if (confirm("이 실행 과정을 삭제하시겠습니까?")) {
+                                        deleteTimelineItemMutation.mutate(item.id);
+                                      }
+                                    }}
+                                    disabled={deleteTimelineItemMutation.isPending}
+                                    data-testid={`button-delete-timeline-item-${item.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                              <p className="text-base leading-relaxed whitespace-pre-wrap">
+                                {item.content}
+                              </p>
+                              {item.imageUrl && (
+                                <div className="rounded-lg overflow-hidden border">
+                                  <img
+                                    src={item.imageUrl}
+                                    alt="실행 과정 이미지"
+                                    className="w-full h-auto max-h-96 object-cover"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">
+                      아직 등록된 실행 과정이 없습니다.
+                    </p>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1040,6 +1360,212 @@ export default function AgendaDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* 실행 타임라인 항목 추가 (실행 중 상태일 때만) */}
+            {editedStatus === "executing" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>실행 과정 추가</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newId = `temp-${Date.now()}`;
+                      setTimelineItems([
+                        ...timelineItems,
+                        {
+                          id: newId,
+                          authorName: "",
+                          content: "",
+                          image: null,
+                          date: new Date().toISOString().slice(0, 10),
+                        },
+                      ]);
+                    }}
+                    data-testid="button-add-timeline-item-form"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    항목 추가
+                  </Button>
+                </div>
+
+                {timelineItems.length > 0 && (
+                  <div className="space-y-4">
+                    {timelineItems.map((item, index) => {
+                      const isExisting = item.id && !item.id.startsWith("temp-");
+                      return (
+                        <Card key={item.id} className="p-4 space-y-4">
+                        <div className="flex items-center justify-end">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              if (isExisting) {
+                                // 기존 아이템은 서버에서 삭제
+                                if (confirm("이 실행 과정을 삭제하시겠습니까?")) {
+                                  deleteTimelineItemMutation.mutate(item.id!);
+                                }
+                              } else {
+                                // 새 아이템은 로컬에서만 제거
+                                setTimelineItems(timelineItems.filter((i) => i.id !== item.id));
+                                if (item.imagePreview && !item.existingImageUrl) {
+                                  URL.revokeObjectURL(item.imagePreview);
+                                }
+                              }
+                            }}
+                            data-testid={`button-remove-timeline-item-${index}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* 모든 아이템 편집 가능 */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`timeline-author-${item.id}`}>작성자</Label>
+                          <Input
+                            id={`timeline-author-${item.id}`}
+                            type="text"
+                            value={item.authorName}
+                            onChange={(e) => {
+                              setTimelineItems(
+                                timelineItems.map((i) =>
+                                  i.id === item.id ? { ...i, authorName: e.target.value } : i
+                                )
+                              );
+                            }}
+                            placeholder="작성자 이름을 입력하세요"
+                            data-testid={`input-timeline-author-${index}`}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`timeline-date-${item.id}`}>날짜</Label>
+                          <Input
+                            id={`timeline-date-${item.id}`}
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => {
+                              setTimelineItems(
+                                timelineItems.map((i) =>
+                                  i.id === item.id ? { ...i, date: e.target.value } : i
+                                )
+                              );
+                            }}
+                            data-testid={`input-timeline-date-${index}`}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`timeline-content-${item.id}`}>내용</Label>
+                          <Textarea
+                            id={`timeline-content-${item.id}`}
+                            value={item.content}
+                            onChange={(e) => {
+                              setTimelineItems(
+                                timelineItems.map((i) =>
+                                  i.id === item.id ? { ...i, content: e.target.value } : i
+                                )
+                              );
+                            }}
+                            placeholder="실행 과정을 입력하세요"
+                            className="min-h-24"
+                            data-testid={`textarea-timeline-content-${index}`}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`timeline-image-${item.id}`}>
+                            이미지 (선택사항)
+                          </Label>
+                          <div className="space-y-2">
+                            {item.imagePreview && (
+                              <div className="relative">
+                                <img
+                                  src={item.imagePreview}
+                                  alt="미리보기"
+                                  className="w-full h-auto max-h-48 object-cover rounded-md"
+                                />
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="absolute top-2 right-2"
+                                  onClick={() => {
+                                    if (item.imagePreview && !item.existingImageUrl) {
+                                      // 새로 선택한 이미지만 URL 해제
+                                      URL.revokeObjectURL(item.imagePreview);
+                                    }
+                                    setTimelineItems(
+                                      timelineItems.map((i) =>
+                                        i.id === item.id
+                                          ? { ...i, image: null, imagePreview: undefined, existingImageUrl: undefined }
+                                          : i
+                                      )
+                                    );
+                                    const input = timelineImageInputRefs.current[item.id];
+                                    if (input) {
+                                      input.value = "";
+                                    }
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                            <input
+                              ref={(el) => {
+                                timelineImageInputRefs.current[item.id] = el;
+                              }}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const preview = URL.createObjectURL(file);
+                                  setTimelineItems(
+                                    timelineItems.map((i) =>
+                                      i.id === item.id
+                                        ? { ...i, image: file, imagePreview: preview }
+                                        : i
+                                    )
+                                  );
+                                }
+                              }}
+                              data-testid={`input-timeline-image-${index}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                const input = timelineImageInputRefs.current[item.id];
+                                input?.click();
+                              }}
+                              className="w-full"
+                              data-testid={`button-select-timeline-image-${index}`}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              {item.imagePreview ? "이미지 변경" : "이미지 선택"}
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                    })}
+                  </div>
+                )}
+
+                {timelineItems.length === 0 && (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground mb-4">
+                      실행 과정 항목을 추가하려면 "항목 추가" 버튼을 클릭하세요.
+                    </p>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -1052,10 +1578,10 @@ export default function AgendaDetailPage() {
             </Button>
             <Button
               onClick={handleSaveEdit}
-              disabled={updateAgendaMutation.isPending}
+              disabled={updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending}
               data-testid="button-save-edit"
             >
-              {updateAgendaMutation.isPending ? "저장 중..." : "저장"}
+              {updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending ? "저장 중..." : "저장"}
             </Button>
           </DialogFooter>
         </DialogContent>

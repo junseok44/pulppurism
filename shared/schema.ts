@@ -271,6 +271,22 @@ export const commentLikes = pgTable(
   }),
 );
 
+export const executionTimelineItems = pgTable("execution_timeline_items", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  agendaId: varchar("agenda_id")
+    .notNull()
+    .references(() => agendas.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id),
+  authorName: text("author_name").notNull().default("작성자"),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -344,6 +360,24 @@ export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({
   id: true,
   createdAt: true,
 });
+export const insertExecutionTimelineItemSchema = createInsertSchema(
+  executionTimelineItems,
+)
+  .omit({ id: true })
+  .extend({
+    createdAt: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val) {
+          // YYYY-MM-DD 형식의 날짜를 받아서 자정(00:00:00)으로 설정
+          const date = new Date(val);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        }
+        return new Date();
+      }),
+  });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -371,3 +405,7 @@ export type UpdateComment = z.infer<typeof updateCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertCommentLike = z.infer<typeof insertCommentLikeSchema>;
 export type CommentLike = typeof commentLikes.$inferSelect;
+export type InsertExecutionTimelineItem = z.infer<
+  typeof insertExecutionTimelineItemSchema
+>;
+export type ExecutionTimelineItem = typeof executionTimelineItems.$inferSelect;
