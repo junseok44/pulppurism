@@ -36,7 +36,7 @@ export default function VotingWidget({
 
   return (
     <div className="space-y-3" data-testid="widget-voting">
-      <h3 className="font-semibold text-base">투표하기</h3>
+      <h2 className="text-xl font-semibold">투표하기</h2>
       <div className="w-full h-16 flex items-center gap-2">
         <div
           className={`flex-1 h-full px-3 py-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg flex flex-row items-center justify-center gap-2 ${

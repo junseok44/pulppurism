@@ -587,9 +587,9 @@ export default function AgendaDetailPage() {
               disabled={voteMutation.isPending}
             />
 
-            {/* 주민의견 섹션 */}
+            {/* 관련 주민의견 섹션 */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">주민의견</h2>
+              <h2 className="text-xl font-semibold">관련 주민의견</h2>
               {opinionsLoading ? (
                 <div className="flex justify-center py-10">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />

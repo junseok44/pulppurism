@@ -13,7 +13,7 @@ interface TimelineProps {
 export default function Timeline({ steps }: TimelineProps) {
   return (
     <div className="space-y-4" data-testid="timeline">
-      <h3 className="font-semibold text-lg">진행상황</h3>
+      <h2 className="text-xl font-semibold">진행상황</h2>
       
       {/* 모바일: 세로 레이아웃 */}
       <div className="space-y-4 md:hidden">
