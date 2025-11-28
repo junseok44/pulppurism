@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
-import { Sprout, TreeDeciduous, MessageCircle, ArrowRight, ArrowDown } from "lucide-react";
+import TitleCard from "@/components/TitleCard";
+import { ArrowRight, ArrowDown } from "lucide-react";
 
 export default function HowToPage() {
   return (
@@ -8,27 +9,20 @@ export default function HowToPage() {
       <Header />
       
       <main className="container mx-auto px-4 py-12 max-w-5xl">
-        
-        {/* 1. 페이지 제목 */}
-        <div className="text-center mb-16 space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            풀뿌리광장 성장 과정 🌱
-          </h1>
-          <p className="text-gray-500 text-lg">
-            작은 씨앗이 거대한 나무가 되기까지의 여정
-          </p>
-        </div>
-
+        <TitleCard
+          title="풀뿌리광장 성장 과정 🌱"
+          description="작은 씨앗이 거대한 나무가 되기까지의 여정"
+        />
         {/* 2. [핵심] 성장 과정 다이어그램 (그림 대신 코드로 구현) */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 mb-20">
           
           {/* 단계 1: 씨앗 (주민의견) */}
           <StepCard 
-            icon={<MessageCircle className="w-10 h-10 text-amber-600" />}
-            title="씨앗"
-            subtitle="주민의 목소리"
+            icon={<img src="/icons/seed.png" alt="씨앗" className="w-16 h-16 object-contain" />}
+            title="주민의 목소리"
+            subtitle="씨앗"
             color="bg-amber-100"
-            description="우리 마을에 필요한 것이 있나요? 작은 아이디어(씨앗)를 심어주세요."
+            description="우리 마을에 필요한 것이 있나요? 작은 아이디어를 심어주세요."
           />
 
           {/* 화살표 (모바일: 아래 / PC: 오른쪽) */}
@@ -36,11 +30,11 @@ export default function HowToPage() {
 
           {/* 단계 2: 새싹 (안건) */}
           <StepCard 
-            icon={<Sprout className="w-10 h-10 text-green-600" />}
-            title="새싹"
-            subtitle="안건 토론"
+            icon={<img src="/icons/sprout.png" alt="새싹" className="w-16 h-16 object-contain" />}
+            title="안건 생성"
+            subtitle="새싹"
             color="bg-green-100"
-            description="AI가 비슷한 의견을 모아 '안건'으로 틔웁니다. 함께 의견을 모아주세요."
+            description="AI가 비슷한 의견을 모아 안건으로 새싹을 틔웁니다. 함께 의견을 모아주세요."
           />
 
           {/* 화살표 */}
@@ -48,9 +42,9 @@ export default function HowToPage() {
 
           {/* 단계 3: 나무 (정책) */}
           <StepCard 
-            icon={<TreeDeciduous className="w-10 h-10 text-emerald-700" />}
-            title="나무"
-            subtitle="정책 실현"
+            icon={<img src="/icons/tree.png" alt="나무" className="w-16 h-16 object-contain" />}
+            title="정책 실현"
+            subtitle="나무"
             color="bg-emerald-100"
             description="무럭무럭 자란 안건은 지자체에 전달되어 든든한 '정책(나무)'이 됩니다."
           />

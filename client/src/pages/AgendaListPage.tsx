@@ -11,6 +11,7 @@ import type { Agenda, Category } from "@shared/schema";
 import OkAgendaCard from "@/components/OkAgendaCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import TitleCard from "@/components/TitleCard";
 import { useUser } from "@/hooks/useUser";
 import {
   DropdownMenu,
@@ -209,213 +210,207 @@ export default function AgendaListPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col pb-20 md:pb-0" bg-background>
+    <div className="min-h-screen bg-background pb-24">
       <Header />
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="max-w-5xl mx-auto w-full px-4 pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold" data-testid="heading-agendas">
-              안건 현황
-            </h2>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setLocation("/search")}
-              data-testid="button-search-agenda"
-            >
-              <Search className="w-5 h-5" />
-            </Button>
-          </div>
-          {spotlightAgendas.length > 0 && (
-            <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  {spotlightConfig.emoji} {spotlightConfig.title}
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setStatusFilter(spotlightSection);
-                    document
-                      .getElementById("agenda-list-section")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="text-muted-foreground text-sm"
-                  data-testid={spotlightConfig.testId}
+      <main className="container mx-auto px-4 py-12 max-w-5xl">
+        <TitleCard
+          title="안건 보기 🌱"
+          description="남겨주신 의견을 모아 만들어진 안건 페이지입니다."
+        />
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setLocation("/search")}
+            data-testid="button-search-agenda"
+          >
+            <Search className="w-5 h-5" />
+          </Button>
+        </div>
+        {spotlightAgendas.length > 0 && spotlightConfig && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                {spotlightConfig.emoji} {spotlightConfig.title}
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter(spotlightSection);
+                  document
+                    .getElementById("agenda-list-section")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-muted-foreground text-sm"
+                data-testid={spotlightConfig.testId}
+              >
+                더보기
+              </Button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
+              {spotlightAgendas.map((agenda) => (
+                <div
+                  key={agenda.id}
+                  className="w-[42vw] min-w-[130px] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[180px] snap-center"
                 >
-                  더보기
-                </Button>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
-                {spotlightAgendas.map((agenda) => (
-                  <div
-                    key={agenda.id}
-                    className="w-[42vw] min-w-[130px] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[180px] snap-center"
-                  >
-                    <OkAgendaCard
-                      id={agenda.id}
-                      title={agenda.title}
-                      category={agenda.category?.name || "카테고리 없음"}
-                      status={agenda.status}
-                      content={agenda.description}
-                      commentCount={agenda.voteCount}
-                      bookmarkCount={agenda.bookmarkCount || 0}
-                      isBookmarked={agenda.isBookmarked || false}
-                      okinews={agenda.okinews}
-                      onClick={() => setLocation(`/agendas/${agenda.id}`)}
-                    />
-                  </div>
-                ))}
-              </div>
+                  <OkAgendaCard
+                    id={agenda.id}
+                    title={agenda.title}
+                    category={agenda.category?.name || "카테고리 없음"}
+                    status={agenda.status}
+                    content={agenda.description}
+                    commentCount={agenda.voteCount}
+                    bookmarkCount={agenda.bookmarkCount || 0}
+                    isBookmarked={agenda.isBookmarked || false}
+                    okinews={agenda.okinews}
+                    onClick={() => setLocation(`/agendas/${agenda.id}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {categoriesError ? (
+          <div>카테고리 에러!</div>
+        ) : !categoriesLoading && categories ? (
+          <CategoryFilter
+            categories={categories.map((c) => ({
+              name: c.name,
+              icons: c.icon,
+            }))}
+            selected={selectedCategoryName}
+            onSelect={setSelectedCategoryName}
+          />
+        ) : null}
+
+        <div className="flex items-center justify-between mb-3 mt-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="button-sort-dropdown"
+              >
+                {sortOption === "latest" && "최신순"}
+                {sortOption === "views" && "조회수순"}
+                {sortOption === "votes" && "투표순"}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" data-testid="dropdown-sort-menu">
+              <DropdownMenuItem
+                onClick={() => setSortOption("latest")}
+                data-testid="menu-item-sort-latest"
+              >
+                최신순
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setSortOption("views")}
+                data-testid="menu-item-sort-views"
+              >
+                조회수순
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setSortOption("votes")}
+                data-testid="menu-item-sort-votes"
+              >
+                투표순
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="button-status-filter-dropdown"
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                {getStatusFilterLabel()}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              data-testid="dropdown-status-menu"
+            >
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("all")}
+                data-testid="menu-item-filter-all"
+              >
+                전체
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("voting")}
+                data-testid="menu-item-filter-voting"
+              >
+                투표중
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("reviewing")}
+                data-testid="menu-item-filter-reviewing"
+              >
+                검토중
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("passed")}
+                data-testid="menu-item-filter-passed"
+              >
+                통과
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("rejected")}
+                data-testid="menu-item-filter-rejected"
+              >
+                반려
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="py-6 space-y-4" id="agenda-list-section">
+          {hasError && agendasError ? (
+            <div
+              className="p-4 bg-destructive/10 text-destructive rounded-md text-center"
+              data-testid="error-agendas"
+            >
+              안건 목록을 불러오는 데 실패했습니다.
+            </div>
+          ) : isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : sortedAgendas.length > 0 ? (
+            sortedAgendas.map((agenda) => (
+              <AgendaCard
+                key={agenda.id}
+                id={agenda.id}
+                title={agenda.title}
+                category={agenda.category?.name || ""}
+                status={agenda.status}
+                commentCount={agenda.voteCount}
+                bookmarkCount={agenda.bookmarkCount || 0}
+                isBookmarked={agenda.isBookmarked || false}
+                onClick={() => setLocation(`/agendas/${agenda.id}`)}
+                onBookmarkClick={() =>
+                  handleBookmarkClick(agenda.id, agenda.isBookmarked || false)
+                }
+              />
+            ))
+          ) : (
+            <div className="text-center py-20">
+              <p
+                className="text-muted-foreground text-lg"
+                data-testid="text-no-agendas"
+              >
+                안건이 없어요
+              </p>
             </div>
           )}
-          {/* 카테고리 필터 */}
-          {categoriesError ? (
-            <div>카테고리 에러!</div>
-          ) : !categoriesLoading && categories ? (
-            <CategoryFilter
-              categories={categories.map((c) => ({
-                name: c.name,
-                icons: c.icon, // CategoryFilter는 icons를 prop으로 받음
-              }))}
-              selected={selectedCategoryName}
-              onSelect={setSelectedCategoryName}
-            />
-          ) : null}
-
-          {/* 정렬 및 필터 */}
-          <div className="flex items-center justify-between mb-3 mt-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="button-sort-dropdown"
-                >
-                  {sortOption === "latest" && "최신순"}
-                  {sortOption === "views" && "조회수순"}
-                  {sortOption === "votes" && "투표순"}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                data-testid="dropdown-sort-menu"
-              >
-                <DropdownMenuItem
-                  onClick={() => setSortOption("latest")}
-                  data-testid="menu-item-sort-latest"
-                >
-                  최신순
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortOption("views")}
-                  data-testid="menu-item-sort-views"
-                >
-                  조회수순
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortOption("votes")}
-                  data-testid="menu-item-sort-votes"
-                >
-                  투표순
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="button-status-filter-dropdown"
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  {getStatusFilterLabel()}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                data-testid="dropdown-status-menu"
-              >
-                <DropdownMenuItem
-                  onClick={() => setStatusFilter("all")}
-                  data-testid="menu-item-filter-all"
-                >
-                  전체
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setStatusFilter("voting")}
-                  data-testid="menu-item-filter-voting"
-                >
-                  투표중
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setStatusFilter("reviewing")}
-                  data-testid="menu-item-filter-reviewing"
-                >
-                  검토중
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setStatusFilter("passed")}
-                  data-testid="menu-item-filter-passed"
-                >
-                  통과
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setStatusFilter("rejected")}
-                  data-testid="menu-item-filter-rejected"
-                >
-                  반려
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
-        <div className="flex-1" id="agenda-list-section">
-          <div className="max-w-5xl mx-auto w-full px-4 py-6 space-y-4">
-            {/* 안건 에러 체크 부분 */}
-            {hasError && agendasError ? (
-              <div
-                className="p-4 bg-destructive/10 text-destructive rounded-md text-center"
-                data-testid="error-agendas"
-              >
-                안건 목록을 불러오는 데 실패했습니다.
-              </div>
-            ) : isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : sortedAgendas.length > 0 ? (
-              sortedAgendas.map((agenda) => (
-                <AgendaCard
-                  key={agenda.id}
-                  id={agenda.id}
-                  title={agenda.title}
-                  category={agenda.category?.name || ""}
-                  status={agenda.status}
-                  commentCount={agenda.voteCount} // 변수명 매핑
-                  bookmarkCount={agenda.bookmarkCount || 0}
-                  isBookmarked={agenda.isBookmarked || false}
-                  onClick={() => setLocation(`/agendas/${agenda.id}`)}
-                  onBookmarkClick={() => handleBookmarkClick(agenda.id, agenda.isBookmarked || false)}
-                />
-              ))
-            ) : (
-              <div className="text-center py-20">
-                <p
-                  className="text-muted-foreground text-lg"
-                  data-testid="text-no-agendas"
-                >
-                  안건이 없어요
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      </main>
       <MobileNav />
     </div>
   );
