@@ -82,7 +82,15 @@ export default function AgendaDetailPage() {
   const [editedStatus, setEditedStatus] = useState<
     "created" | "voting" | "proposing" | "answered" | "executing" | "executed"
   >("created");
-  const [editedResponse, setEditedResponse] = useState("");
+  const [editedResponse, setEditedResponse] = useState<{
+    authorName: string;
+    responseDate: string;
+    content: string;
+  }>({
+    authorName: "",
+    responseDate: new Date().toISOString().slice(0, 10),
+    content: "",
+  });
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
   const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>(
     [],
@@ -305,7 +313,11 @@ export default function AgendaDetailPage() {
       title?: string;
       description?: string;
       status?: "created" | "voting" | "proposing" | "answered" | "executing" | "executed";
-      response?: string | null;
+      response?: {
+        authorName: string;
+        responseDate: string;
+        content: string;
+      } | null;
       okinewsUrl?: string | null;
       referenceLinks?: string[];
       referenceFiles?: string[];
@@ -576,7 +588,31 @@ export default function AgendaDetailPage() {
       setEditedTitle(agenda.title);
       setEditedDescription(agenda.description);
       setEditedStatus(agenda.status);
-      setEditedResponse(agenda.response || "");
+      // response가 문자열인 경우 (기존 데이터) 또는 객체인 경우 처리
+      if (agenda.response) {
+        if (typeof agenda.response === "string") {
+          // 기존 문자열 데이터를 객체로 변환
+          setEditedResponse({
+            authorName: "",
+            responseDate: new Date().toISOString().slice(0, 10),
+            content: agenda.response,
+          });
+        } else {
+          // 이미 객체인 경우
+          const responseObj = agenda.response as { authorName?: string; responseDate?: string; content?: string };
+          setEditedResponse({
+            authorName: responseObj.authorName || "",
+            responseDate: responseObj.responseDate || new Date().toISOString().slice(0, 10),
+            content: responseObj.content || "",
+          });
+        }
+      } else {
+        setEditedResponse({
+          authorName: "",
+          responseDate: new Date().toISOString().slice(0, 10),
+          content: "",
+        });
+      }
       setEditedOkinewsUrl(agenda.okinewsUrl || "");
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
@@ -611,7 +647,13 @@ export default function AgendaDetailPage() {
       title: editedTitle,
       description: editedDescription,
       status: editedStatus, // 상태는 액션 버튼으로만 변경
-      response: editedResponse.trim() || null,
+      response: editedResponse.content.trim() && editedResponse.authorName.trim()
+        ? {
+            authorName: editedResponse.authorName.trim(),
+            responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
+            content: editedResponse.content.trim(),
+          }
+        : null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
@@ -646,7 +688,13 @@ export default function AgendaDetailPage() {
         title: editedTitle,
         description: editedDescription,
         status: newStatus,
-        response: editedResponse.trim() || null,
+        response: editedResponse.content.trim() && editedResponse.authorName.trim()
+          ? {
+              authorName: editedResponse.authorName.trim(),
+              responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
+              content: editedResponse.content.trim(),
+            }
+          : null,
         okinewsUrl: editedOkinewsUrl.trim() || null,
         referenceLinks: editedReferenceLinks,
         referenceFiles: editedReferenceFiles,
@@ -1092,17 +1140,56 @@ export default function AgendaDetailPage() {
             {(agenda.status === "answered" || agenda.status === "executing" || agenda.status === "executed") && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">제안에 대한 답변</h2>
-                <Card className="p-6">
-                  {agenda.response ? (
-                    <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-agenda-response">
-                      {agenda.response}
-                    </p>
-                  ) : (
+                {agenda.response && (typeof agenda.response === "object" && "content" in agenda.response ? (agenda.response as { content: string }).content : typeof agenda.response === "string" ? agenda.response : null) ? (
+                  <div className="flex gap-4">
+                    {/* 말풍선 꼬리 */}
+                    <div className="flex-shrink-0 w-2">
+                      <div className="w-full h-full bg-muted"></div>
+                    </div>
+                    {/* 말풍선 내용 */}
+                    <Card className="flex-1 p-6 relative">
+                      <div className="absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-card border-b-[8px] border-b-transparent"></div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
+                              {(typeof agenda.response === "object" && "authorName" in agenda.response ? (agenda.response as { authorName: string }).authorName : "관리자")[0]}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm">
+                                {typeof agenda.response === "object" && "authorName" in agenda.response ? (agenda.response as { authorName: string }).authorName : "관리자"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {typeof agenda.response === "object" && "responseDate" in agenda.response && (agenda.response as { responseDate?: string }).responseDate
+                                  ? new Date((agenda.response as { responseDate: string }).responseDate).toLocaleDateString("ko-KR", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })
+                                  : new Date().toLocaleDateString("ko-KR", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t">
+                          <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-agenda-response">
+                            {typeof agenda.response === "object" && "content" in agenda.response ? (agenda.response as { content: string }).content : typeof agenda.response === "string" ? agenda.response : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                ) : (
+                  <Card className="p-6">
                     <p className="text-muted-foreground">
                       답변이 등록되지 않았습니다.
                     </p>
-                  )}
-                </Card>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -1479,16 +1566,53 @@ export default function AgendaDetailPage() {
                                 제안에 대한 답변 입력하기
                               </Button>
                             ) : (
-                              <div className="space-y-2">
-                                <Label htmlFor="edit-response">제안에 대한 답변</Label>
-                                <Textarea
-                                  id="edit-response"
-                                  value={editedResponse}
-                                  onChange={(e) => setEditedResponse(e.target.value)}
-                                  placeholder="제안에 대한 답변을 입력하세요"
-                                  className="min-h-32"
-                                  data-testid="textarea-edit-response"
-                                />
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-author">답변자</Label>
+                                  <Input
+                                    id="edit-response-author"
+                                    value={editedResponse.authorName}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        authorName: e.target.value,
+                                      })
+                                    }
+                                    placeholder="답변자 이름을 입력하세요"
+                                    data-testid="input-edit-response-author"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-date">답변 날짜</Label>
+                                  <Input
+                                    id="edit-response-date"
+                                    type="date"
+                                    value={editedResponse.responseDate}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        responseDate: e.target.value,
+                                      })
+                                    }
+                                    data-testid="input-edit-response-date"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-content">제안에 대한 답변</Label>
+                                  <Textarea
+                                    id="edit-response-content"
+                                    value={editedResponse.content}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        content: e.target.value,
+                                      })
+                                    }
+                                    placeholder="제안에 대한 답변을 입력하세요"
+                                    className="min-h-32"
+                                    data-testid="textarea-edit-response"
+                                  />
+                                </div>
                                 <div className="flex gap-2">
                                   <Button
                                     variant="outline"
@@ -1499,13 +1623,13 @@ export default function AgendaDetailPage() {
                                   </Button>
                                   <Button
                                     onClick={() => {
-                                      if (editedResponse.trim()) {
+                                      if (editedResponse.content.trim() && editedResponse.authorName.trim()) {
                                         handleStatusAction("executing");
                                         setShowResponseInput(false);
                                       } else {
                                         toast({
                                           title: "답변을 입력하세요",
-                                          description: "답변 내용을 입력해야 다음 단계로 진행할 수 있습니다.",
+                                          description: "답변자와 답변 내용을 모두 입력해야 다음 단계로 진행할 수 있습니다.",
                                           variant: "destructive",
                                         });
                                       }
@@ -1536,17 +1660,84 @@ export default function AgendaDetailPage() {
                               </Button>
                             </div>
                             {showResponseInput ? (
-                              <Textarea
-                                id="edit-response"
-                                value={editedResponse}
-                                onChange={(e) => setEditedResponse(e.target.value)}
-                                placeholder="제안에 대한 답변을 입력하세요"
-                                className="min-h-32"
-                                data-testid="textarea-edit-response"
-                              />
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-author">답변자</Label>
+                                  <Input
+                                    id="edit-response-author"
+                                    value={editedResponse.authorName}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        authorName: e.target.value,
+                                      })
+                                    }
+                                    placeholder="답변자 이름을 입력하세요"
+                                    data-testid="input-edit-response-author"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-date">답변 날짜</Label>
+                                  <Input
+                                    id="edit-response-date"
+                                    type="date"
+                                    value={editedResponse.responseDate}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        responseDate: e.target.value,
+                                      })
+                                    }
+                                    data-testid="input-edit-response-date"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-response-content">제안에 대한 답변</Label>
+                                  <Textarea
+                                    id="edit-response-content"
+                                    value={editedResponse.content}
+                                    onChange={(e) =>
+                                      setEditedResponse({
+                                        ...editedResponse,
+                                        content: e.target.value,
+                                      })
+                                    }
+                                    placeholder="제안에 대한 답변을 입력하세요"
+                                    className="min-h-32"
+                                    data-testid="textarea-edit-response"
+                                  />
+                                </div>
+                              </div>
                             ) : (
                               <div className="p-4 border rounded-md bg-muted/50">
-                                <p className="text-sm whitespace-pre-wrap">{editedResponse || "답변이 입력되지 않았습니다."}</p>
+                                {editedResponse.content ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-xs">
+                                        {editedResponse.authorName[0] || "관"}
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-semibold">{editedResponse.authorName || "관리자"}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {editedResponse.responseDate
+                                            ? new Date(editedResponse.responseDate).toLocaleDateString("ko-KR", {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                              })
+                                            : new Date().toLocaleDateString("ko-KR", {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                              })}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <p className="text-sm whitespace-pre-wrap pt-2 border-t">{editedResponse.content}</p>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">답변이 입력되지 않았습니다.</p>
+                                )}
                               </div>
                             )}
                           </div>

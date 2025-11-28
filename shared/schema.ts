@@ -8,6 +8,7 @@ import {
   pgEnum,
   unique,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -102,7 +103,7 @@ export const agendas = pgTable("agendas", {
   referenceFiles: text("reference_files").array(),
   regionalCases: text("regional_cases").array(),
   tags: text("tags").array(),
-  response: text("response"),
+  response: jsonb("response"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   okinews: boolean("okinews").notNull().default(false),
@@ -305,6 +306,7 @@ const baseAgendaSchema = createInsertSchema(agendas)
     voteCount: true,
     viewCount: true,
     status: true, // 기존 status를 omit
+    response: true, // response도 omit하고 재정의
   })
   .extend({
     // 새로운 status enum 정의
@@ -321,7 +323,13 @@ const baseAgendaSchema = createInsertSchema(agendas)
     referenceLinks: z.array(z.string().url()).nullish(),
     referenceFiles: z.array(z.string()).nullish(),
     regionalCases: z.array(z.string()).nullish(),
-    response: z.string().nullish(),
+    response: z
+      .object({
+        authorName: z.string().min(1, "답변자를 입력해주세요"),
+        responseDate: z.string().optional(),
+        content: z.string().min(1, "답변 내용을 입력해주세요"),
+      })
+      .nullish(),
   });
 
 export const insertAgendaSchema = baseAgendaSchema;
