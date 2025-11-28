@@ -13,7 +13,7 @@ interface TimelineProps {
 export default function Timeline({ steps }: TimelineProps) {
   return (
     <div className="space-y-4" data-testid="timeline">
-      <h2 className="text-xl font-semibold">진행상황</h2>
+      <h2 className="text-xl font-semibold mb-12">진행상황</h2>
       
       {/* 모바일: 세로 레이아웃 */}
       <div className="space-y-4 md:hidden">
@@ -26,7 +26,7 @@ export default function Timeline({ steps }: TimelineProps) {
                     ? "bg-primary border-primary text-primary-foreground"
                     : step.status === "current"
                     ? "border-primary bg-background"
-                    : "border-muted bg-background"
+                    : "border-muted-foreground/25 bg-background"
                 }`}
               >
                 {step.status === "completed" && <Check className="w-4 h-4" />}
@@ -37,7 +37,7 @@ export default function Timeline({ steps }: TimelineProps) {
               {index < steps.length - 1 && (
                 <div
                   className={`w-0.5 h-12 ${
-                    step.status === "completed" ? "bg-primary" : "bg-muted"
+                    step.status === "completed" ? "bg-primary" : "bg-muted-foreground/25"
                   }`}
                 ></div>
               )}
@@ -45,7 +45,7 @@ export default function Timeline({ steps }: TimelineProps) {
             <div className="flex-1 pb-8">
               <p
                 className={`font-medium ${
-                  step.status === "upcoming" ? "text-muted-foreground" : ""
+                  step.status === "upcoming" ? "text-muted-foreground/80" : ""
                 }`}
               >
                 {step.label}
@@ -95,7 +95,7 @@ export default function Timeline({ steps }: TimelineProps) {
                     ? "bg-primary border-primary text-primary-foreground"
                     : step.status === "current"
                     ? "border-primary bg-background"
-                    : "border-muted bg-background"
+                    : "border-muted-foreground/25 bg-background"
                 }`}
               >
                 {step.status === "completed" && <Check className="w-4 h-4" />}
@@ -106,7 +106,7 @@ export default function Timeline({ steps }: TimelineProps) {
               <div className="mt-4 text-center max-w-[120px]">
                 <p
                   className={`font-medium text-sm ${
-                    step.status === "upcoming" ? "text-muted-foreground" : ""
+                    step.status === "upcoming" ? "text-muted-foreground/80" : ""
                   }`}
                 >
                   {step.label}

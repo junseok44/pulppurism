@@ -595,44 +595,203 @@ export default function AgendaDetailPage() {
               disabled={voteMutation.isPending}
             />
 
-            {/* 관련 주민의견 섹션 */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">관련 주민의견</h2>
-              {opinionsLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            {/* 관련 주민의견과 참고자료를 한 행에 배치 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+              {/* 관련 주민의견 섹션 */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">관련 주민의견</h2>
+                {opinionsLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : relatedOpinions.length > 0 ? (
+                  <>
+                    {relatedOpinions.slice(0, 3).map((opinion) => (
+                      <OpinionCard
+                        key={opinion.id}
+                        id={opinion.id}
+                        authorName="익명"
+                        content={opinion.content}
+                        likeCount={opinion.likes}
+                        commentCount={0}
+                        timestamp={new Date(opinion.createdAt).toLocaleDateString(
+                          "ko-KR",
+                        )}
+                        onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                      />
+                    ))}
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setLocation(`/agendas/${agendaId}/opinions`)}
+                      data-testid="button-view-all-opinions-bottom"
+                    >
+                      주민의견 전체보기 ({relatedOpinions.length}개)
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </>
+                ) : (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">관련 의견이 없습니다.</p>
+                  </Card>
+                )}
+              </div>
+
+              {/* 참고자료 섹션 */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold">참고자료</h2>
+              
+                {/* 참고자료 리스트 */}
+                <div className="space-y-3">
+                  {/* 옥천신문 */}
+                  {agenda?.okinewsUrl ? (
+                    <Card
+                      className="p-4 hover-elevate active-elevate-2 cursor-pointer"
+                      data-testid="card-okinews-link"
+                      onClick={() => window.open(agenda.okinewsUrl!, "_blank")}
+                    >
+                      <div className="flex items-center gap-4">
+                        <ExternalLink className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+                              옥천신문
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-sm truncate" title={agenda.okinewsUrl}>
+                            {agenda.okinewsUrl.length > 60 
+                              ? `${agenda.okinewsUrl.substring(0, 60)}...` 
+                              : agenda.okinewsUrl}
+                          </h4>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card className="p-4">
+                      <div className="flex items-center gap-4">
+                        <ExternalLink className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+                              옥천신문
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            아직 취재 전이에요.{" "}
+                            <button
+                              className="text-primary hover:underline"
+                              onClick={() =>
+                                window.open(
+                                  "http://www.okinews.com/bbs/writeForm.html?mode=input&table=bbs_43&category=",
+                                  "_blank",
+                                )
+                              }
+                              data-testid="button-request-coverage"
+                            >
+                              취재 요청하기
+                            </button>
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* 참고링크 - 1개만 표시 */}
+                  {agenda?.referenceLinks && agenda.referenceLinks.length > 0 ? (
+                    <Card
+                      className="p-4 hover-elevate active-elevate-2 cursor-pointer"
+                      data-testid="card-reference-link-0"
+                      onClick={() => window.open(agenda.referenceLinks![0], "_blank")}
+                    >
+                      <div className="flex items-center gap-4">
+                        <ExternalLink className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded">
+                              외부 링크
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-sm truncate" title={agenda.referenceLinks[0]}>
+                            {agenda.referenceLinks[0].length > 60 
+                              ? `${agenda.referenceLinks[0].substring(0, 60)}...` 
+                              : agenda.referenceLinks[0]}
+                          </h4>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : null}
+
+                  {/* 첨부파일 - 1개만 표시 */}
+                  {agenda?.referenceFiles && agenda.referenceFiles.length > 0 ? (
+                    <Card
+                      className="p-4 hover-elevate active-elevate-2 cursor-pointer"
+                      data-testid="card-reference-file-0"
+                      onClick={() => window.open(agenda.referenceFiles![0], "_blank")}
+                    >
+                      <div className="flex items-center gap-4">
+                        <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded">
+                              첨부 파일
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-sm truncate" title={agenda.referenceFiles[0]}>
+                            {(file => {
+                              const fileName = file.split("/").pop() || file;
+                              return fileName.length > 40 ? `${fileName.substring(0, 40)}...` : fileName;
+                            })(agenda.referenceFiles[0])}
+                          </h4>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : null}
+
+                  {/* 타 지역 정책 사례 - 1개만 표시 */}
+                  {agenda?.regionalCases && agenda.regionalCases.length > 0 ? (
+                    <Card
+                      className="p-4"
+                      data-testid="card-regional-case-0"
+                    >
+                      <div className="flex items-start gap-4">
+                        <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded">
+                              타 지역 정책 사례
+                            </span>
+                          </div>
+                          <p className="text-sm line-clamp-2" title={agenda.regionalCases[0]}>
+                            {agenda.regionalCases[0].length > 100 
+                              ? `${agenda.regionalCases[0].substring(0, 100)}...` 
+                              : agenda.regionalCases[0]}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : null}
+
+                  {/* 참고자료가 없는 경우 */}
+                  {(!agenda?.okinewsUrl || !agenda?.referenceLinks?.length) &&
+                  !agenda?.referenceFiles?.length &&
+                  !agenda?.regionalCases?.length ? (
+                    <Card className="p-6 text-center">
+                      <p className="text-muted-foreground">등록된 참고자료가 없습니다.</p>
+                    </Card>
+                  ) : null}
                 </div>
-              ) : relatedOpinions.length > 0 ? (
-                <>
-                  {relatedOpinions.slice(0, 3).map((opinion) => (
-                    <OpinionCard
-                      key={opinion.id}
-                      id={opinion.id}
-                      authorName="익명"
-                      content={opinion.content}
-                      likeCount={opinion.likes}
-                      commentCount={0}
-                      timestamp={new Date(opinion.createdAt).toLocaleDateString(
-                        "ko-KR",
-                      )}
-                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                    />
-                  ))}
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setLocation(`/agendas/${agendaId}/opinions`)}
-                    data-testid="button-view-all-opinions-bottom"
-                  >
-                    주민의견 전체보기 ({relatedOpinions.length}개)
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </>
-              ) : (
-                <Card className="p-6 text-center">
-                  <p className="text-muted-foreground">관련 의견이 없습니다.</p>
-                </Card>
-              )}
+
+                {/* 참고자료 더보기 버튼 */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setLocation(`/agendas/${agendaId}/references`)}
+                  data-testid="button-view-all-references-bottom"
+                >
+                  참고자료 전체보기
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </div>
 
             {/* 답변 및 결과 */}
@@ -650,152 +809,6 @@ export default function AgendaDetailPage() {
                   </p>
                 )}
               </Card>
-            </div>
-
-            {/* 참고자료 섹션 */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">참고자료</h2>
-              
-              {/* 2x2 그리드 레이아웃 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 옥천신문 */}
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold mb-3">옥천신문</h3>
-                  <div className="flex-1">
-                    {agenda?.okinewsUrl ? (
-                      <Card
-                        className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full"
-                        data-testid="card-okinews-link"
-                        onClick={() => window.open(agenda.okinewsUrl!, "_blank")}
-                      >
-                        <div className="flex items-center gap-4">
-                          <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <h4 className="font-medium break-all">
-                              {agenda.okinewsUrl}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              옥천신문 기사
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ) : (
-                      <Card className="p-6 text-center h-full flex flex-col justify-center min-h-[120px]">
-                        <p className="text-muted-foreground mb-4">
-                          아직 취재 전이에요. 취재를 요청해보세요.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() =>
-                            window.open(
-                              "http://www.okinews.com/bbs/writeForm.html?mode=input&table=bbs_43&category=",
-                              "_blank",
-                            )
-                          }
-                          data-testid="button-request-coverage"
-                        >
-                          취재 요청하기
-                        </Button>
-                      </Card>
-                    )}
-                  </div>
-                </div>
-
-                {/* 참고링크 - 최대 1개만 표시 */}
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold mb-3">참고링크</h3>
-                  <div className="flex-1">
-                    {agenda?.referenceLinks && agenda.referenceLinks.length > 0 ? (
-                      <Card
-                        className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full min-h-[120px]"
-                        data-testid="card-reference-link-0"
-                        onClick={() => window.open(agenda.referenceLinks[0], "_blank")}
-                      >
-                        <div className="flex items-center gap-4">
-                          <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <h4 className="font-medium break-all">{agenda.referenceLinks[0]}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              외부 링크
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ) : (
-                      <Card className="p-6 text-center h-full flex flex-col justify-center min-h-[120px]">
-                        <p className="text-muted-foreground">
-                          등록된 참고링크가 없습니다.
-                        </p>
-                      </Card>
-                    )}
-                  </div>
-                </div>
-
-                {/* 첨부파일 - 최대 1개만 표시 */}
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold mb-3">첨부파일</h3>
-                  <div className="flex-1">
-                    {agenda?.referenceFiles && agenda.referenceFiles.length > 0 ? (
-                      <Card
-                        className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full min-h-[120px]"
-                        data-testid="card-reference-file-0"
-                        onClick={() => window.open(agenda.referenceFiles[0], "_blank")}
-                      >
-                        <div className="flex items-center gap-4">
-                          <FileText className="w-5 h-5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <h4 className="font-medium">
-                              {agenda.referenceFiles[0].split("/").pop() || agenda.referenceFiles[0]}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              첨부 파일
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ) : (
-                      <Card className="p-6 text-center h-full flex flex-col justify-center min-h-[120px]">
-                        <p className="text-muted-foreground">
-                          등록된 첨부파일이 없습니다.
-                        </p>
-                      </Card>
-                    )}
-                  </div>
-                </div>
-
-                {/* 타 지역 정책 사례 - 최대 1개만 표시 */}
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold mb-3">타 지역 정책 사례</h3>
-                  <div className="flex-1">
-                    {agenda?.regionalCases && agenda.regionalCases.length > 0 ? (
-                      <Card
-                        className="p-6 h-full min-h-[120px]"
-                        data-testid="card-regional-case-0"
-                      >
-                        <p className="text-sm">{agenda.regionalCases[0]}</p>
-                      </Card>
-                    ) : (
-                      <Card className="p-6 text-center h-full flex flex-col justify-center min-h-[120px]">
-                        <p className="text-muted-foreground">
-                          등록된 타 지역 정책 사례가 없습니다.
-                        </p>
-                      </Card>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 참고자료 더보기 버튼 */}
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setLocation(`/agendas/${agendaId}/references`)}
-                data-testid="button-view-all-references-bottom"
-              >
-                참고자료 전체보기
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
             </div>
           </div>
         </div>
