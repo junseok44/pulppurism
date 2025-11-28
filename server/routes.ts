@@ -1237,9 +1237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/agendas", async (req, res) => {
     try {
-      console.log("POST /api/agendas - Request body:", JSON.stringify(req.body, null, 2));
       const data = insertAgendaSchema.parse(req.body);
-      console.log("POST /api/agendas - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.createAgenda(data);
       res.status(201).json(agenda);
     } catch (error) {
@@ -1258,14 +1256,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      console.log("PATCH /api/agendas/:id - Request body:", JSON.stringify(req.body, null, 2));
       const data = updateAgendaSchema.parse(req.body);
-      console.log("PATCH /api/agendas/:id - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
         return res.status(404).json({ error: "Agenda not found" });
       }
-      console.log("PATCH /api/agendas/:id - Updated agenda:", JSON.stringify({ id: agenda.id, okinewsUrl: agenda.okinewsUrl, regionalCases: agenda.regionalCases }, null, 2));
       res.json(agenda);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1392,24 +1387,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     upload.single("image"),
     async (req, res) => {
       try {
-        console.log("[POST /api/agendas/:id/execution-timeline] Request:", {
-          agendaId: req.params.id,
-          userId: req.user?.id,
-          isAdmin: req.user?.isAdmin,
-          hasFile: !!req.file,
-          content: req.body.content,
-          createdAt: req.body.createdAt,
-        });
-
         if (!req.user?.isAdmin) {
-          console.log("[POST /api/agendas/:id/execution-timeline] Unauthorized: Not admin");
           return res.status(403).json({ error: "Admin access required" });
         }
 
         const agendaId = req.params.id;
         const agenda = await storage.getAgenda(agendaId);
         if (!agenda) {
-          console.log("[POST /api/agendas/:id/execution-timeline] Agenda not found:", agendaId);
           return res.status(404).json({ error: "Agenda not found" });
         }
 
@@ -1430,16 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: req.body.createdAt,
         });
 
-        console.log("[POST /api/agendas/:id/execution-timeline] Creating item with data:", {
-          agendaId: data.agendaId,
-          userId: data.userId,
-          contentLength: data.content.length,
-          hasImage: !!data.imageUrl,
-          createdAt: data.createdAt,
-        });
-
         const item = await storage.createExecutionTimelineItem(data);
-        console.log("[POST /api/agendas/:id/execution-timeline] Item created successfully:", item.id);
         res.status(201).json(item);
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -1464,7 +1439,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`  File: ${req.file ? req.file.originalname : 'No file'}`);
 
         if (!req.user?.isAdmin) {
-          console.warn(`[PATCH /api/agendas/${req.params.agendaId}/execution-timeline/${req.params.itemId}] Unauthorized access: User ${req.user?.id} is not admin.`);
           return res.status(403).json({ error: "Admin access required" });
         }
 
@@ -1475,7 +1449,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingItems = await storage.getExecutionTimelineItems(agendaId);
         const existingItem = existingItems.find((item) => item.id === itemId);
         if (!existingItem) {
-          console.warn(`[PATCH /api/agendas/${agendaId}/execution-timeline/${itemId}] Item not found: ${itemId}`);
           return res.status(404).json({ error: "Execution timeline item not found" });
         }
 
@@ -1485,7 +1458,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const filename = `execution-timeline/${agendaId}/${timestamp}-${req.file.originalname}`;
           await objectStorageService.uploadFile(filename, req.file.buffer);
           imageUrl = `/public-objects/${filename}`;
-          console.log(`  Image uploaded to: ${imageUrl}`);
         } else if (req.body.removeImage === "true") {
           imageUrl = null;
         }
@@ -1507,15 +1479,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedItem = await storage.updateExecutionTimelineItem(itemId, updateData);
         if (!updatedItem) {
-          console.warn(`[PATCH /api/agendas/${agendaId}/execution-timeline/${itemId}] Failed to update item: ${itemId}`);
           return res.status(404).json({ error: "Failed to update execution timeline item" });
         }
-
-        console.log(`[PATCH /api/agendas/${agendaId}/execution-timeline/${itemId}] Item updated successfully: ${itemId}`);
         res.json(updatedItem);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          console.error(`[PATCH /api/agendas/${req.params.agendaId}/execution-timeline/${req.params.itemId}] Validation error:`, JSON.stringify(error.errors, null, 2));
           return res.status(400).json({ error: error.errors });
         }
         console.error(`[PATCH /api/agendas/${req.params.agendaId}/execution-timeline/${req.params.itemId}] Error updating execution timeline item:`, error);

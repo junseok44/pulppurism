@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import AgendaHeader from "@/components/AgendaHeader";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, X, Trash2, Upload, ChevronRight } from "lucide-react";
+import { Loader2, Plus, X, Trash2, Upload, ChevronRight, Check } from "lucide-react";
 import VotingWidget from "@/components/VotingWidget";
 import Timeline from "@/components/Timeline";
 import OpinionCard from "@/components/OpinionCard";
@@ -73,6 +73,10 @@ export default function AgendaDetailPage() {
   const { toast } = useToast();
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [referenceDialogOpen, setReferenceDialogOpen] = useState(false);
+  const [executionTimelineDialogOpen, setExecutionTimelineDialogOpen] = useState(false);
+  const [showResponseInput, setShowResponseInput] = useState(false);
+  const [showBasicInfoEdit, setShowBasicInfoEdit] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [editedStatus, setEditedStatus] = useState<
@@ -164,7 +168,7 @@ export default function AgendaDetailPage() {
     ExecutionTimelineItem[]
   >({
     queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
-    enabled: !!agendaId && agenda?.status === "executing",
+    enabled: !!agendaId && (agenda?.status === "executing" || agenda?.status === "executed"),
   });
 
   const voteMutation = useMutation({
@@ -312,7 +316,7 @@ export default function AgendaDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
-      setEditDialogOpen(false);
+      // 상태 변경은 handleStatusAction에서 처리하므로 모달은 닫지 않음
       toast({
         title: "안건이 수정되었습니다",
         description: "변경사항이 성공적으로 저장되었습니다.",
@@ -577,9 +581,11 @@ export default function AgendaDetailPage() {
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
       setEditedRegionalCases(agenda.regionalCases || []);
+      setShowResponseInput(false);
+      setShowBasicInfoEdit(false);
       
-      // 실행 중 상태일 때 기존 실행 과정 불러오기
-      if (agenda.status === "executing" && executionTimelineItems.length > 0) {
+      // 실행 중 또는 실행 완료 상태일 때 기존 실행 과정 불러오기
+      if ((agenda.status === "executing" || agenda.status === "executed") && executionTimelineItems.length > 0) {
         setTimelineItems(
           executionTimelineItems.map((item) => ({
             id: item.id,
@@ -600,14 +606,12 @@ export default function AgendaDetailPage() {
   };
 
   const handleSaveEdit = async () => {
-    // 안건 정보 저장
+    // 안건 정보 저장 (기본 정보만)
     await updateAgendaMutation.mutateAsync({
       title: editedTitle,
       description: editedDescription,
-      status: editedStatus,
-      response: (editedStatus === "answered" || editedStatus === "executing" || editedStatus === "executed") 
-        ? (editedResponse.trim() || null) 
-        : null,
+      status: editedStatus, // 상태는 액션 버튼으로만 변경
+      response: editedResponse.trim() || null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
@@ -632,6 +636,60 @@ export default function AgendaDetailPage() {
           }))
         );
       }
+    }
+  };
+
+  const handleStatusAction = async (newStatus: "voting" | "proposing" | "answered" | "executing" | "executed") => {
+    try {
+      // 상태 변경과 함께 저장
+      await updateAgendaMutation.mutateAsync({
+        title: editedTitle,
+        description: editedDescription,
+        status: newStatus,
+        response: editedResponse.trim() || null,
+        okinewsUrl: editedOkinewsUrl.trim() || null,
+        referenceLinks: editedReferenceLinks,
+        referenceFiles: editedReferenceFiles,
+        regionalCases: editedRegionalCases,
+      });
+      
+      // 상태 업데이트
+      setEditedStatus(newStatus);
+      
+      // 실행 중으로 변경 시 실행 과정도 저장
+      if (newStatus === "executing" && timelineItems.length > 0) {
+        const validItems = timelineItems.filter(
+          (item) => item.content.trim() && item.authorName.trim()
+        );
+        if (validItems.length > 0) {
+          await saveTimelineItemsMutation.mutateAsync(
+            validItems.map((item) => ({
+              id: item.id,
+              authorName: item.authorName.trim(),
+              content: item.content.trim(),
+              image: item.image || undefined,
+              date: item.date,
+              existingImageUrl: item.existingImageUrl,
+              imagePreview: item.imagePreview,
+            }))
+          );
+        }
+      }
+      
+      // 안건 데이터 새로고침
+      await queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
+      
+      toast({
+        title: "상태 변경 완료",
+        description: `안건 상태가 "${getStatusLabel(newStatus)}"로 변경되었습니다.`,
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "상태 변경 실패",
+        description: "상태를 변경하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1030,25 +1088,26 @@ export default function AgendaDetailPage() {
               </div>
             </div>
 
-            {/* 답변 및 결과 */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">답변 및 결과</h2>
-              <Card className="p-6">
-                {agenda.response ? (
-                  <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-agenda-response">
-                    {agenda.response}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground">
-                    현재 주민 투표가 진행 중입니다. 투표 완료 후 공식 답변이
-                    등록됩니다.
-                  </p>
-                )}
-              </Card>
-            </div>
+            {/* 제안에 대한 답변 */}
+            {(agenda.status === "answered" || agenda.status === "executing" || agenda.status === "executed") && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">제안에 대한 답변</h2>
+                <Card className="p-6">
+                  {agenda.response ? (
+                    <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-agenda-response">
+                      {agenda.response}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      답변이 등록되지 않았습니다.
+                    </p>
+                  )}
+                </Card>
+              </div>
+            )}
 
-            {/* 실행 중 타임라인 */}
-            {agenda.status === "executing" && (
+            {/* 실행 과정 */}
+            {(agenda.status === "executing" || agenda.status === "executed") && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">실행 과정</h2>
                 {executionTimelineLoading ? (
@@ -1150,31 +1209,426 @@ export default function AgendaDetailPage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">제목</Label>
-              <Input
-                id="edit-title"
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="안건 제목을 입력하세요"
-                data-testid="input-edit-title"
-              />
+            {/* 타임라인 */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold mb-12">진행상황</h2>
+              
+              {(() => {
+                const timelineSteps = getTimelineSteps(editedStatus, agenda?.createdAt ? String(agenda.createdAt) : new Date().toISOString());
+                return (
+                  <div className="space-y-6">
+                    {timelineSteps.map((step, index) => {
+                      const stepStatus = step.status;
+                      const stepLabel = step.label;
+                      
+                      // 각 단계별 액션 버튼 렌더링
+                      let actionButton = null;
+                      
+                      if (stepLabel === "안건 생성" && (stepStatus === "completed" || stepStatus === "current")) {
+                        actionButton = (
+                          <div className="mt-4 space-y-4">
+                            {!showBasicInfoEdit ? (
+                              <div className="space-y-3">
+                                <div className="p-4 border rounded-md bg-muted/50 space-y-2">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">제목</p>
+                                    <p className="text-sm">{editedTitle || "제목이 입력되지 않았습니다."}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">설명</p>
+                                    <p className="text-sm whitespace-pre-wrap">{editedDescription || "설명이 입력되지 않았습니다."}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">참고자료</p>
+                                    <p className="text-sm">
+                                      {editedOkinewsUrl || editedReferenceLinks.length > 0 || editedReferenceFiles.length > 0 || editedRegionalCases.length > 0
+                                        ? `${editedOkinewsUrl ? "옥천신문 링크 있음, " : ""}${editedReferenceLinks.length}개 링크, ${editedReferenceFiles.length}개 파일, ${editedRegionalCases.length}개 사례`
+                                        : "참고자료가 없습니다."}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => setShowBasicInfoEdit(true)}
+                                  variant="outline"
+                                  className="w-full"
+                                  data-testid="button-edit-basic-info"
+                                >
+                                  기본 정보 편집하기
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-title">제목</Label>
+                                  <Input
+                                    id="edit-title"
+                                    value={editedTitle}
+                                    onChange={(e) => setEditedTitle(e.target.value)}
+                                    placeholder="안건 제목을 입력하세요"
+                                    data-testid="input-edit-title"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-description">설명</Label>
+                                  <Textarea
+                                    id="edit-description"
+                                    value={editedDescription}
+                                    onChange={(e) => setEditedDescription(e.target.value)}
+                                    placeholder="안건 설명을 입력하세요"
+                                    className="min-h-32"
+                                    data-testid="textarea-edit-description"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label>참고자료</Label>
+                                  <div className="space-y-2">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-okinews-url" className="text-sm">옥천신문 링크</Label>
+                                      <Input
+                                        id="edit-okinews-url"
+                                        value={editedOkinewsUrl}
+                                        onChange={(e) => setEditedOkinewsUrl(e.target.value)}
+                                        placeholder="http://www.okinews.com/..."
+                                        data-testid="input-edit-okinews-url"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">참고 링크</Label>
+                                      <div className="space-y-2">
+                                        {editedReferenceLinks.map((link, linkIndex) => (
+                                          <div key={linkIndex} className="flex items-center gap-2 min-w-0">
+                                            <div className="flex-1 min-w-0">
+                                              <Input
+                                                value={link}
+                                                onChange={(e) => {
+                                                  const newLinks = [...editedReferenceLinks];
+                                                  newLinks[linkIndex] = e.target.value;
+                                                  setEditedReferenceLinks(newLinks);
+                                                }}
+                                                className="w-full"
+                                                data-testid={`input-reference-link-${linkIndex}`}
+                                              />
+                                            </div>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              onClick={() => handleRemoveReferenceLink(linkIndex)}
+                                              data-testid={`button-remove-reference-link-${linkIndex}`}
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                        <div className="flex items-center gap-2">
+                                          <Input
+                                            value={newReferenceLink}
+                                            onChange={(e) => setNewReferenceLink(e.target.value)}
+                                            placeholder="https://example.com"
+                                            className="flex-1"
+                                            data-testid="input-add-reference-link"
+                                          />
+                                          <Button
+                                            variant="outline"
+                                            onClick={handleAddReferenceLink}
+                                            disabled={!newReferenceLink.trim()}
+                                            data-testid="button-add-reference-link"
+                                          >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            추가
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">첨부 파일</Label>
+                                      <div className="space-y-2">
+                                        {editedReferenceFiles.map((file, fileIndex) => (
+                                          <div key={fileIndex} className="flex items-center gap-2 min-w-0">
+                                            <div className="flex-1 min-w-0 flex items-center gap-2 p-2 border rounded-md overflow-hidden">
+                                              <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                              <span
+                                                className="text-sm truncate min-w-0 flex-1 block"
+                                                title={file.split("/").pop() || file}
+                                              >
+                                                {file.split("/").pop() || file}
+                                              </span>
+                                            </div>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              onClick={() => handleRemoveReferenceFile(fileIndex)}
+                                              data-testid={`button-remove-reference-file-${fileIndex}`}
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                        <div>
+                                          <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden"
+                                            onChange={handleFileSelect}
+                                            data-testid="input-file-upload"
+                                          />
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadFileMutation.isPending}
+                                            className="w-full"
+                                            data-testid="button-upload-file"
+                                          >
+                                            <Upload className="w-4 h-4 mr-2" />
+                                            {uploadFileMutation.isPending
+                                              ? "업로드 중..."
+                                              : "파일 업로드"}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">타 지역 정책 사례</Label>
+                                      <div className="space-y-2">
+                                        {editedRegionalCases.map((caseItem, caseIndex) => (
+                                          <div key={caseIndex} className="flex items-center gap-2 min-w-0">
+                                            <div className="flex-1 min-w-0">
+                                              <Input
+                                                value={caseItem}
+                                                onChange={(e) => {
+                                                  const newCases = [...editedRegionalCases];
+                                                  newCases[caseIndex] = e.target.value;
+                                                  setEditedRegionalCases(newCases);
+                                                }}
+                                                className="w-full"
+                                                data-testid={`input-regional-case-${caseIndex}`}
+                                              />
+                                            </div>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              onClick={() => handleRemoveRegionalCase(caseIndex)}
+                                              data-testid={`button-remove-regional-case-${caseIndex}`}
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                        <div className="flex items-center gap-2">
+                                          <Input
+                                            value={newRegionalCase}
+                                            onChange={(e) => setNewRegionalCase(e.target.value)}
+                                            placeholder="예: 서울시 ○○구의 ○○ 정책 사례"
+                                            className="flex-1"
+                                            data-testid="input-add-regional-case"
+                                          />
+                                          <Button
+                                            variant="outline"
+                                            onClick={handleAddRegionalCase}
+                                            disabled={!newRegionalCase.trim()}
+                                            data-testid="button-add-regional-case"
+                                          >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            추가
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setShowBasicInfoEdit(false)}
+                                    className="flex-1"
+                                  >
+                                    취소
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } else if (stepLabel === "투표 중" && editedStatus === "voting" && stepStatus === "current") {
+                        actionButton = (
+                          <div className="mt-4">
+                            <Button
+                              onClick={() => handleStatusAction("proposing")}
+                              className="w-full"
+                              data-testid="button-complete-voting"
+                            >
+                              투표 완료하기
+                            </Button>
+                          </div>
+                        );
+                      } else if (stepLabel === "제안 중" && editedStatus === "proposing" && stepStatus === "current") {
+                        actionButton = (
+                          <div className="mt-4 space-y-2">
+                            {!showResponseInput ? (
+                              <Button
+                                onClick={() => setShowResponseInput(true)}
+                                className="w-full"
+                                data-testid="button-input-response"
+                              >
+                                제안에 대한 답변 입력하기
+                              </Button>
+                            ) : (
+                              <div className="space-y-2">
+                                <Label htmlFor="edit-response">제안에 대한 답변</Label>
+                                <Textarea
+                                  id="edit-response"
+                                  value={editedResponse}
+                                  onChange={(e) => setEditedResponse(e.target.value)}
+                                  placeholder="제안에 대한 답변을 입력하세요"
+                                  className="min-h-32"
+                                  data-testid="textarea-edit-response"
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setShowResponseInput(false)}
+                                    className="flex-1"
+                                  >
+                                    취소
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      if (editedResponse.trim()) {
+                                        handleStatusAction("executing");
+                                        setShowResponseInput(false);
+                                      } else {
+                                        toast({
+                                          title: "답변을 입력하세요",
+                                          description: "답변 내용을 입력해야 다음 단계로 진행할 수 있습니다.",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                    className="flex-1"
+                                    data-testid="button-complete-response"
+                                  >
+                                    답변 완료
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } else if (stepLabel === "답변 완료" && (editedStatus === "answered" || editedStatus === "executing" || editedStatus === "executed") && (stepStatus === "completed" || stepStatus === "current")) {
+                        actionButton = (
+                          <div className="mt-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="edit-response">제안에 대한 답변</Label>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowResponseInput(!showResponseInput)}
+                                data-testid="button-toggle-response"
+                              >
+                                {showResponseInput ? "숨기기" : "수정하기"}
+                              </Button>
+                            </div>
+                            {showResponseInput ? (
+                              <Textarea
+                                id="edit-response"
+                                value={editedResponse}
+                                onChange={(e) => setEditedResponse(e.target.value)}
+                                placeholder="제안에 대한 답변을 입력하세요"
+                                className="min-h-32"
+                                data-testid="textarea-edit-response"
+                              />
+                            ) : (
+                              <div className="p-4 border rounded-md bg-muted/50">
+                                <p className="text-sm whitespace-pre-wrap">{editedResponse || "답변이 입력되지 않았습니다."}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } else if (stepLabel === "실행 중" && (editedStatus === "executing" || editedStatus === "executed") && (stepStatus === "current" || stepStatus === "completed")) {
+                        actionButton = (
+                          <div className="mt-4 space-y-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setExecutionTimelineDialogOpen(true)}
+                              className="w-full"
+                              data-testid="button-manage-execution-timeline"
+                            >
+                              실행 과정 관리
+                              <ChevronRight className="w-4 h-4 ml-2" />
+                            </Button>
+                            {editedStatus === "executing" && (
+                              <Button
+                                onClick={() => handleStatusAction("executed")}
+                                className="w-full"
+                                data-testid="button-complete-executing"
+                              >
+                                실행 완료
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex gap-4 items-start">
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                  stepStatus === "completed"
+                                    ? "bg-primary border-primary text-primary-foreground"
+                                    : stepStatus === "current"
+                                    ? "border-primary bg-background"
+                                    : "border-muted-foreground/25 bg-background"
+                                }`}
+                              >
+                                {stepStatus === "completed" && <Check className="w-4 h-4" />}
+                                {stepStatus === "current" && (
+                                  <div className="w-3 h-3 rounded-full bg-primary"></div>
+                                )}
+                              </div>
+                              {index < timelineSteps.length - 1 && (
+                                <div
+                                  className={`w-0.5 min-h-12 ${
+                                    stepStatus === "completed" ? "bg-primary" : "bg-muted-foreground/25"
+                                  }`}
+                                ></div>
+                              )}
+                            </div>
+                            <div className="flex-1 pb-4">
+                              <p
+                                className={`font-medium ${
+                                  stepStatus === "upcoming" ? "text-muted-foreground/80" : ""
+                                }`}
+                              >
+                                {step.label}
+                              </p>
+                              {step.date && (
+                                <p className="text-sm text-muted-foreground">{step.date}</p>
+                              )}
+                              {actionButton}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">설명</Label>
-              <Textarea
-                id="edit-description"
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                placeholder="안건 설명을 입력하세요"
-                className="min-h-32"
-                data-testid="textarea-edit-description"
-              />
-            </div>
 
+            {/* 테스트용 상태 직접 변경 */}
             <div className="space-y-2">
-              <Label htmlFor="edit-status">상태</Label>
+              <Label htmlFor="edit-status">상태 (테스트용)</Label>
               <Select
                 value={editedStatus}
                 onValueChange={(value: any) => setEditedStatus(value)}
@@ -1195,21 +1649,41 @@ export default function AgendaDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {(editedStatus === "answered" || editedStatus === "executing" || editedStatus === "executed") && (
-              <div className="space-y-2">
-                <Label htmlFor="edit-response">답변 및 결과</Label>
-                <Textarea
-                  id="edit-response"
-                  value={editedResponse}
-                  onChange={(e) => setEditedResponse(e.target.value)}
-                  placeholder="안건에 대한 최종 답변 및 결과를 입력하세요"
-                  className="min-h-32"
-                  data-testid="textarea-edit-response"
-                />
-              </div>
-            )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
+      {/* 참고자료 관리 모달 */}
+      <Dialog open={referenceDialogOpen} onOpenChange={setReferenceDialogOpen}>
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          data-testid="dialog-edit-references"
+        >
+          <DialogHeader>
+            <DialogTitle>참고자료 관리</DialogTitle>
+            <DialogDescription>
+              안건의 참고자료를 추가, 수정, 삭제할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-okinews-url">옥천신문 링크</Label>
               <Input
@@ -1360,228 +1834,313 @@ export default function AgendaDetailPage() {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* 실행 타임라인 항목 추가 (실행 중 상태일 때만) */}
-            {editedStatus === "executing" && (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReferenceDialogOpen(false)}
+              data-testid="button-close-reference-dialog"
+            >
+              닫기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 실행 과정 관리 모달 */}
+      <Dialog 
+        open={executionTimelineDialogOpen} 
+        onOpenChange={async (open) => {
+          setExecutionTimelineDialogOpen(open);
+          // 모달이 열릴 때 기존 실행 과정 불러오기
+          if (open && (agenda?.status === "executing" || agenda?.status === "executed")) {
+            // 쿼리 새로고침
+            await queryClient.invalidateQueries({
+              queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
+            });
+            
+            // 데이터 가져오기
+            const { data: items } = await queryClient.fetchQuery({
+              queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
+              queryFn: async () => {
+                const res = await fetch(`/api/agendas/${agendaId}/execution-timeline`, {
+                  credentials: "include",
+                });
+                if (!res.ok) throw new Error("Failed to fetch timeline items");
+                return res.json();
+              },
+            });
+            
+            if (items && items.length > 0) {
+              setTimelineItems(
+                items.map((item: ExecutionTimelineItem) => ({
+                  id: item.id,
+                  authorName: item.authorName,
+                  content: item.content,
+                  image: null,
+                  date: new Date(item.createdAt).toISOString().slice(0, 10),
+                  imagePreview: item.imageUrl || undefined,
+                  existingImageUrl: item.imageUrl || undefined,
+                }))
+              );
+            } else {
+              setTimelineItems([]);
+            }
+          } else if (open) {
+            setTimelineItems([]);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          data-testid="dialog-manage-execution-timeline"
+        >
+          <DialogHeader>
+            <DialogTitle>실행 과정 관리</DialogTitle>
+            <DialogDescription>
+              안건의 실행 과정을 추가, 수정, 삭제할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="flex items-center justify-between">
+              <Label>실행 과정 항목</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newId = `temp-${Date.now()}`;
+                  setTimelineItems([
+                    ...timelineItems,
+                    {
+                      id: newId,
+                      authorName: "",
+                      content: "",
+                      image: null,
+                      date: new Date().toISOString().slice(0, 10),
+                    },
+                  ]);
+                }}
+                data-testid="button-add-timeline-item-form"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                항목 추가
+              </Button>
+            </div>
+
+            {timelineItems.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>실행 과정 추가</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newId = `temp-${Date.now()}`;
-                      setTimelineItems([
-                        ...timelineItems,
-                        {
-                          id: newId,
-                          authorName: "",
-                          content: "",
-                          image: null,
-                          date: new Date().toISOString().slice(0, 10),
-                        },
-                      ]);
-                    }}
-                    data-testid="button-add-timeline-item-form"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    항목 추가
-                  </Button>
-                </div>
-
-                {timelineItems.length > 0 && (
-                  <div className="space-y-4">
-                    {timelineItems.map((item, index) => {
-                      const isExisting = item.id && !item.id.startsWith("temp-");
-                      return (
-                        <Card key={item.id} className="p-4 space-y-4">
-                        <div className="flex items-center justify-end">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              if (isExisting) {
-                                // 기존 아이템은 서버에서 삭제
-                                if (confirm("이 실행 과정을 삭제하시겠습니까?")) {
-                                  deleteTimelineItemMutation.mutate(item.id!);
-                                }
-                              } else {
-                                // 새 아이템은 로컬에서만 제거
-                                setTimelineItems(timelineItems.filter((i) => i.id !== item.id));
-                                if (item.imagePreview && !item.existingImageUrl) {
-                                  URL.revokeObjectURL(item.imagePreview);
-                                }
+                {timelineItems.map((item, index) => {
+                  const isExisting = item.id && !item.id.startsWith("temp-");
+                  return (
+                    <Card key={item.id} className="p-4 space-y-4">
+                      <div className="flex items-center justify-end">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            if (isExisting) {
+                              // 기존 아이템은 서버에서 삭제
+                              if (confirm("이 실행 과정을 삭제하시겠습니까?")) {
+                                deleteTimelineItemMutation.mutate(item.id!);
                               }
-                            }}
-                            data-testid={`button-remove-timeline-item-${index}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        {/* 모든 아이템 편집 가능 */}
-                        <div className="space-y-2">
-                          <Label htmlFor={`timeline-author-${item.id}`}>작성자</Label>
-                          <Input
-                            id={`timeline-author-${item.id}`}
-                            type="text"
-                            value={item.authorName}
-                            onChange={(e) => {
-                              setTimelineItems(
-                                timelineItems.map((i) =>
-                                  i.id === item.id ? { ...i, authorName: e.target.value } : i
-                                )
-                              );
-                            }}
-                            placeholder="작성자 이름을 입력하세요"
-                            data-testid={`input-timeline-author-${index}`}
-                          />
-                        </div>
+                            } else {
+                              // 새 아이템은 로컬에서만 제거
+                              setTimelineItems(timelineItems.filter((i) => i.id !== item.id));
+                              if (item.imagePreview && !item.existingImageUrl) {
+                                URL.revokeObjectURL(item.imagePreview);
+                              }
+                            }
+                          }}
+                          data-testid={`button-remove-timeline-item-${index}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* 모든 아이템 편집 가능 */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`timeline-author-${item.id}`}>작성자</Label>
+                        <Input
+                          id={`timeline-author-${item.id}`}
+                          type="text"
+                          value={item.authorName}
+                          onChange={(e) => {
+                            setTimelineItems(
+                              timelineItems.map((i) =>
+                                i.id === item.id ? { ...i, authorName: e.target.value } : i
+                              )
+                            );
+                          }}
+                          placeholder="작성자 이름을 입력하세요"
+                          data-testid={`input-timeline-author-${index}`}
+                        />
+                      </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor={`timeline-date-${item.id}`}>날짜</Label>
-                          <Input
-                            id={`timeline-date-${item.id}`}
-                            type="date"
-                            value={item.date}
-                            onChange={(e) => {
-                              setTimelineItems(
-                                timelineItems.map((i) =>
-                                  i.id === item.id ? { ...i, date: e.target.value } : i
-                                )
-                              );
-                            }}
-                            data-testid={`input-timeline-date-${index}`}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`timeline-date-${item.id}`}>날짜</Label>
+                        <Input
+                          id={`timeline-date-${item.id}`}
+                          type="date"
+                          value={item.date}
+                          onChange={(e) => {
+                            setTimelineItems(
+                              timelineItems.map((i) =>
+                                i.id === item.id ? { ...i, date: e.target.value } : i
+                              )
+                            );
+                          }}
+                          data-testid={`input-timeline-date-${index}`}
+                        />
+                      </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor={`timeline-content-${item.id}`}>내용</Label>
-                          <Textarea
-                            id={`timeline-content-${item.id}`}
-                            value={item.content}
-                            onChange={(e) => {
-                              setTimelineItems(
-                                timelineItems.map((i) =>
-                                  i.id === item.id ? { ...i, content: e.target.value } : i
-                                )
-                              );
-                            }}
-                            placeholder="실행 과정을 입력하세요"
-                            className="min-h-24"
-                            data-testid={`textarea-timeline-content-${index}`}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`timeline-content-${item.id}`}>내용</Label>
+                        <Textarea
+                          id={`timeline-content-${item.id}`}
+                          value={item.content}
+                          onChange={(e) => {
+                            setTimelineItems(
+                              timelineItems.map((i) =>
+                                i.id === item.id ? { ...i, content: e.target.value } : i
+                              )
+                            );
+                          }}
+                          placeholder="실행 과정을 입력하세요"
+                          className="min-h-24"
+                          data-testid={`textarea-timeline-content-${index}`}
+                        />
+                      </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor={`timeline-image-${item.id}`}>
+                          이미지 (선택사항)
+                        </Label>
                         <div className="space-y-2">
-                          <Label htmlFor={`timeline-image-${item.id}`}>
-                            이미지 (선택사항)
-                          </Label>
-                          <div className="space-y-2">
-                            {item.imagePreview && (
-                              <div className="relative">
-                                <img
-                                  src={item.imagePreview}
-                                  alt="미리보기"
-                                  className="w-full h-auto max-h-48 object-cover rounded-md"
-                                />
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className="absolute top-2 right-2"
-                                  onClick={() => {
-                                    if (item.imagePreview && !item.existingImageUrl) {
-                                      // 새로 선택한 이미지만 URL 해제
-                                      URL.revokeObjectURL(item.imagePreview);
-                                    }
-                                    setTimelineItems(
-                                      timelineItems.map((i) =>
-                                        i.id === item.id
-                                          ? { ...i, image: null, imagePreview: undefined, existingImageUrl: undefined }
-                                          : i
-                                      )
-                                    );
-                                    const input = timelineImageInputRefs.current[item.id];
-                                    if (input) {
-                                      input.value = "";
-                                    }
-                                  }}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
-                            <input
-                              ref={(el) => {
-                                timelineImageInputRefs.current[item.id] = el;
-                              }}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const preview = URL.createObjectURL(file);
+                          {item.imagePreview && (
+                            <div className="relative">
+                              <img
+                                src={item.imagePreview}
+                                alt="미리보기"
+                                className="w-full h-auto max-h-48 object-cover rounded-md"
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="absolute top-2 right-2"
+                                onClick={() => {
+                                  if (item.imagePreview && !item.existingImageUrl) {
+                                    // 새로 선택한 이미지만 URL 해제
+                                    URL.revokeObjectURL(item.imagePreview);
+                                  }
                                   setTimelineItems(
                                     timelineItems.map((i) =>
                                       i.id === item.id
-                                        ? { ...i, image: file, imagePreview: preview }
+                                        ? { ...i, image: null, imagePreview: undefined, existingImageUrl: undefined }
                                         : i
                                     )
                                   );
-                                }
-                              }}
-                              data-testid={`input-timeline-image-${index}`}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                const input = timelineImageInputRefs.current[item.id];
-                                input?.click();
-                              }}
-                              className="w-full"
-                              data-testid={`button-select-timeline-image-${index}`}
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              {item.imagePreview ? "이미지 변경" : "이미지 선택"}
-                            </Button>
-                          </div>
+                                  const input = timelineImageInputRefs.current[item.id];
+                                  if (input) {
+                                    input.value = "";
+                                  }
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                          <input
+                            ref={(el) => {
+                              timelineImageInputRefs.current[item.id] = el;
+                            }}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const preview = URL.createObjectURL(file);
+                                setTimelineItems(
+                                  timelineItems.map((i) =>
+                                    i.id === item.id
+                                      ? { ...i, image: file, imagePreview: preview }
+                                      : i
+                                  )
+                                );
+                              }
+                            }}
+                            data-testid={`input-timeline-image-${index}`}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const input = timelineImageInputRefs.current[item.id];
+                              input?.click();
+                            }}
+                            className="w-full"
+                            data-testid={`button-select-timeline-image-${index}`}
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            {item.imagePreview ? "이미지 변경" : "이미지 선택"}
+                          </Button>
                         </div>
-                      </Card>
-                    );
-                    })}
-                  </div>
-                )}
-
-                {timelineItems.length === 0 && (
-                  <Card className="p-6 text-center">
-                    <p className="text-muted-foreground mb-4">
-                      실행 과정 항목을 추가하려면 "항목 추가" 버튼을 클릭하세요.
-                    </p>
-                  </Card>
-                )}
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
+            )}
+
+            {timelineItems.length === 0 && (
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground mb-4">
+                  실행 과정 항목을 추가하려면 "항목 추가" 버튼을 클릭하세요.
+                </p>
+              </Card>
             )}
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setEditDialogOpen(false)}
-              data-testid="button-cancel-edit"
+              onClick={() => setExecutionTimelineDialogOpen(false)}
+              data-testid="button-close-execution-timeline-dialog"
             >
-              취소
+              닫기
             </Button>
             <Button
-              onClick={handleSaveEdit}
-              disabled={updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending}
-              data-testid="button-save-edit"
+              onClick={async () => {
+                // 실행 과정 저장
+                if (timelineItems.length > 0) {
+                  const validItems = timelineItems.filter(
+                    (item) => item.content.trim() && item.authorName.trim()
+                  );
+                  if (validItems.length > 0) {
+                    await saveTimelineItemsMutation.mutateAsync(
+                      validItems.map((item) => ({
+                        id: item.id,
+                        authorName: item.authorName.trim(),
+                        content: item.content.trim(),
+                        image: item.image || undefined,
+                        date: item.date,
+                        existingImageUrl: item.existingImageUrl,
+                        imagePreview: item.imagePreview,
+                      }))
+                    );
+                  }
+                }
+                setExecutionTimelineDialogOpen(false);
+              }}
+              disabled={saveTimelineItemsMutation.isPending}
+              data-testid="button-save-execution-timeline"
             >
-              {updateAgendaMutation.isPending || saveTimelineItemsMutation.isPending ? "저장 중..." : "저장"}
+              {saveTimelineItemsMutation.isPending ? "저장 중..." : "저장"}
             </Button>
           </DialogFooter>
         </DialogContent>
