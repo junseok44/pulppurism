@@ -911,9 +911,6 @@ export default function AgendaDetailPage() {
           />
 
           <div className="space-y-12">
-            {/* 타임라인 */}
-            <Timeline steps={timelineSteps} />
-
             {/* 안건 소개 */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">안건 소개</h2>
@@ -926,6 +923,9 @@ export default function AgendaDetailPage() {
                 </p>
               </Card>
             </div>
+
+            {/* 타임라인 */}
+            <Timeline steps={timelineSteps} />
 
             {/* 투표 위젯 */}
             <VotingWidget
