@@ -66,8 +66,8 @@ export default function AgendaDetailPage() {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [editedStatus, setEditedStatus] = useState<
-    "voting" | "reviewing" | "passed" | "rejected"
-  >("voting");
+    "created" | "voting" | "proposing" | "answered" | "executing" | "executed"
+  >("created");
   const [editedResponse, setEditedResponse] = useState("");
   const [editedOkinewsUrl, setEditedOkinewsUrl] = useState("");
   const [editedReferenceLinks, setEditedReferenceLinks] = useState<string[]>(
@@ -271,7 +271,7 @@ export default function AgendaDetailPage() {
     mutationFn: async (data: {
       title?: string;
       description?: string;
-      status?: "voting" | "reviewing" | "passed" | "rejected";
+      status?: "created" | "voting" | "proposing" | "answered" | "executing" | "executed";
       response?: string | null;
       okinewsUrl?: string | null;
       referenceLinks?: string[];
@@ -389,7 +389,7 @@ export default function AgendaDetailPage() {
       title: editedTitle,
       description: editedDescription,
       status: editedStatus,
-      response: (editedStatus === "passed" || editedStatus === "rejected") 
+      response: (editedStatus === "answered" || editedStatus === "executing" || editedStatus === "executed") 
         ? (editedResponse.trim() || null) 
         : null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
@@ -446,37 +446,45 @@ export default function AgendaDetailPage() {
       .replace(/\. /g, ".")
       .replace(/\.$/, "");
 
-    const isCompleted = status === "passed" || status === "rejected";
-    const resultLabel = status === "passed" ? "통과" : status === "rejected" ? "반려" : "결과";
+    const getStepStatus = (stepStatus: string) => {
+      const statusOrder = ["created", "voting", "proposing", "answered", "executing", "executed"];
+      const currentIndex = statusOrder.indexOf(status);
+      const stepIndex = statusOrder.indexOf(stepStatus);
+
+      if (stepIndex < currentIndex) {
+        return "completed" as const;
+      } else if (stepIndex === currentIndex) {
+        return "current" as const;
+      } else {
+        return "upcoming" as const;
+      }
+    };
 
     return [
       {
         label: "안건 생성",
-        status: "completed" as const,
+        status: getStepStatus("created"),
         date: createdDate,
       },
       {
-        label: "투표중",
-        status:
-          status === "voting"
-            ? ("current" as const)
-            : status === "reviewing" || isCompleted
-              ? ("completed" as const)
-              : ("upcoming" as const),
+        label: "투표 중",
+        status: getStepStatus("voting"),
       },
       {
-        label: "검토중",
-        status:
-          status === "reviewing"
-            ? ("current" as const)
-            : isCompleted
-              ? ("completed" as const)
-              : ("upcoming" as const),
+        label: "제안 중",
+        status: getStepStatus("proposing"),
       },
       {
-        label: resultLabel,
-        status:
-          isCompleted ? ("current" as const) : ("upcoming" as const),
+        label: "답변 완료",
+        status: getStepStatus("answered"),
+      },
+      {
+        label: "실행 중",
+        status: getStepStatus("executing"),
+      },
+      {
+        label: "실행 완료",
+        status: getStepStatus("executed"),
       },
     ];
   };
@@ -845,15 +853,17 @@ export default function AgendaDetailPage() {
                   <SelectValue placeholder="상태를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="voting">투표중</SelectItem>
-                  <SelectItem value="reviewing">검토중</SelectItem>
-                  <SelectItem value="passed">통과</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
+                  <SelectItem value="created">안건 생성</SelectItem>
+                  <SelectItem value="voting">투표 중</SelectItem>
+                  <SelectItem value="proposing">제안 중</SelectItem>
+                  <SelectItem value="answered">답변 완료</SelectItem>
+                  <SelectItem value="executing">실행 중</SelectItem>
+                  <SelectItem value="executed">실행 완료</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {(editedStatus === "passed" || editedStatus === "rejected") && (
+            {(editedStatus === "answered" || editedStatus === "executing" || editedStatus === "executed") && (
               <div className="space-y-2">
                 <Label htmlFor="edit-response">답변 및 결과</Label>
                 <Textarea

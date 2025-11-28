@@ -45,7 +45,7 @@ export default function AllAgendasManagement() {
   const [editingAgenda, setEditingAgenda] = useState<Agenda | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editStatus, setEditStatus] = useState<"voting" | "reviewing" | "passed" | "rejected">("reviewing");
+  const [editStatus, setEditStatus] = useState<"created" | "voting" | "proposing" | "answered" | "executing" | "executed">("created");
   const [editResponse, setEditResponse] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -127,7 +127,7 @@ export default function AllAgendasManagement() {
     setEditingAgenda(agenda);
     setEditTitle(agenda.title);
     setEditDescription(agenda.description);
-    setEditStatus(agenda.status as "voting" | "reviewing" | "passed" | "rejected");
+    setEditStatus(agenda.status as "created" | "voting" | "proposing" | "answered" | "executing" | "executed");
     setEditResponse(agenda.response || "");
     setEditDialogOpen(true);
   };
@@ -142,7 +142,7 @@ export default function AllAgendasManagement() {
       status: editStatus,
     };
     
-    if (editStatus === "passed" || editStatus === "rejected") {
+    if (editStatus === "answered" || editStatus === "executing" || editStatus === "executed") {
       updateData.response = editResponse.trim() || null;
     } else {
       updateData.response = null;
@@ -322,31 +322,27 @@ export default function AllAgendasManagement() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">상태</label>
-              <Select value={editStatus} onValueChange={(val) => setEditStatus(val as "voting" | "reviewing" | "passed" | "rejected")}>
+              <Select value={editStatus} onValueChange={(val) => setEditStatus(val as "created" | "voting" | "proposing" | "answered" | "executing" | "executed")}>
                 <SelectTrigger data-testid="select-edit-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="voting">투표중</SelectItem>
-                  <SelectItem value="reviewing">검토중</SelectItem>
-                  <SelectItem value="passed">통과</SelectItem>
-                  <SelectItem value="rejected">반려</SelectItem>
+                  <SelectItem value="created">안건 생성</SelectItem>
+                  <SelectItem value="voting">투표 중</SelectItem>
+                  <SelectItem value="proposing">제안 중</SelectItem>
+                  <SelectItem value="answered">답변 완료</SelectItem>
+                  <SelectItem value="executing">실행 중</SelectItem>
+                  <SelectItem value="executed">실행 완료</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {(editStatus === "passed" || editStatus === "rejected") && (
+            {(editStatus === "answered" || editStatus === "executing" || editStatus === "executed") && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  답변 {editStatus === "passed" ? "(통과 사유)" : "(반려 사유)"}
-                </label>
+                <label className="text-sm font-medium">답변 및 결과</label>
                 <Textarea
                   value={editResponse}
                   onChange={(e) => setEditResponse(e.target.value)}
-                  placeholder={
-                    editStatus === "passed"
-                      ? "안건이 통과된 사유와 향후 진행 계획을 입력하세요."
-                      : "안건이 반려된 사유를 입력하세요."
-                  }
+                  placeholder="안건에 대한 답변 및 결과를 입력하세요."
                   rows={4}
                   data-testid="textarea-edit-response"
                 />

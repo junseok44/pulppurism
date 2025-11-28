@@ -75,10 +75,12 @@ export const opinions = pgTable("opinions", {
 });
 
 export const agendaStatusEnum = pgEnum("agenda_status", [
+  "created",
   "voting",
-  "reviewing",
-  "passed",
-  "rejected",
+  "proposing",
+  "answered",
+  "executing",
+  "executed",
 ]);
 
 export const agendas = pgTable("agendas", {
@@ -90,7 +92,7 @@ export const agendas = pgTable("agendas", {
   categoryId: varchar("category_id")
     .notNull()
     .references(() => categories.id),
-  status: agendaStatusEnum("status").notNull().default("reviewing"),
+  status: agendaStatusEnum("status").notNull().default("created"),
   voteCount: integer("vote_count").notNull().default(0),
   viewCount: integer("view_count").notNull().default(0),
   startDate: timestamp("start_date"),
@@ -278,15 +280,19 @@ export const insertOpinionSchema = createInsertSchema(opinions).omit({
   createdAt: true,
   likes: true,
 });
-export const insertAgendaSchema = createInsertSchema(agendas)
+// status 필드를 먼저 omit하고 나중에 새 enum으로 재정의
+const baseAgendaSchema = createInsertSchema(agendas)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
     voteCount: true,
     viewCount: true,
+    status: true, // 기존 status를 omit
   })
   .extend({
+    // 새로운 status enum 정의
+    status: z.enum(["created", "voting", "proposing", "answered", "executing", "executed"]).optional(),
     startDate: z
       .string()
       .optional()
@@ -301,7 +307,10 @@ export const insertAgendaSchema = createInsertSchema(agendas)
     regionalCases: z.array(z.string()).nullish(),
     response: z.string().nullish(),
   });
-export const updateAgendaSchema = insertAgendaSchema.partial();
+
+export const insertAgendaSchema = baseAgendaSchema;
+
+export const updateAgendaSchema = baseAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({
   id: true,
   createdAt: true,
