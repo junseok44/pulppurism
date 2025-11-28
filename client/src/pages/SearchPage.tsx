@@ -1,54 +1,58 @@
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Search, ArrowLeft, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { Agenda, Category } from "@shared/schema";
+
+interface AgendaWithCategory extends Agenda {
+  category?: Category;
+  bookmarkCount?: number;
+  isBookmarked?: boolean;
+}
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
 
-  // todo: remove mock functionality
-  const allAgendas = [
-    {
-      id: "1",
-      title: "A초등학교 앞 과속방지턱 설치 요청",
-      category: "교통",
-      status: "주민 투표",
-      commentCount: 45,
-      bookmarkCount: 23,
-    },
-    {
-      id: "2",
-      title: "공원 내 야간 소음 문제 해결 방안",
-      category: "환경",
-      status: "검토 중",
-      commentCount: 89,
-      bookmarkCount: 56,
-    },
-    {
-      id: "3",
-      title: "지역 도서관 운영 시간 연장 건의",
-      category: "문화",
-      status: "답변 완료",
-      commentCount: 34,
-      bookmarkCount: 12,
-    },
-  ];
+  // 실제 안건 데이터 가져오기
+  const {
+    data: allAgendas,
+    isLoading: agendasLoading,
+    error: agendasError,
+  } = useQuery<AgendaWithCategory[]>({
+    queryKey: ["/api/agendas"],
+  });
 
-  const filteredAgendas = searchQuery
-    ? allAgendas.filter((agenda) =>
-        agenda.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  // 제목으로 검색 필터링
+  const filteredAgendas = useMemo(() => {
+    if (!searchQuery.trim() || !allAgendas) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return allAgendas.filter((agenda) =>
+      agenda.title.toLowerCase().includes(query)
+    );
+  }, [searchQuery, allAgendas]);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="space-y-6">
+          {/* 뒤로 가기 버튼 */}
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/agendas")}
+            className="mb-2"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            뒤로가기
+          </Button>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
@@ -64,7 +68,17 @@ export default function SearchPage() {
 
           {searchQuery && (
             <div className="space-y-4">
-              {filteredAgendas.length > 0 ? (
+              {agendasLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : agendasError ? (
+                <div className="text-center py-12">
+                  <p className="text-destructive">
+                    안건을 불러오는 데 실패했습니다.
+                  </p>
+                </div>
+              ) : filteredAgendas.length > 0 ? (
                 <>
                   <p className="text-sm text-muted-foreground">
                     {filteredAgendas.length}개의 검색 결과
@@ -72,7 +86,13 @@ export default function SearchPage() {
                   {filteredAgendas.map((agenda) => (
                     <AgendaCard
                       key={agenda.id}
-                      {...agenda}
+                      id={agenda.id}
+                      title={agenda.title}
+                      category={agenda.category?.name || ""}
+                      status={agenda.status}
+                      commentCount={agenda.voteCount}
+                      bookmarkCount={agenda.bookmarkCount || 0}
+                      isBookmarked={agenda.isBookmarked || false}
                       onClick={() => setLocation(`/agendas/${agenda.id}`)}
                     />
                   ))}
