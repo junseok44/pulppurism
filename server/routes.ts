@@ -13,6 +13,7 @@ import {
   insertClusterSchema,
   insertCommentSchema,
   updateCommentSchema,
+  insertExecutionTimelineItemSchema,
   users,
   comments as dbComments,
 } from "@shared/schema";
@@ -1236,9 +1237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/agendas", async (req, res) => {
     try {
-      console.log("POST /api/agendas - Request body:", JSON.stringify(req.body, null, 2));
       const data = insertAgendaSchema.parse(req.body);
-      console.log("POST /api/agendas - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.createAgenda(data);
       res.status(201).json(agenda);
     } catch (error) {
@@ -1257,14 +1256,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      console.log("PATCH /api/agendas/:id - Request body:", JSON.stringify(req.body, null, 2));
       const data = updateAgendaSchema.parse(req.body);
-      console.log("PATCH /api/agendas/:id - Parsed data:", JSON.stringify(data, null, 2));
       const agenda = await storage.updateAgenda(req.params.id, data);
       if (!agenda) {
         return res.status(404).json({ error: "Agenda not found" });
       }
-      console.log("PATCH /api/agendas/:id - Updated agenda:", JSON.stringify({ id: agenda.id, okinewsUrl: agenda.okinewsUrl, regionalCases: agenda.regionalCases }, null, 2));
       res.json(agenda);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1374,6 +1370,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
       neutral: neutralCount,
     });
   });
+
+  app.get("/api/agendas/:id/execution-timeline", async (req, res) => {
+    try {
+      const items = await storage.getExecutionTimelineItems(req.params.id);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching execution timeline:", error);
+      res.status(500).json({ error: "Failed to fetch execution timeline" });
+    }
+  });
+
+  app.post(
+    "/api/agendas/:id/execution-timeline",
+    requireAuth,
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        if (!req.user?.isAdmin) {
+          return res.status(403).json({ error: "Admin access required" });
+        }
+
+        const agendaId = req.params.id;
+        const agenda = await storage.getAgenda(agendaId);
+        if (!agenda) {
+          return res.status(404).json({ error: "Agenda not found" });
+        }
+
+        let imageUrl: string | null = null;
+        if (req.file) {
+          const timestamp = Date.now();
+          const filename = `execution-timeline/${agendaId}/${timestamp}-${req.file.originalname}`;
+          await objectStorageService.uploadFile(filename, req.file.buffer);
+          imageUrl = `/public-objects/${filename}`;
+        }
+
+        const data = insertExecutionTimelineItemSchema.parse({
+          agendaId,
+          userId: req.user.id,
+          authorName: req.body.authorName || req.user.displayName || req.user.username,
+          content: req.body.content,
+          imageUrl,
+          createdAt: req.body.createdAt,
+        });
+
+        const item = await storage.createExecutionTimelineItem(data);
+        res.status(201).json(item);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          console.error("[POST /api/agendas/:id/execution-timeline] Zod validation error:", error.errors);
+          return res.status(400).json({ error: error.errors });
+        }
+        console.error("[POST /api/agendas/:id/execution-timeline] Error:", error);
+        res.status(500).json({ error: "Failed to create execution timeline item" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/agendas/:agendaId/execution-timeline/:itemId",
+    requireAuth,
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        console.log(`[PATCH /api/agendas/${req.params.agendaId}/execution-timeline/${req.params.itemId}] Request received.`);
+        console.log(`  User: ${req.user?.id}, isAdmin: ${req.user?.isAdmin}`);
+        console.log(`  Body: ${JSON.stringify(req.body)}`);
+        console.log(`  File: ${req.file ? req.file.originalname : 'No file'}`);
+
+        if (!req.user?.isAdmin) {
+          return res.status(403).json({ error: "Admin access required" });
+        }
+
+        const agendaId = req.params.agendaId;
+        const itemId = req.params.itemId;
+
+        // 기존 아이템 확인
+        const existingItems = await storage.getExecutionTimelineItems(agendaId);
+        const existingItem = existingItems.find((item) => item.id === itemId);
+        if (!existingItem) {
+          return res.status(404).json({ error: "Execution timeline item not found" });
+        }
+
+        let imageUrl: string | null | undefined = undefined;
+        if (req.file) {
+          const timestamp = Date.now();
+          const filename = `execution-timeline/${agendaId}/${timestamp}-${req.file.originalname}`;
+          await objectStorageService.uploadFile(filename, req.file.buffer);
+          imageUrl = `/public-objects/${filename}`;
+        } else if (req.body.removeImage === "true") {
+          imageUrl = null;
+        }
+
+        const updateData: any = {};
+        if (req.body.authorName !== undefined) {
+          updateData.authorName = req.body.authorName;
+        }
+        if (req.body.content !== undefined) {
+          updateData.content = req.body.content;
+        }
+        if (req.body.createdAt !== undefined) {
+          const [year, month, day] = req.body.createdAt.split('-').map(Number);
+          updateData.createdAt = new Date(Date.UTC(year, month - 1, day));
+        }
+        if (imageUrl !== undefined) {
+          updateData.imageUrl = imageUrl;
+        }
+
+        const updatedItem = await storage.updateExecutionTimelineItem(itemId, updateData);
+        if (!updatedItem) {
+          return res.status(404).json({ error: "Failed to update execution timeline item" });
+        }
+        res.json(updatedItem);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ error: error.errors });
+        }
+        console.error(`[PATCH /api/agendas/${req.params.agendaId}/execution-timeline/${req.params.itemId}] Error updating execution timeline item:`, error);
+        res.status(500).json({ error: "Failed to update execution timeline item" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/agendas/:agendaId/execution-timeline/:itemId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        if (!req.user?.isAdmin) {
+          return res.status(403).json({ error: "Admin access required" });
+        }
+
+        const success = await storage.deleteExecutionTimelineItem(req.params.itemId);
+        if (!success) {
+          return res.status(404).json({ error: "Timeline item not found" });
+        }
+        res.status(204).send();
+      } catch (error) {
+        console.error("Error deleting execution timeline item:", error);
+        res.status(500).json({ error: "Failed to delete execution timeline item" });
+      }
+    },
+  );
 
   app.post("/api/votes", async (req, res) => {
     try {

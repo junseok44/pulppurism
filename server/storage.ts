@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, desc, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, asc, sql, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   users,
@@ -14,6 +14,7 @@ import {
   agendaBookmarks,
   comments,
   commentLikes,
+  executionTimelineItems,
   type InsertUser,
   type User,
   type InsertCategory,
@@ -38,6 +39,8 @@ import {
   type Comment,
   type InsertCommentLike,
   type CommentLike,
+  type InsertExecutionTimelineItem,
+  type ExecutionTimelineItem,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -110,6 +113,11 @@ export interface IStorage {
   getCommentLike(userId: string, commentId: string): Promise<CommentLike | undefined>;
   createCommentLike(like: InsertCommentLike): Promise<CommentLike>;
   deleteCommentLike(userId: string, commentId: string): Promise<boolean>;
+
+  getExecutionTimelineItems(agendaId: string): Promise<(ExecutionTimelineItem & { user: User })[]>;
+  createExecutionTimelineItem(item: InsertExecutionTimelineItem): Promise<ExecutionTimelineItem>;
+  updateExecutionTimelineItem(id: string, item: Partial<InsertExecutionTimelineItem>): Promise<ExecutionTimelineItem | null>;
+  deleteExecutionTimelineItem(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -516,6 +524,38 @@ export class DatabaseStorage implements IStorage {
   async deleteCommentLike(userId: string, commentId: string): Promise<boolean> {
     const result = await db.delete(commentLikes)
       .where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getExecutionTimelineItems(agendaId: string): Promise<ExecutionTimelineItem[]> {
+    const result = await db
+      .select()
+      .from(executionTimelineItems)
+      .where(eq(executionTimelineItems.agendaId, agendaId))
+      .orderBy(asc(executionTimelineItems.createdAt));
+    
+    return result;
+  }
+
+  async createExecutionTimelineItem(item: InsertExecutionTimelineItem): Promise<ExecutionTimelineItem> {
+    const result = await db.insert(executionTimelineItems).values(item).returning();
+    return result[0];
+  }
+
+  async updateExecutionTimelineItem(
+    id: string,
+    item: Partial<InsertExecutionTimelineItem>
+  ): Promise<ExecutionTimelineItem | null> {
+    const result = await db
+      .update(executionTimelineItems)
+      .set(item)
+      .where(eq(executionTimelineItems.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteExecutionTimelineItem(id: string): Promise<boolean> {
+    const result = await db.delete(executionTimelineItems).where(eq(executionTimelineItems.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 }

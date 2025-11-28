@@ -8,6 +8,7 @@ import {
   pgEnum,
   unique,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -75,10 +76,12 @@ export const opinions = pgTable("opinions", {
 });
 
 export const agendaStatusEnum = pgEnum("agenda_status", [
+  "created",
   "voting",
-  "reviewing",
-  "passed",
-  "rejected",
+  "proposing",
+  "answered",
+  "executing",
+  "executed",
 ]);
 
 export const agendas = pgTable("agendas", {
@@ -90,7 +93,7 @@ export const agendas = pgTable("agendas", {
   categoryId: varchar("category_id")
     .notNull()
     .references(() => categories.id),
-  status: agendaStatusEnum("status").notNull().default("reviewing"),
+  status: agendaStatusEnum("status").notNull().default("created"),
   voteCount: integer("vote_count").notNull().default(0),
   viewCount: integer("view_count").notNull().default(0),
   startDate: timestamp("start_date"),
@@ -100,7 +103,7 @@ export const agendas = pgTable("agendas", {
   referenceFiles: text("reference_files").array(),
   regionalCases: text("regional_cases").array(),
   tags: text("tags").array(),
-  response: text("response"),
+  response: jsonb("response"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   okinews: boolean("okinews").notNull().default(false),
@@ -269,6 +272,22 @@ export const commentLikes = pgTable(
   }),
 );
 
+export const executionTimelineItems = pgTable("execution_timeline_items", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  agendaId: varchar("agenda_id")
+    .notNull()
+    .references(() => agendas.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id),
+  authorName: text("author_name").notNull().default("작성자"),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -278,15 +297,20 @@ export const insertOpinionSchema = createInsertSchema(opinions).omit({
   createdAt: true,
   likes: true,
 });
-export const insertAgendaSchema = createInsertSchema(agendas)
+// status 필드를 먼저 omit하고 나중에 새 enum으로 재정의
+const baseAgendaSchema = createInsertSchema(agendas)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
     voteCount: true,
     viewCount: true,
+    status: true, // 기존 status를 omit
+    response: true, // response도 omit하고 재정의
   })
   .extend({
+    // 새로운 status enum 정의
+    status: z.enum(["created", "voting", "proposing", "answered", "executing", "executed"]).optional(),
     startDate: z
       .string()
       .optional()
@@ -299,9 +323,18 @@ export const insertAgendaSchema = createInsertSchema(agendas)
     referenceLinks: z.array(z.string().url()).nullish(),
     referenceFiles: z.array(z.string()).nullish(),
     regionalCases: z.array(z.string()).nullish(),
-    response: z.string().nullish(),
+    response: z
+      .object({
+        authorName: z.string().min(1, "답변자를 입력해주세요"),
+        responseDate: z.string().optional(),
+        content: z.string().min(1, "답변 내용을 입력해주세요"),
+      })
+      .nullish(),
   });
-export const updateAgendaSchema = insertAgendaSchema.partial();
+
+export const insertAgendaSchema = baseAgendaSchema;
+
+export const updateAgendaSchema = baseAgendaSchema.partial();
 export const insertVoteSchema = createInsertSchema(votes).omit({
   id: true,
   createdAt: true,
@@ -335,6 +368,24 @@ export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({
   id: true,
   createdAt: true,
 });
+export const insertExecutionTimelineItemSchema = createInsertSchema(
+  executionTimelineItems,
+)
+  .omit({ id: true })
+  .extend({
+    createdAt: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val) {
+          // YYYY-MM-DD 형식의 날짜를 받아서 자정(00:00:00)으로 설정
+          const date = new Date(val);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        }
+        return new Date();
+      }),
+  });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -362,3 +413,7 @@ export type UpdateComment = z.infer<typeof updateCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertCommentLike = z.infer<typeof insertCommentLikeSchema>;
 export type CommentLike = typeof commentLikes.$inferSelect;
+export type InsertExecutionTimelineItem = z.infer<
+  typeof insertExecutionTimelineItemSchema
+>;
+export type ExecutionTimelineItem = typeof executionTimelineItems.$inferSelect;

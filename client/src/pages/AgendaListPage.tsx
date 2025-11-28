@@ -26,9 +26,9 @@ interface AgendaWithCategory extends Agenda {
   isBookmarked?: boolean;
 }
 
-type AgendaStatus = "all" | "voting" | "reviewing" | "passed" | "rejected";
+type AgendaStatus = "all" | "created" | "voting" | "proposing" | "answered" | "executing" | "executed";
 type SortOption = "latest" | "views" | "votes";
-type SpotlightSection = "voting" | "passed" | "rejected";
+type SpotlightSection = "voting" | "executed";
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
@@ -39,7 +39,7 @@ export default function AgendaListPage() {
   const { user } = useUser();
 
   const spotlightSection = useMemo<SpotlightSection>(() => {
-    const sections: SpotlightSection[] = ["voting", "passed", "rejected"];
+    const sections: SpotlightSection[] = ["voting", "executed"];
     return sections[Math.floor(Math.random() * sections.length)];
   }, []);
 
@@ -102,14 +102,18 @@ export default function AgendaListPage() {
     switch (statusFilter) {
       case "all":
         return "전체";
+      case "created":
+        return "안건 생성";
       case "voting":
-        return "투표중";
-      case "reviewing":
-        return "검토중";
-      case "passed":
-        return "통과";
-      case "rejected":
-        return "반려";
+        return "투표 중";
+      case "proposing":
+        return "제안 중";
+      case "answered":
+        return "답변 완료";
+      case "executing":
+        return "실행 중";
+      case "executed":
+        return "실행 완료";
       default:
         return "진행상황에 따라 보기";
     }
@@ -123,17 +127,11 @@ export default function AgendaListPage() {
           title: "투표 진행 중",
           testId: "button-view-all-voting",
         };
-      case "passed":
+      case "executed":
         return {
           emoji: "✅",
-          title: "통과 된 안건",
-          testId: "button-view-all-passed",
-        };
-      case "rejected":
-        return {
-          emoji: "❌",
-          title: "반려 된 안건",
-          testId: "button-view-all-rejected",
+          title: "실행 완료 된 안건",
+          testId: "button-view-all-executed",
         };
     }
   };
@@ -343,28 +341,40 @@ export default function AgendaListPage() {
                 전체
               </DropdownMenuItem>
               <DropdownMenuItem
+                onClick={() => setStatusFilter("created")}
+                data-testid="menu-item-filter-created"
+              >
+                안건 생성
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => setStatusFilter("voting")}
                 data-testid="menu-item-filter-voting"
               >
-                투표중
+                투표 중
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setStatusFilter("reviewing")}
-                data-testid="menu-item-filter-reviewing"
+                onClick={() => setStatusFilter("proposing")}
+                data-testid="menu-item-filter-proposing"
               >
-                검토중
+                제안 중
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setStatusFilter("passed")}
-                data-testid="menu-item-filter-passed"
+                onClick={() => setStatusFilter("answered")}
+                data-testid="menu-item-filter-answered"
               >
-                통과
+                답변 완료
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setStatusFilter("rejected")}
-                data-testid="menu-item-filter-rejected"
+                onClick={() => setStatusFilter("executing")}
+                data-testid="menu-item-filter-executing"
               >
-                반려
+                실행 중
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setStatusFilter("executed")}
+                data-testid="menu-item-filter-executed"
+              >
+                실행 완료
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
