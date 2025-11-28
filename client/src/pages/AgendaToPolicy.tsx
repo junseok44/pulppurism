@@ -1,63 +1,137 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, Hammer, ArrowRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CheckCircle2, Hammer, Loader2, Info } from "lucide-react";
+import type { Agenda, Category } from "@shared/schema";
 
-// 1️⃣ 나중에 API에서 받아올 데이터 형태 (Dummy Data)
-const MOCK_POLICIES = [
-  {
-    id: 1,
-    title: "마을 입구 가로등 추가 설치",
-    description: "밤길이 너무 어둡다는 주민들의 의견을 수렴하여, 입구부터 놀이터까지 LED 가로등 5개를 추가 설치합니다.",
-    status: "COMPLETED", // 진행 상태
-    progress: 100, // 진행률 (%)
-    date: "2024.03.15 완료",
-    category: "안전/치안",
-    updates: "설치 완료 및 점등 테스트 통과",
-  },
-  {
-    id: 2,
-    title: "주민센터 앞 횡단보도 신호등 시간 연장",
-    description: "어르신들의 보행 속도를 고려해 보행자 신호 시간을 기존 20초에서 30초로 연장하는 안건입니다.",
-    status: "IN_PROGRESS",
-    progress: 60,
-    date: "2024.04.01 시행 예정",
-    category: "교통",
-    updates: "경찰청 심의 통과, 신호 체계 변경 작업 중",
-  },
-  {
-    id: 3,
-    title: "공원 내 반려견 배변봉투함 설치",
-    description: "쾌적한 공원 환경을 위해 산책로 입구 2곳에 배변봉투함을 시범 설치합니다.",
-    status: "PLANNING",
-    progress: 20,
-    date: "2024.05.01 목표",
-    category: "환경",
-    updates: "예산 배정 완료, 업체 선정 단계",
-  },
-  {
-    id: 4,
-    title: "매주 수요일 '재활용 정거장' 운영",
-    description: "분리수거가 어려운 빌라촌을 위해 이동식 분리수거 정거장을 운영합니다.",
-    status: "IN_PROGRESS",
-    progress: 45,
-    date: "2024.04.15 시범운영",
-    category: "환경",
-    updates: "자원봉사자 모집 중 (현재 80% 달성)",
-  },
-];
+interface AgendaWithCategory extends Agenda {
+  category?: Category;
+}
 
-export default function SuccessPage() {
+interface ExecutionTimelineItem {
+  id: string;
+  agendaId: string;
+  userId: string;
+  authorName: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+interface AgendaWithTimeline extends AgendaWithCategory {
+  latestTimelineItem?: ExecutionTimelineItem;
+}
+
+const ITEMS_PER_PAGE = 10;
+
+export default function AgendaToPolicy() {
+  const [, setLocation] = useLocation();
+  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+
+  // 모든 안건 가져오기
+  const {
+    data: allAgendas,
+    isLoading: agendasLoading,
+    error: agendasError,
+  } = useQuery<AgendaWithCategory[]>({
+    queryKey: ["/api/agendas"],
+  });
+
+  // 실행 중 또는 실행 완료인 안건만 필터링
+  const executingAgendas = useMemo(() => {
+    if (!allAgendas) return [];
+    return allAgendas.filter(
+      (agenda) => agenda.status === "executing" || agenda.status === "executed"
+    );
+  }, [allAgendas]);
+
+  // 통계 계산
+  const stats = useMemo(() => {
+    const executedCount = executingAgendas.filter(
+      (a) => a.status === "executed"
+    ).length;
+    const executingCount = executingAgendas.filter(
+      (a) => a.status === "executing"
+    ).length;
+    const totalAgendas = allAgendas?.length || 0;
+    const realizationRate = totalAgendas > 0 
+      ? Math.round((executingAgendas.length / totalAgendas) * 100)
+      : 0;
+    return { executedCount, executingCount, realizationRate };
+  }, [executingAgendas, allAgendas]);
+
+  // 표시할 안건 목록 (무한스크롤)
+  const displayedAgendas = executingAgendas.slice(0, displayedCount);
+
+  // 각 안건의 실행 과정 아이템 가져오기
+  const timelineQueries = useQueries({
+    queries: displayedAgendas.map((agenda) => ({
+      queryKey: [`/api/agendas/${agenda.id}/execution-timeline`],
+      queryFn: async () => {
+        const res = await fetch(`/api/agendas/${agenda.id}/execution-timeline`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch timeline");
+        return res.json() as Promise<ExecutionTimelineItem[]>;
+      },
+      enabled: !!agenda.id,
+      select: (data: ExecutionTimelineItem[]) => {
+        // 날짜순으로 정렬하고 가장 최근 아이템 반환
+        const sorted = [...data].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        return sorted;
+      },
+    })),
+  });
+
+  // 안건과 최근 실행 과정 아이템 결합
+  const agendasWithTimeline: AgendaWithTimeline[] = useMemo(() => {
+    return displayedAgendas.map((agenda, index) => {
+      const timelineData = timelineQueries[index]?.data;
+      return {
+        ...agenda,
+        latestTimelineItem: timelineData && timelineData.length > 0 ? timelineData[0] : undefined,
+      };
+    });
+  }, [displayedAgendas, timelineQueries]);
+
+  // 무한스크롤 처리
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 100
+      ) {
+        if (displayedCount < executingAgendas.length) {
+          setDisplayedCount((prev) => Math.min(prev + ITEMS_PER_PAGE, executingAgendas.length));
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [displayedCount, executingAgendas.length]);
+
+  const isLoading = agendasLoading || timelineQueries.some((q) => q.isLoading || q.isFetching);
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header />
-      
+
       <main className="w-full max-w-5xl mx-auto px-4 py-8">
-        
         {/* 헤더 섹션 */}
         <div className="text-center mb-10 space-y-2">
-          {/* font-bagel 제거 -> 깔끔한 기본 폰트 */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
             정책 실현 현황 🚀
           </h1>
@@ -67,29 +141,71 @@ export default function SuccessPage() {
         </div>
 
         {/* 통계 요약 카드 */}
-        <div className="grid grid-cols-3 gap-4 mb-10">
-          <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-            {/* 숫자 부분 폰트 제거 */}
-            <div className="text-2xl font-bold text-blue-600">12건</div>
-            <div className="text-xs text-gray-400">실현 완료</div>
+        <TooltipProvider>
+          <div className="grid grid-cols-3 gap-4 mb-10">
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.executedCount}건
+              </div>
+              <div className="text-xs text-gray-400">실현 완료</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+              <div className="text-2xl font-bold text-orange-500">
+                {stats.executingCount}건
+              </div>
+              <div className="text-xs text-gray-400">진행 중</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 relative">
+              <div className="text-2xl font-bold text-gray-700">
+                {stats.realizationRate}%
+              </div>
+              <div className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                정책 실현율
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Info className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">
+                      전체 안건 중 실행 중 또는 실행 완료 상태인 안건의 비율입니다.
+                      <br />
+                      (실행 중 + 실행 완료) / 전체 안건 × 100
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-            <div className="text-2xl font-bold text-orange-500">5건</div>
-            <div className="text-xs text-gray-400">진행 중</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-            <div className="text-2xl font-bold text-gray-700">100%</div>
-            <div className="text-xs text-gray-400">주민 만족도</div>
-          </div>
-        </div>
+        </TooltipProvider>
 
         {/* 정책 리스트 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {MOCK_POLICIES.map((policy) => (
-            <PolicyCard key={policy.id} policy={policy} />
-          ))}
-        </div>
-
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : agendasError ? (
+          <div className="text-center py-20">
+            <p className="text-destructive">안건을 불러오는 데 실패했습니다.</p>
+          </div>
+        ) : agendasWithTimeline.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {agendasWithTimeline.map((agenda) => (
+              <PolicyCard key={agenda.id} agenda={agenda} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground text-lg">
+              실행 중이거나 실행 완료된 안건이 없습니다.
+            </p>
+          </div>
+        )}
       </main>
 
       <MobileNav />
@@ -97,71 +213,112 @@ export default function SuccessPage() {
   );
 }
 
-// 2️⃣ 정책 카드 컴포넌트
-function PolicyCard({ policy }: { policy: any }) {
+// 정책 카드 컴포넌트
+function PolicyCard({ agenda }: { agenda: AgendaWithTimeline }) {
+  const [, setLocation] = useLocation();
+
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "COMPLETED":
-        return { color: "bg-green-100 text-green-700", icon: CheckCircle2, text: "실현 완료" };
-      case "IN_PROGRESS":
-        return { color: "bg-blue-100 text-blue-700", icon: Hammer, text: "진행 중" };
-      case "PLANNING":
-        return { color: "bg-orange-100 text-orange-700", icon: Clock, text: "계획 수립" };
+      case "executed":
+        return {
+          color: "bg-green-100 text-green-700",
+          icon: CheckCircle2,
+          text: "실현 완료",
+        };
+      case "executing":
+        return {
+          color: "bg-blue-100 text-blue-700",
+          icon: Hammer,
+          text: "진행 중",
+        };
       default:
-        return { color: "bg-gray-100 text-gray-700", icon: Clock, text: "대기 중" };
+        return {
+          color: "bg-gray-100 text-gray-700",
+          icon: CheckCircle2,
+          text: "대기 중",
+        };
     }
   };
 
-  const statusStyle = getStatusStyle(policy.status);
+  const statusStyle = getStatusStyle(agenda.status);
   const StatusIcon = statusStyle.icon;
 
+  // 최근 업데이트 날짜 포맷팅
+  const getLatestUpdateDate = () => {
+    if (!agenda.latestTimelineItem) return null;
+    const date = new Date(agenda.latestTimelineItem.createdAt);
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
-    <div className="bg-ok_gray1 rounded-[24px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col justify-between h-full group">
+    <div
+      className="bg-ok_gray1 rounded-[24px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col justify-between h-full group cursor-pointer"
+      onClick={() => setLocation(`/agendas/${agenda.id}`)}
+    >
       <div>
         {/* 상단 뱃지 영역 */}
         <div className="flex justify-between items-start mb-4">
-          <Badge variant="secondary" className={`${statusStyle.color} border-0 px-3 py-1`}>
+          <Badge
+            variant="secondary"
+            className={`${statusStyle.color} border-0 px-3 py-1`}
+          >
             <StatusIcon className="w-3.5 h-3.5 mr-1" />
             {statusStyle.text}
           </Badge>
           <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-full">
-            {policy.category}
+            {agenda.category?.name || "카테고리 없음"}
           </span>
         </div>
 
-        {/* 타이틀: font-bagel 제거 */}
+        {/* 타이틀 */}
         <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-          {policy.title}
+          {agenda.title}
         </h3>
         <p className="text-gray-500 text-sm line-clamp-2 mb-6">
-          {policy.description}
+          {agenda.description}
         </p>
       </div>
 
-      {/* 하단 진행률 및 정보 */}
+      {/* 하단 정보 */}
       <div className="bg-gray-50 rounded-2xl p-4 mt-auto">
-        <div className="flex justify-between items-end mb-2">
-          <span className="text-sm font-bold text-gray-700">진행률</span>
-          <span className="text-sm font-bold text-blue-600">{policy.progress}%</span>
-        </div>
-        
-        {/* 프로그레스 바 */}
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3 overflow-hidden">
-          <div 
-            className={`h-2.5 rounded-full transition-all duration-1000 ${
-              policy.status === 'COMPLETED' ? 'bg-green-500' : 'bg-blue-500'
-            }`}
-            style={{ width: `${policy.progress}%` }}
-          ></div>
-        </div>
-
-        <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-200">
-          <span className="text-gray-500 flex items-center">
-            최근 업데이트: {policy.updates}
-          </span>
-        </div>
+        {agenda.latestTimelineItem ? (
+          <>
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-xs">
+                  {agenda.latestTimelineItem.authorName[0] || "관"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    {agenda.latestTimelineItem.authorName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {getLatestUpdateDate()}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 line-clamp-2">
+                {agenda.latestTimelineItem.content}
+              </p>
+            </div>
+            <div className="pt-2 border-t border-gray-200">
+              <span className="text-xs text-gray-500">
+                최근 업데이트: {getLatestUpdateDate()}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-2">
+            <span className="text-xs text-gray-500">
+              아직 실행 과정이 등록되지 않았습니다.
+            </span>
+          </div>
+        )}
       </div>
-      
     </div>
   );
 }
