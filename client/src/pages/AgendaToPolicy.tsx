@@ -10,8 +10,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle2, Hammer, Loader2, Info } from "lucide-react";
+import { CheckCircle2, Hammer, Loader2, Info, Filter, ChevronDown, Calendar } from "lucide-react";
 import type { Agenda, Category } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CategoryFilter from "@/components/CategoryFilter";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -33,9 +41,15 @@ interface AgendaWithTimeline extends AgendaWithCategory {
 
 const ITEMS_PER_PAGE = 10;
 
+type StatusFilter = "all" | "executing" | "executed";
+type PeriodFilter = "all" | "1month" | "1year";
+
 export default function AgendaToPolicy() {
   const [, setLocation] = useLocation();
   const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
 
   // 모든 안건 가져오기
   const {
@@ -46,31 +60,77 @@ export default function AgendaToPolicy() {
     queryKey: ["/api/agendas"],
   });
 
-  // 실행 중 또는 실행 완료인 안건만 필터링
-  const executingAgendas = useMemo(() => {
+  // 카테고리 가져오기
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+  } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  // 필터링된 안건 목록
+  const filteredAgendas = useMemo(() => {
     if (!allAgendas) return [];
-    return allAgendas.filter(
+    
+    let filtered = allAgendas.filter(
       (agenda) => agenda.status === "executing" || agenda.status === "executed"
     );
-  }, [allAgendas]);
 
-  // 통계 계산
+    // 상태 필터
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((agenda) => agenda.status === statusFilter);
+    }
+
+    // 카테고리 필터
+    if (selectedCategoryName) {
+      filtered = filtered.filter(
+        (agenda) => agenda.category?.name === selectedCategoryName
+      );
+    }
+
+    // 기간 필터
+    if (periodFilter !== "all") {
+      const now = new Date();
+      const cutoffDate = new Date();
+      
+      if (periodFilter === "1month") {
+        cutoffDate.setMonth(now.getMonth() - 1);
+      } else if (periodFilter === "1year") {
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+      }
+
+      filtered = filtered.filter((agenda) => {
+        const agendaDate = new Date(agenda.createdAt);
+        return agendaDate >= cutoffDate;
+      });
+    }
+
+    return filtered;
+  }, [allAgendas, statusFilter, selectedCategoryName, periodFilter]);
+
+  // 통계 계산 (필터 적용 전 전체 데이터 기준)
   const stats = useMemo(() => {
+    if (!allAgendas) return { executedCount: 0, executingCount: 0, realizationRate: 0 };
+    
+    const executingAgendas = allAgendas.filter(
+      (agenda) => agenda.status === "executing" || agenda.status === "executed"
+    );
+    
     const executedCount = executingAgendas.filter(
       (a) => a.status === "executed"
     ).length;
     const executingCount = executingAgendas.filter(
       (a) => a.status === "executing"
     ).length;
-    const totalAgendas = allAgendas?.length || 0;
+    const totalAgendas = allAgendas.length;
     const realizationRate = totalAgendas > 0 
       ? Math.round((executingAgendas.length / totalAgendas) * 100)
       : 0;
     return { executedCount, executingCount, realizationRate };
-  }, [executingAgendas, allAgendas]);
+  }, [allAgendas]);
 
   // 표시할 안건 목록 (무한스크롤)
-  const displayedAgendas = executingAgendas.slice(0, displayedCount);
+  const displayedAgendas = filteredAgendas.slice(0, displayedCount);
 
   // 각 안건의 실행 과정 아이템 가져오기
   const timelineQueries = useQueries({
@@ -113,15 +173,20 @@ export default function AgendaToPolicy() {
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 100
       ) {
-        if (displayedCount < executingAgendas.length) {
-          setDisplayedCount((prev) => Math.min(prev + ITEMS_PER_PAGE, executingAgendas.length));
+        if (displayedCount < filteredAgendas.length) {
+          setDisplayedCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filteredAgendas.length));
         }
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [displayedCount, executingAgendas.length]);
+  }, [displayedCount, filteredAgendas.length]);
+
+  // 필터 변경 시 표시 개수 리셋
+  useEffect(() => {
+    setDisplayedCount(ITEMS_PER_PAGE);
+  }, [statusFilter, periodFilter, selectedCategoryName]);
 
   const isLoading = agendasLoading || timelineQueries.some((q) => q.isLoading || q.isFetching);
 
@@ -183,6 +248,96 @@ export default function AgendaToPolicy() {
             </div>
           </div>
         </TooltipProvider>
+
+        {/* 필터 섹션 */}
+        <div className="mb-6 space-y-4">
+          {/* 카테고리 필터 */}
+          {!categoriesLoading && categories && (
+            <CategoryFilter
+              categories={categories.map((c) => ({
+                name: c.name,
+                icons: c.icon,
+              }))}
+              selected={selectedCategoryName}
+              onSelect={setSelectedCategoryName}
+            />
+          )}
+
+          {/* 상태 및 기간 필터 */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-status-filter"
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  {statusFilter === "all" && "전체"}
+                  {statusFilter === "executing" && "실행 중"}
+                  {statusFilter === "executed" && "실행 완료"}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => setStatusFilter("all")}
+                  data-testid="menu-item-filter-all"
+                >
+                  전체
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setStatusFilter("executing")}
+                  data-testid="menu-item-filter-executing"
+                >
+                  실행 중
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setStatusFilter("executed")}
+                  data-testid="menu-item-filter-executed"
+                >
+                  실행 완료
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-period-filter"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {periodFilter === "all" && "전체 기간"}
+                  {periodFilter === "1month" && "최근 1개월"}
+                  {periodFilter === "1year" && "최근 1년"}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => setPeriodFilter("all")}
+                  data-testid="menu-item-period-all"
+                >
+                  전체 기간
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setPeriodFilter("1month")}
+                  data-testid="menu-item-period-1month"
+                >
+                  최근 1개월
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setPeriodFilter("1year")}
+                  data-testid="menu-item-period-1year"
+                >
+                  최근 1년
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
 
         {/* 정책 리스트 그리드 */}
         {isLoading ? (
