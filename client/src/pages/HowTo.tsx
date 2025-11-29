@@ -9,7 +9,7 @@ export default function HowToPage() {
       <Header />
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <TitleCard
-          title="풀뿌리광장 성장 과정 🕊️"
+          title="두런두런 옥천마루 성장 과정 🕊️"
           description="작은 씨앗이 거대한 나무가 되기까지의 여정"
         />
         {/* 2. [핵심] 성장 과정 다이어그램 (그림 대신 코드로 구현) */}
@@ -21,7 +21,7 @@ export default function HowToPage() {
             title="주민의 목소리"
             subtitle="씨앗"
             color="bg-ok_sub2"
-            description="우리 마을에 필요한 것이 있나요? 작은 아이디어를 심어주세요."
+            description="우리 마을에 필요한 것이 있나요? 여러분의 생각을 자유롭게 남겨주세요. 다른 이웃의 의견에도 좋아요와 답글로 반응할 수 있습니다."
           />
 
           {/* 화살표 (모바일: 아래 / PC: 오른쪽) */}
@@ -33,7 +33,7 @@ export default function HowToPage() {
             title="안건 보기"
             subtitle="새싹"
             color="bg-ok_sub2"
-            description="AI가 비슷한 의견을 모아 안건으로 새싹을 틔웁니다. 함께 의견을 모아주세요."
+            description="비슷한 목소리가 많이 모이면, 관리자가 안건으로 채택하게 됩니다. 투표에 참여하고, 댓글을 달아 안건의 힘을 키워주세요. 여러분의 관심도는 정책 제안의 기반이 됩니다."
           />
 
           {/* 화살표 */}
@@ -45,7 +45,7 @@ export default function HowToPage() {
             title="정책 실현"
             subtitle="나무"
             color="bg-ok_sub2"
-            description="무럭무럭 자란 안건은 지자체에 전달되어 든든한 정책이 됩니다."
+            description="2주간의 투표 결과 및 다양한 참고자료를 토대로 다듬어진 정책은 관리자가 지자체에 제안하게 됩니다. 주무부처의 공식 답변을 직접 조회할 수 있습니다."
           />
 
         </div>
@@ -54,7 +54,7 @@ export default function HowToPage() {
         <div className="bg-gray-50 rounded-[40px] p-8 md:p-12 text-center border border-gray-100">
           <h3 className="text-xl font-bold mb-4">함께 키우는 숲 🌳</h3>
           <p className="text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            풀뿌리 광장은 여러분의 참여로 자라납니다.<br />
+            두런두런 옥천마루는 여러분의 참여로 자라납니다.<br />
             나 혼자만의 불평이 아닌, <strong>우리 모두의 해결책</strong>이 되는 과정.<br />
             지금 바로 여러분만의 씨앗을 심어보세요!
           </p>
