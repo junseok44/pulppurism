@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import OpinionCard from "@/components/OpinionCard";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
@@ -137,7 +136,6 @@ export default function OpinionListPage() {
         <Plus className="w-5 h-5 mr-2" />
         <span className="font-semibold">제안하기</span>
       </Button>
-      <MobileNav />
     </div>
   );
 }

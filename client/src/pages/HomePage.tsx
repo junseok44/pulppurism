@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
-import { ArrowRight, MessageSquare, Loader2 } from "lucide-react";
+import { ArrowRight, MessageSquare, Loader2,HelpCircle, Heart} from "lucide-react";
 import type { Opinion } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
@@ -28,6 +27,18 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-24">
       {/* 1. 상단 헤더 불러오기 */}
       <Header />
+      {/* ✨ [추가] 이용안내 배너 ✨ */}
+      <div
+        onClick={() => setLocation("/howto")}
+        className="w-full bg-ok_sand text-ok_sandtxt py-3 px-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-ok_sandhover transition-colors text-sm md:text-base font-medium animate-in slide-in-from-top duration-300"
+      >
+        <HelpCircle className="w-5 h-5" />
+        <span>
+          옥천마루에 처음 오셨나요? 이용 안내 보러가기
+        </span>
+        <ArrowRight className="w-4 h-4" />
+      </div>
+      {/* ✨ [끝] 배너 끝 ✨ */}
       {/* 2. 메인 컨텐츠 영역 */}
       <main className="w-full mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[70vh] text-center">
         
@@ -126,7 +137,8 @@ export default function HomePage() {
                         
                         {/* 👇 [수정] agreementCount -> likes 로 변경! (없으면 0 표시) */}
                         <span className="flex items-center gap-1">
-                          👍 {opinion.likes || 0}
+                          <Heart className="w-3.5 h-3.5" />
+                          {opinion.likes || 0}
                         </span>
                       </div>
                     </div>
@@ -150,8 +162,6 @@ export default function HomePage() {
 
         </div>
       </main>
-
-      <MobileNav />
     </div>
   );
 }
