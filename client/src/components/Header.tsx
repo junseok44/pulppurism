@@ -52,7 +52,7 @@ export default function Header() {
   return (
     <>
       {/* 헤더 컨테이너 */}
-      <div className="sticky top-0 z-50 w-full pt-4 px-4 flex items-center gap-3" data-testid="header-main">    
+      <div className="sticky top-0 z-50 w-full pt-4 pl-4 flex items-center gap-3" data-testid="header-main">    
       <header className="bg-ok_gray1 pointer-events-auto flex-grow bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">
           <div className="flex items-center gap-3">
             {/* PC 로고 */}
