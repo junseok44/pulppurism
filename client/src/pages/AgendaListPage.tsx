@@ -215,16 +215,6 @@ export default function AgendaListPage() {
           title="안건 보기 🌱"
           description="남겨주신 의견을 모아 만들어진 안건 페이지입니다."
         />
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setLocation("/search")}
-            data-testid="button-search-agenda"
-          >
-            <Search className="w-5 h-5" />
-          </Button>
-        </div>
         {spotlightAgendas.length > 0 && spotlightConfig && (
           <div className="mb-10">
             <div className="flex items-center justify-between mb-4">

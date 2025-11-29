@@ -45,7 +45,7 @@ export default function SearchPage() {
           {/* 뒤로 가기 버튼 */}
           <Button
             variant="ghost"
-            onClick={() => setLocation("/agendas")}
+            onClick={() => window.history.back()}
             className="mb-2"
             data-testid="button-back"
           >
