@@ -286,7 +286,15 @@ export function setupAuth(app: Express) {
   });
 
   app.use(passport.initialize());
-  app.use(passport.session());
+  // passport.session()을 API 요청에만 적용하여 정적 파일 요청에서 불필요한 deserializeUser 호출 방지
+  const sessionMiddleware = passport.session();
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      sessionMiddleware(req, res, next);
+    } else {
+      next();
+    }
+  });
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {

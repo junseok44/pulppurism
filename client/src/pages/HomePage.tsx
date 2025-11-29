@@ -8,9 +8,14 @@ import { useQuery } from "@tanstack/react-query";
 export default function HomePage() {
   const [, setLocation] = useLocation();
 
-  // 1️⃣ 실제 의견 데이터 가져오기
+  // 1️⃣ 실제 의견 데이터 가져오기 (홈페이지용 - 최신 10개만)
   const { data: opinions, isLoading } = useQuery<Opinion[]>({
-    queryKey: ["/api/opinions"],
+    queryKey: ["/api/opinions", "preview"],
+    queryFn: async () => {
+      const response = await fetch("/api/opinions?limit=10");
+      if (!response.ok) throw new Error("Failed to fetch opinions");
+      return response.json();
+    },
   });
 
   // 2️⃣ 최신순 정렬 (ID가 높을수록 최신이라고 가정하거나, 날짜순 정렬) 후 10개만 자르기

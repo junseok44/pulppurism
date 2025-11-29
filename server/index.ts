@@ -46,6 +46,22 @@ app.use(express.urlencoded({ extended: false }));
 
 setupAuth(app);
 
+// API 요청 엔드포인트 로깅 미들웨어 (개발 모드에서만)
+if (app.get("env") === "development") {
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      const timestamp = new Date().toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      console.log(`[${timestamp}] ${req.method} ${req.path}`);
+    }
+    next();
+  });
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
