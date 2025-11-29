@@ -61,7 +61,7 @@ export default function Header() {
                 
                 {/* 2. 윗쪽 박스: [두런두런 + 나뭇잎] -> 가로(Row) 정렬 */}
                 <div className="flex items-end mb-[-17px]"> {/* mb-[-2px]: 옥천마루와 간격 좁히기 */}
-                  <span className="pb-[10px] pl-[3px] font-edu text-s tracking-tighter">
+                  <span className="pb-[11px] pl-[3px] font-logosub text-[14px] tracking-tighter">
                     두런두런
                   </span>
                   <img 
