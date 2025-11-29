@@ -29,8 +29,8 @@ export default function Header() {
 
   const navItems = [
     { path: "/howto", label: "이용방법"},
-    { path: "/agendas", label: "안건보기"},
     { path: "/opinions", label: "주민의 목소리" },
+    { path: "/agendas", label: "안건보기"},
     { path: "/policy", label: "정책실현현황"}
   ];
 
@@ -68,8 +68,10 @@ export default function Header() {
                 />
 
                 {/* 👇 옆에 글씨('주민참여')는 남겨둘게. (이미지에 글씨까지 포함돼있으면 이 줄 삭제해!) */}
+                <h1 >
+                </h1>
                 <h1 className="font-bagel text-xl hidden sm:block">
-                  풀뿌리광장
+                  옥천마루
                 </h1>
                 
               </div>
