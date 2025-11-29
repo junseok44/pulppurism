@@ -6,10 +6,10 @@
   export default function TitleCard({ title, description }: TitleCardProps){
     return(
       <div className="text-center mb-20 space-y-4">
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+      <h1 className="text-3xl md:text-4xl font-bold text-ok_txtgray2">
         {title}
       </h1>
-      <p className="text-gray-500 text-lg">
+      <p className="text-ok_txtgray1 text-lg">
         {description}
       </p>
       </div>

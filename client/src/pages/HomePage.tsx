@@ -36,7 +36,7 @@ export default function HomePage() {
           {/* 1️⃣ [메인 박스] 여기에 onClick 추가! 👇 */}
           <div 
             onClick={() => setLocation("/policy")} 
-            className="lg:col-span-2 bg-[#F3F4F6] rounded-[40px] p-8 md:p-12 flex flex-col justify-between min-h-[400px] relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
+            className="lg:col-span-2 bg-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col justify-between min-h-[400px] relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
           >
             <div>
               <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-gray-900 mb-4">
@@ -50,7 +50,7 @@ export default function HomePage() {
             
             {/* 하단 버튼 (박스 전체가 눌리니까 버튼의 기능은 장식용이 됨) */}
             <div className="mt-8 text-left">
-              <button className="bg-black text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 hover:bg-gray-800 transition-colors">
+              <button className="bg-primary text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 hover:bg-ok_sub1 transition-colors">
                 정책 보러가기 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -59,7 +59,7 @@ export default function HomePage() {
           {/* 2️⃣ [사이드 박스] 안건 */}
           <div 
             // 나중에 여기도 연결하려면 똑같이 onClick={() => setLocation("/agenda")} 넣으면 돼
-            className="lg:col-span-1 bg-[#E5E7EB] rounded-[40px] p-8 flex flex-col min-h-[400px] relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
+            className="lg:col-span-1 bg-ok_gray2 rounded-[40px] p-8 flex flex-col min-h-[400px] relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
           >
             <div className="flex justify-between items-start mb-6">
               <h2 className="text-3xl font-bold text-gray-900">
@@ -79,17 +79,17 @@ export default function HomePage() {
           </div>
 
           {/* 3️⃣ [하단 박스] 주민 의견 */}
-          <div className="lg:col-span-3 bg-white border-2 border-gray-100 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-gray-300 transition-colors">
+          <div className="lg:col-span-3 bg-ok_gray2 border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_gray3 transition-colors">
             <div className="md:w-1/3 text-left">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-3xl font-extrabold text-ok_txtgray2 mb-2">
                 주민의 목소리
               </h2>
-              <p className="text-gray-500">
+              <p className="text-ok_txtgray1">
                 우리 동네에 필요한 점을<br />자유롭게 이야기해주세요.
               </p>
               <button 
                 onClick={() => setLocation("/opinions")}
-                className="text-sm font-bold text-gray-900 underline underline-offset-4 hover:text-blue-600"
+                className="text-sm font-bold text-ok_txtgray2 underline underline-offset-4 hover:text-ok_sub1"
               >
                 전체보기 &rarr;
               </button>
@@ -108,19 +108,19 @@ export default function HomePage() {
                   {recentOpinions.map((opinion) => (
                     <div 
                       key={opinion.id} 
-                      className="min-w-[240px] w-[240px] bg-gray-50 rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer text-left"
+                      className="min-w-[240px] w-[240px] bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sand hover:shadow-md transition-all cursor-pointer text-left"
                       onClick={() => setLocation(`/opinions/${opinion.id}`)}
                     >
                       <div className="mb-3">
-                        <MessageSquare className="w-8 h-8 text-blue-500 bg-blue-100 p-1.5 rounded-full mb-3" />
+                        <MessageSquare className="w-8 h-8 text-ok_sandtxt bg-ok_sand p-1.5 rounded-full mb-3" />
                         
                         {/* 👇 [수정] title -> content 로 변경! */}
-                        <p className="text-gray-900 font-bold line-clamp-2 leading-snug">
+                        <p className="text-ok_txtgray2 font-bold line-clamp-2 leading-snug">
                           {opinion.content}
                         </p>
                       </div>
                       
-                      <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
+                      <div className="flex justify-between items-center text-xs text-ok_txtgray0 mt-2">
                         {/* 날짜 형식은 그대로 유지 */}
                         <span>{new Date(opinion.createdAt).toLocaleDateString()}</span>
                         
