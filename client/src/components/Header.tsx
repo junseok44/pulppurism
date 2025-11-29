@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { LogIn, LogOut, Menu, X, ChevronDown } from "lucide-react"; // 👈 X, ChevronDown 아이콘 추가
+import { LogIn, LogOut, Search} from "lucide-react"; // 👈 X, ChevronDown 아이콘 추가
 import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
@@ -52,8 +52,8 @@ export default function Header() {
   return (
     <>
       {/* 헤더 컨테이너 */}
-      <div className="bg-transparent sticky top-0 z-50 w-full flex flex-col items-center pt-4 px-4 pointer-events-none" data-testid="header-main">    
-        <header className="bg-ok_gray1 pointer-events-auto w-full bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">    
+      <div className="sticky top-0 z-50 w-full pt-4 pl-4 flex items-center gap-3" data-testid="header-main">    
+      <header className="bg-ok_gray1 pointer-events-auto flex-grow bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">
           <div className="flex items-center gap-3">
             {/* PC 로고 */}
             <Link href="/">
@@ -111,6 +111,17 @@ export default function Header() {
           </div>
 
         </header>
+
+        <button 
+          onClick={() => setLocation("/search")} 
+          // 👇 여기에 relative, z-50, cursor-pointer 추가!
+          className="relative z-50 cursor-pointer rounded-full bg-primary w-10 h-10 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md"
+        >
+          <Search className="w-5 h-5 text-white" />
+        </button>
+        
+        <div>
+      </div>
       </div>
 
       {/* 👇 2. 로그인 다이얼로그 (이게 꼭 있어야 해!) */}
