@@ -15,6 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { trackOpinionLike, trackCommentCreated } from "@/lib/analytics";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +119,11 @@ export default function OpinionDetailPage() {
       }
     },
     onMutate: async () => {
+      // GA 이벤트 추적: 좋아요
+      if (opinionId) {
+        trackOpinionLike(opinionId, opinionLike?.liked ? "unlike" : "like");
+      }
+      
       await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}`] });
       await queryClient.cancelQueries({ queryKey: [`/api/opinions/${opinionId}/like?userId=${user?.id}`] });
       
@@ -189,6 +195,11 @@ export default function OpinionDetailPage() {
       return { previousComments };
     },
     onSuccess: () => {
+      // GA 이벤트 추적: 답글 작성
+      if (opinionId) {
+        trackCommentCreated(opinionId);
+      }
+      
       setComment("");
       toast({
         title: "답글이 등록되었습니다",

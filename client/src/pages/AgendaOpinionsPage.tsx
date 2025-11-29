@@ -13,6 +13,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Agenda, Category, Opinion } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
+import { trackAgendaComment, trackBookmark } from "@/lib/analytics";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -85,7 +86,12 @@ export default function AgendaOpinionsPage() {
         variant: "destructive",
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, isBookmarked) => {
+      // GA 이벤트 추적: 즐겨찾기
+      if (agendaId) {
+        trackBookmark(agendaId, isBookmarked ? "unbookmark" : "bookmark");
+      }
+      
       // 성공 시 쿼리 무효화하여 서버 데이터와 동기화
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/agendas/bookmarked"] });
@@ -121,6 +127,11 @@ export default function AgendaOpinionsPage() {
       return res.json();
     },
     onSuccess: () => {
+      // GA 이벤트 추적: 안건 댓글 (의견 작성)
+      if (agendaId) {
+        trackAgendaComment(agendaId);
+      }
+      
       setComment("");
       toast({
         title: "의견이 제출되었습니다",

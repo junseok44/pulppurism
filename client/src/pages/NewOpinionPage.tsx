@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useUser } from "@/hooks/useUser";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { InsertOpinion } from "@shared/schema";
+import { trackOpinionCreated } from "@/lib/analytics";
 
 export default function NewOpinionPage() {
   const [, setLocation] = useLocation();
@@ -134,6 +135,9 @@ export default function NewOpinionPage() {
       return { previousOpinions };
     },
     onSuccess: () => {
+      // GA 이벤트 추적: 의견 작성
+      trackOpinionCreated("text");
+      
       setLocation("/opinions");
       toast({
         title: "의견이 제출되었습니다",

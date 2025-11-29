@@ -9,12 +9,13 @@ import {
 import { Bookmark, Edit, ArrowLeft, Share2, Copy, MessageCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
-import type { Agenda, Category, User } from "@shared/schema";
+import type { Agenda, Category } from "@shared/schema";
 import { useState, useEffect } from "react";
+import { trackShare } from "@/lib/analytics";
 
 interface AgendaHeaderProps {
   agenda: Agenda & { category?: Category; isBookmarked?: boolean };
-  user?: User;
+  user?: { isAdmin?: boolean };
   onBookmarkClick: () => void;
   onEditClick?: () => void;
   bookmarkLoading?: boolean;
@@ -103,6 +104,9 @@ export default function AgendaHeader({
   }, []);
 
   const handleShare = async (platform: 'kakao' | 'copy') => {
+    // GA 이벤트 추적: 공유
+    trackShare(agenda.id, platform === 'kakao' ? 'kakao' : 'copy');
+    
     if (platform === 'copy') {
       try {
         await navigator.clipboard.writeText(shareUrl);
@@ -174,6 +178,9 @@ export default function AgendaHeader({
 
   // Web Share API 사용 (모바일)
   const handleNativeShare = async () => {
+    // GA 이벤트 추적: 공유
+    trackShare(agenda.id, 'native');
+    
     if (navigator.share) {
       try {
         await navigator.share({

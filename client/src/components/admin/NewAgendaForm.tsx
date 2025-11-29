@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
 import { Loader2, Plus, X } from "lucide-react";
 import type { Category, Cluster } from "@shared/schema";
+import { trackAgendaCreated } from "@/lib/analytics";
 
 export default function NewAgendaForm() {
   const [title, setTitle] = useState("");
@@ -115,7 +116,10 @@ export default function NewAgendaForm() {
 
       return agenda;
     },
-    onSuccess: () => {
+    onSuccess: (agenda) => {
+      // GA 이벤트 추적: 안건 생성
+      trackAgendaCreated(agenda.id);
+      
       queryClient.invalidateQueries({ queryKey: ["/api/agendas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clusters"] });
       toast({

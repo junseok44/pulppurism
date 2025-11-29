@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { SiGoogle, SiKakaotalk } from "react-icons/si";
 import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
+import { trackVote, trackBookmark } from "@/lib/analytics";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -191,6 +192,12 @@ export default function AgendaDetailPage() {
       });
       return res.json();
     },
+    onMutate: async (voteType) => {
+      // GA 이벤트 추적: 투표
+      if (agendaId) {
+        trackVote(agendaId, voteType);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [`/api/agendas/${agendaId}/votes`],
@@ -227,6 +234,11 @@ export default function AgendaDetailPage() {
       }
     },
     onMutate: async (isBookmarked: boolean) => {
+      // GA 이벤트 추적: 즐겨찾기
+      if (agendaId) {
+        trackBookmark(agendaId, isBookmarked ? "unbookmark" : "bookmark");
+      }
+      
       // Optimistic update: 즉시 UI 업데이트
       await queryClient.cancelQueries({ queryKey: [`/api/agendas/${agendaId}`] });
       
@@ -904,7 +916,7 @@ export default function AgendaDetailPage() {
 
           <AgendaHeader
             agenda={agenda}
-            user={user}
+            user={user ? { isAdmin: user.isAdmin } : undefined}
             onBookmarkClick={handleBookmarkClick}
             onEditClick={handleEditClick}
             bookmarkLoading={bookmarkMutation.isPending}
