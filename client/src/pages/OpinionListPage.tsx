@@ -35,7 +35,7 @@ export default function OpinionListPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<OpinionWithUser[]>({
-    queryKey: ["/api/opinions"],
+    queryKey: ["/api/opinions", "infinite"],
     queryFn: async ({ pageParam = 0 }) => {
       const response = await fetch(
         `/api/opinions?limit=${PAGE_SIZE}&offset=${pageParam}`
