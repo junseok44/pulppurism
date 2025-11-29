@@ -61,7 +61,7 @@ export default function Header() {
                 
                 {/* 2. 윗쪽 박스: [두런두런 + 나뭇잎] -> 가로(Row) 정렬 */}
                 <div className="flex items-end mb-[-17px]"> {/* mb-[-2px]: 옥천마루와 간격 좁히기 */}
-                  <span className="pb-[11px] pl-[3px] font-logosub text-[14px] tracking-tighter">
+                  <span className="pb-[11px] pl-[3px] font-logosub text-[14px] text-primary tracking-tighter">
                     두런두런
                   </span>
                   <img 
@@ -73,7 +73,7 @@ export default function Header() {
                 </div>
 
                 {/* 3. 아랫쪽 박스: [옥천마루] */}
-                <h1 className="font-bagel text-2xl text-[#1e293b]">
+                <h1 className="font-bagel text-2xl text-primary text-[#1e293b]">
                   옥천마루
                 </h1>
                 
@@ -88,8 +88,8 @@ export default function Header() {
               <Link 
                 key={item.path} 
                 href={item.path}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(item.path) ? "text-primary font-bold" : "text-muted-foreground"
+                className={`text-sm font-medium transition-colors hover:text-ok_sub1 ${
+                  isActive(item.path) ? "text-ok_sub1 font-bold" : "text-muted-foreground"
                 }`}
                 data-testid={`nav-${item.label}`}
               >
