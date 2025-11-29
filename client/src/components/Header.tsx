@@ -1,23 +1,38 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
-import { Avatar, AvatarFallback } from "./ui/avatar";
-import { LogIn, LogOut, Search, Bell, Menu } from "lucide-react"; 
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"; // 👈 AvatarImage 추가!
+import { LogIn, LogOut, Search, Bell, Menu, Loader2 } from "lucide-react"; 
 import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"; 
 import { SiGoogle, SiKakaotalk } from "react-icons/si";
+import { useQuery } from "@tanstack/react-query";
 
 interface AuthProviders {
   google: boolean;
   kakao: boolean;
 }
 
-const MOCK_NOTIFICATIONS = [
-  { id: 1, text: "내 안건 '가로등 설치'에 새 댓글이 달렸습니다.", time: "방금 전", read: false },
-  { id: 2, text: "주민 투표가 시작되었습니다! 소중한 한 표를 행사해주세요.", time: "1시간 전", read: false },
-  { id: 3, text: "회원가입을 축하합니다!", time: "1일 전", read: true },
-];
+interface Notification {
+  id: number;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  type?: string;
+}
+
+function formatTimeAgo(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "방금 전";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+  return date.toLocaleDateString();
+}
 
 export default function Header() {
   const [location, setLocation] = useLocation();
@@ -25,7 +40,15 @@ export default function Header() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [providers, setProviders] = useState<AuthProviders | null>(null);
 
-  const unreadCount = MOCK_NOTIFICATIONS.filter(n => !n.read).length;
+  const { 
+    data: notifications, 
+    isLoading: isNotiLoading 
+  } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
+    enabled: !!user, 
+  });
+
+  const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
   useEffect(() => {
     fetch("/api/auth/providers")
@@ -81,7 +104,6 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* PC 네비게이션 (모바일 숨김) */}
           <nav className="hidden md:flex items-center gap-3 lg:gap-6 flex-shrink-0" data-testid="nav-desktop">
             <Link href="/howto">
               <a className={`
@@ -113,7 +135,7 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* 🖥️ [PC용] 오른쪽 버튼 그룹 (모바일에선 hidden 처리!) */}
+          {/* 🖥️ [PC용] 오른쪽 버튼 그룹 */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0">
              {user ? (
                <>
@@ -135,14 +157,20 @@ export default function Header() {
                      <SheetHeader className="mb-6 text-left">
                        <SheetTitle className="font-bold text-xl">알림함</SheetTitle>
                      </SheetHeader>
+                     
                      <div className="space-y-4 overflow-y-auto max-h-[80vh]">
-                       {MOCK_NOTIFICATIONS.length > 0 ? (
-                         MOCK_NOTIFICATIONS.map((noti) => (
+                       {isNotiLoading ? (
+                         <div className="flex flex-col items-center justify-center py-10 gap-2">
+                           <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                           <p className="text-xs text-gray-400">알림을 불러오는 중...</p>
+                         </div>
+                       ) : notifications && notifications.length > 0 ? (
+                         notifications.map((noti) => (
                            <div key={noti.id} className={`p-4 rounded-2xl border transition-colors cursor-pointer ${noti.read ? 'bg-ok_gray2 border-transparent' : 'bg-white border-gray-100 shadow-sm'}`}>
                              <p className={`text-sm mb-1 ${noti.read ? 'text-ok_txtgray0 font-bold' : 'text-ok_txtgray2 font-bold'}`}>
-                               {noti.text}
+                               {noti.message}
                              </p>
-                             <span className="text-xs text-ok_txtgray0">{noti.time}</span>
+                             <span className="text-xs text-ok_txtgray0">{formatTimeAgo(noti.createdAt)}</span>
                            </div>
                          ))
                        ) : (
@@ -154,8 +182,14 @@ export default function Header() {
                    </SheetContent>
                  </Sheet>
 
-                 <button onClick={() => setLocation("/my")} className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent flex-shrink-0">
-                   <Avatar className="w-8 h-8"><AvatarFallback className="bg-transparent text-sm font-medium text-primary">{user.username[0].toUpperCase()}</AvatarFallback></Avatar>
+                 <button onClick={() => setLocation("/my")} className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent flex-shrink-0 overflow-hidden">
+                   <Avatar className="w-8 h-8">
+                      {/* 👇 [PC] 여기에 AvatarImage 추가! */}
+                      <AvatarImage src={user.avatarUrl || undefined} alt={user.username} className="object-cover" />
+                      <AvatarFallback className="bg-transparent text-sm font-medium text-primary">
+                        {user.username[0].toUpperCase()}
+                      </AvatarFallback>
+                   </Avatar>
                  </button>
                  <Button variant="outline" size="sm" className="rounded-full h-9 px-4 hidden sm:flex flex-shrink-0 whitespace-nowrap" onClick={() => logout()} disabled={isLoggingOut}><LogOut className="w-3.5 h-3.5 mr-2" />로그아웃</Button>
                </>
@@ -164,7 +198,7 @@ export default function Header() {
              )}
           </div>
 
-          {/* 📱 [모바일용] 햄버거 메뉴 (PC에선 hidden 처리!) */}
+          {/* 📱 [모바일용] 햄버거 메뉴 */}
           <div className="flex md:hidden items-center">
             <Sheet>
               <SheetTrigger asChild>
@@ -173,17 +207,19 @@ export default function Header() {
                 </button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] bg-ok_gray1 p-0 border-l border-gray-100">
-                <SheetHeader className="p-6 border-b border-gray-100 text-left bg-ok_gray1">
+                <SheetHeader className="p-6 border-b border-gray-100 text-left bg-white">
                   {user ? (
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12 border border-gray-100 shadow-sm">
+                        {/* 👇 [모바일] 여기에도 AvatarImage 추가! */}
+                        <AvatarImage src={user.avatarUrl || undefined} alt={user.username} className="object-cover" />
                         <AvatarFallback className="bg-primary text-white text-lg font-bold">
                           {user.username[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <SheetTitle className="text-lg font-bold text-ok_txtgray2">{user.username}님</SheetTitle>
-                        <p className="text-xs text-ok_txtgray1">오늘도 즐거운 하루 되세요!</p>
+                        <p className="text-xs text-ok_txtgray1">오늘도 즐거운 하루 되세요! 🌱</p>
                       </div>
                     </div>
                   ) : (
@@ -199,22 +235,20 @@ export default function Header() {
                   )}
                 </SheetHeader>
 
-                {/* 모바일 메뉴 리스트 */}
                 <div className="p-4 flex flex-col gap-2">
                   <Link href="/howto">
-                    <a className={`p-4 rounded-xl flex items-center gap-3 transition-colors ${isActive("/howto") ? "bg-ok_gray2 text-primary" : "text-ok_txtgray2 hover:bg-ok_gray2"}`}>
-                      이용방법
+                    <a className={`p-4 rounded-xl font-bold flex items-center gap-3 transition-colors ${isActive("/howto") ? "bg-primary/10 text-primary" : "text-ok_txtgray2 hover:bg-white"}`}>
+                      📘 이용방법
                     </a>
                   </Link>
                   {sliderNavItems.map((item) => (
                     <Link key={item.path} href={item.path}>
-                      <a className={`p-4 rounded-xl flex items-center gap-3 transition-colors ${isActive(item.path) ? "bg-ok_gray2 text-primary" : "text-ok_txtgray2 hover:bg-ok_gray2"}`}>
-                        {item.label}
+                      <a className={`p-4 rounded-xl font-bold flex items-center gap-3 transition-colors ${isActive(item.path) ? "bg-primary/10 text-primary" : "text-ok_txtgray2 hover:bg-white"}`}>
+                        👉 {item.label}
                       </a>
                     </Link>
                   ))}
                   
-                  {/* 모바일용 알림/로그아웃 */}
                   {user && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                        <div className="p-4 rounded-xl flex items-center gap-3 text-ok_txtgray2 cursor-pointer hover:bg-white">
@@ -234,7 +268,6 @@ export default function Header() {
 
         </header>
 
-        {/* 검색 버튼 */}
         <button 
           onClick={() => setLocation("/search")} 
           className="relative z-50 cursor-pointer rounded-full bg-primary w-10 h-10 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md flex-shrink-0"
@@ -247,7 +280,7 @@ export default function Header() {
       </div>
 
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        {/* 다이얼로그 내용 (기존 동일) */}
+        {/* 다이얼로그 내용은 그대로 유지 */}
         <DialogContent 
         data-testid="dialog-login"
         className = "bg-ok_gray1 sm:rounded-lg"
