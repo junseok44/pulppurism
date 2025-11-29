@@ -200,7 +200,7 @@ export default function AgendaToPolicy() {
         <div className="text-center mb-10 space-y-2">
           <TitleCard
             title="정책 실현 현황 🌳"
-            description="주민의 의견이 현실이 되는 과정을 투명하게 공개합니다."
+            description="안건들이 통과된 이후 어떻게 진행되고 있는지 궁금하신가요?"
           />
         </div>
 

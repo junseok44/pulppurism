@@ -213,7 +213,7 @@ export default function AgendaListPage() {
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <TitleCard
           title="안건 보기 🌱"
-          description="남겨주신 의견을 모아 만들어진 안건 페이지입니다."
+          description="비슷한 목소리가 많이 모이면, 관리자가 안건으로 채택하게 됩니다."
         />
         {spotlightAgendas.length > 0 && spotlightConfig && (
           <div className="mb-10">
