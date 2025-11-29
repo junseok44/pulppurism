@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { LogIn, LogOut, Search, Bell } from "lucide-react"; 
+import { LogIn, LogOut, Search, Bell, Menu } from "lucide-react"; 
 import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
@@ -57,18 +57,12 @@ export default function Header() {
 
   return (
     <>
-      {/* 🚀 [수정 1] gap-3 -> gap-2로 줄여서 좁은 공간 확보 
-         overflow-x-clip: 혹시라도 튀어나가는 거 방지
-      */}
       <div className="sticky top-0 z-50 w-full pt-4 pl-4 flex items-center gap-2 md:gap-3 overflow-x-clip" data-testid="header-main">    
         
         <header className="bg-ok_gray1 pointer-events-auto flex-grow bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-4 md:px-6 flex items-center justify-between transition-all min-w-0">
           
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link href="/">
-              {/* 🚀 [수정 2] flex-shrink-0: 로고 절대 찌그러지지 마!
-                 whitespace-nowrap: 글자 줄바꿈 금지!
-              */}
               <div className="flex flex-col items-start cursor-pointer group select-none leading-none pb-[10px] flex-shrink-0 whitespace-nowrap" data-testid="logo">
                 <div className="flex items-end mb-[-17px]"> 
                   <span className="pb-[11px] pl-[3px] font-logosub text-[14px] text-ok_txtgray2 tracking-tighter">
@@ -87,23 +81,18 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* 🚀 [수정 3] 네비게이션이 좁은 화면(md)에서 너무 꽉 차면 lg부터 보이게 변경 고려.
-             일단은 md에서 보이되, 텍스트가 안 깨지게 whitespace-nowrap 추가.
-          */}
+          {/* PC 네비게이션 (모바일 숨김) */}
           <nav className="hidden md:flex items-center gap-3 lg:gap-6 flex-shrink-0" data-testid="nav-desktop">
-            
             <Link href="/howto">
               <a className={`
                 text-sm font-medium transition-colors hover:text-ok_sub1 whitespace-nowrap
                 ${isActive("/howto") ? "text-ok_sub1 font-bold" : "text-ok_txtgray1"}
               `}
-              data-testid="nav-이용방법"
               >
                 이용방법
               </a>
             </Link>
 
-            {/* 슬라이더 박스 */}
             <div className="flex items-center bg-ok_gray2 p-1 rounded-full border border-ok_gray3/30">
               {sliderNavItems.map((item) => {
                 const active = isActive(item.path);
@@ -124,8 +113,8 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* 오른쪽 버튼 그룹: 절대 줄어들지 않게 보호 */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* 🖥️ [PC용] 오른쪽 버튼 그룹 (모바일에선 hidden 처리!) */}
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
              {user ? (
                <>
                  <Sheet>
@@ -175,9 +164,77 @@ export default function Header() {
              )}
           </div>
 
+          {/* 📱 [모바일용] 햄버거 메뉴 (PC에선 hidden 처리!) */}
+          <div className="flex md:hidden items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+                  <Menu className="w-6 h-6 text-ok_txtgray2" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] bg-ok_gray1 p-0 border-l border-gray-100">
+                <SheetHeader className="p-6 border-b border-gray-100 text-left bg-ok_gray1">
+                  {user ? (
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-12 h-12 border border-gray-100 shadow-sm">
+                        <AvatarFallback className="bg-primary text-white text-lg font-bold">
+                          {user.username[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <SheetTitle className="text-lg font-bold text-ok_txtgray2">{user.username}님</SheetTitle>
+                        <p className="text-xs text-ok_txtgray1">오늘도 즐거운 하루 되세요!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div onClick={() => setShowLoginDialog(true)} className="flex items-center gap-3 cursor-pointer">
+                      <div className="w-12 h-12 rounded-full bg-ok_gray2 flex items-center justify-center text-ok_txtgray1">
+                        <LogIn className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <SheetTitle className="text-lg font-bold text-ok_txtgray2">로그인하기</SheetTitle>
+                        <p className="text-xs text-ok_txtgray1">로그인하고 소통에 참여해보세요.</p>
+                      </div>
+                    </div>
+                  )}
+                </SheetHeader>
+
+                {/* 모바일 메뉴 리스트 */}
+                <div className="p-4 flex flex-col gap-2">
+                  <Link href="/howto">
+                    <a className={`p-4 rounded-xl flex items-center gap-3 transition-colors ${isActive("/howto") ? "bg-ok_gray2 text-primary" : "text-ok_txtgray2 hover:bg-ok_gray2"}`}>
+                      이용방법
+                    </a>
+                  </Link>
+                  {sliderNavItems.map((item) => (
+                    <Link key={item.path} href={item.path}>
+                      <a className={`p-4 rounded-xl flex items-center gap-3 transition-colors ${isActive(item.path) ? "bg-ok_gray2 text-primary" : "text-ok_txtgray2 hover:bg-ok_gray2"}`}>
+                        {item.label}
+                      </a>
+                    </Link>
+                  ))}
+                  
+                  {/* 모바일용 알림/로그아웃 */}
+                  {user && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                       <div className="p-4 rounded-xl flex items-center gap-3 text-ok_txtgray2 cursor-pointer hover:bg-white">
+                        <Bell className="w-5 h-5" />
+                        <span className="font-medium">알림함 ({unreadCount})</span>
+                      </div>
+                      <div className="p-4 rounded-xl flex items-center gap-3 text-red-500 cursor-pointer hover:bg-red-50" onClick={() => logout()}>
+                        <LogOut className="w-5 h-5" />
+                        <span className="font-medium">로그아웃</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
         </header>
 
-        {/* 검색 버튼도 찌그러지지 않게 */}
+        {/* 검색 버튼 */}
         <button 
           onClick={() => setLocation("/search")} 
           className="relative z-50 cursor-pointer rounded-full bg-primary w-10 h-10 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md flex-shrink-0"
@@ -190,11 +247,11 @@ export default function Header() {
       </div>
 
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        {/* 다이얼로그 내용 (기존 동일) */}
         <DialogContent 
         data-testid="dialog-login"
         className = "bg-ok_gray1 sm:rounded-lg"
         >
-          {/* 다이얼로그 내용은 그대로 */}
           <DialogHeader>
             <DialogTitle>로그인</DialogTitle>
             <DialogDescription>

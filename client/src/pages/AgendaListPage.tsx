@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import CategoryFilter from "@/components/CategoryFilter";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, Filter, ChevronDown } from "lucide-react";
+import { Loader2, Filter, ChevronDown } from "lucide-react";
 import type { Agenda, Category } from "@shared/schema";
 import OkAgendaCard from "@/components/OkAgendaCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -411,7 +410,6 @@ export default function AgendaListPage() {
           )}
         </div>
       </main>
-      <MobileNav />
     </div>
   );
 }

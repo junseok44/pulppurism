@@ -24,6 +24,7 @@ export default {
         ok_txtgray1:"var(--ok_txtgray1)",
         ok_txtgray2:"var(--ok_txtgray2)",
         ok_sand:"var(--ok_sand)",
+        ok_sandhover:"var(--ok_sandhover)",
         ok_sandtxt:"var(--ok_sandtxt)",
         // Flat / base colors (regular buttons)
         background: "var(--background)",

@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -361,8 +360,6 @@ export default function AgendaToPolicy() {
           </div>
         )}
       </main>
-
-      <MobileNav />
     </div>
   );
 }
