@@ -1,11 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { LogIn, LogOut, Search, Bell } from "lucide-react"; // 👈 Bell 아이콘 추가
+import { LogIn, LogOut, Search, Bell } from "lucide-react"; 
 import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"; // 👈 Sheet 관련 컴포넌트 추가
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"; 
 import { SiGoogle, SiKakaotalk } from "react-icons/si";
 
 interface AuthProviders {
@@ -13,7 +13,6 @@ interface AuthProviders {
   kakao: boolean;
 }
 
-// 🔔 [추가] 임시 알림 데이터
 const MOCK_NOTIFICATIONS = [
   { id: 1, text: "내 안건 '가로등 설치'에 새 댓글이 달렸습니다.", time: "방금 전", read: false },
   { id: 2, text: "주민 투표가 시작되었습니다! 소중한 한 표를 행사해주세요.", time: "1시간 전", read: false },
@@ -26,7 +25,6 @@ export default function Header() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [providers, setProviders] = useState<AuthProviders | null>(null);
 
-  // 🔔 [추가] 읽지 않은 알림 개수 계산
   const unreadCount = MOCK_NOTIFICATIONS.filter(n => !n.read).length;
 
   useEffect(() => {
@@ -36,8 +34,7 @@ export default function Header() {
       .catch(() => setProviders({ google: false, kakao: false }));
   }, []);
 
-  const navItems = [
-    { path: "/howto", label: "이용방법"},
+  const sliderNavItems = [
     { path: "/opinions", label: "주민의 목소리" },
     { path: "/agendas", label: "안건보기"},
     { path: "/policy", label: "정책실현현황"}
@@ -60,15 +57,19 @@ export default function Header() {
 
   return (
     <>
-      {/* 헤더 컨테이너 */}
-      <div className="sticky top-0 z-50 w-full pt-4 pl-4 flex items-center gap-3" data-testid="header-main">    
-      <header className="bg-ok_gray1 pointer-events-auto flex-grow bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-6 flex items-center justify-between transition-all">
-          <div className="flex items-center gap-3">
-            {/* PC 로고 */}
+      {/* 🚀 [수정 1] gap-3 -> gap-2로 줄여서 좁은 공간 확보 
+         overflow-x-clip: 혹시라도 튀어나가는 거 방지
+      */}
+      <div className="sticky top-0 z-50 w-full pt-4 pl-4 flex items-center gap-2 md:gap-3 overflow-x-clip" data-testid="header-main">    
+        
+        <header className="bg-ok_gray1 pointer-events-auto flex-grow bg-background/80 backdrop-blur-md border border-border shadow-sm rounded-full h-16 px-4 md:px-6 flex items-center justify-between transition-all min-w-0">
+          
+          <div className="flex items-center gap-3 flex-shrink-0">
             <Link href="/">
-              <div className="flex flex-col items-start cursor-pointer group select-none leading-none pb-[10px]" data-testid="logo">
-                
-                {/* 2. 윗쪽 박스: [두런두런 + 나뭇잎] */}
+              {/* 🚀 [수정 2] flex-shrink-0: 로고 절대 찌그러지지 마!
+                 whitespace-nowrap: 글자 줄바꿈 금지!
+              */}
+              <div className="flex flex-col items-start cursor-pointer group select-none leading-none pb-[10px] flex-shrink-0 whitespace-nowrap" data-testid="logo">
                 <div className="flex items-end mb-[-17px]"> 
                   <span className="pb-[11px] pl-[3px] font-logosub text-[14px] text-ok_txtgray2 tracking-tighter">
                     두런두런
@@ -79,42 +80,58 @@ export default function Header() {
                     className="w-11 h-11 object-contain group-hover:rotate-12 transition-transform duration-300" 
                   />
                 </div>
-
-                {/* 3. 아랫쪽 박스: [옥천마루] */}
                 <h1 className="font-bagel text-2xl text-ok_txtgray2 text-[#1e293b]">
                   옥천마루
                 </h1>
-                
               </div>
             </Link>
           </div>
 
-          {/* PC 네비게이션 */}
-          <nav className="hidden md:flex items-center gap-8" data-testid="nav-desktop">
-            {navItems.map((item) => (
-              <Link 
-                key={item.path} 
-                href={item.path}
-                className={`text-sm font-medium transition-colors hover:text-ok_sub1 ${
-                  isActive(item.path) ? "text-ok_sub1 font-bold" : "text-muted-foreground"
-                }`}
-                data-testid={`nav-${item.label}`}
+          {/* 🚀 [수정 3] 네비게이션이 좁은 화면(md)에서 너무 꽉 차면 lg부터 보이게 변경 고려.
+             일단은 md에서 보이되, 텍스트가 안 깨지게 whitespace-nowrap 추가.
+          */}
+          <nav className="hidden md:flex items-center gap-3 lg:gap-6 flex-shrink-0" data-testid="nav-desktop">
+            
+            <Link href="/howto">
+              <a className={`
+                text-sm font-medium transition-colors hover:text-ok_sub1 whitespace-nowrap
+                ${isActive("/howto") ? "text-ok_sub1 font-bold" : "text-ok_txtgray1"}
+              `}
+              data-testid="nav-이용방법"
               >
-                {item.label}
-              </Link>
-            ))}
+                이용방법
+              </a>
+            </Link>
+
+            {/* 슬라이더 박스 */}
+            <div className="flex items-center bg-ok_gray2 p-1 rounded-full border border-ok_gray3/30">
+              {sliderNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link key={item.path} href={item.path}>
+                    <a className={`
+                      relative px-3 lg:px-5 py-2 rounded-full text-xs lg:text-sm transition-all duration-300 ease-out cursor-pointer select-none whitespace-nowrap
+                      ${active 
+                        ? "bg-primary text-white shadow-sm font-bold"  
+                        : "text-ok_txtgray2 hover:text-ok_sub1 hover:bg-gray-200/50"
+                      }
+                    `}>
+                      {item.label}
+                    </a>
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
-          {/* PC 오른쪽 버튼들 */}
-          <div className="flex items-center gap-2">
+          {/* 오른쪽 버튼 그룹: 절대 줄어들지 않게 보호 */}
+          <div className="flex items-center gap-2 flex-shrink-0">
              {user ? (
                <>
-                 {/* 🔔 [추가됨] 알림 서랍 (Sheet) 시작 */}
                  <Sheet>
                    <SheetTrigger asChild>
-                     <button className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent relative transition-transform hover:scale-105 mr-1">
+                     <button className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent relative transition-transform hover:scale-105 mr-1 flex-shrink-0">
                        <Bell className="w-4 h-4 text-gray-600" />
-                       {/* 읽지 않은 알림 뱃지 */}
                        {unreadCount > 0 && (
                          <span className="absolute top-[-2px] right-[-2px] flex h-3 w-3">
                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok_sub1 opacity-75"></span>
@@ -125,8 +142,6 @@ export default function Header() {
                        )}
                      </button>
                    </SheetTrigger>
-                   
-                   {/* 서랍 내용물 */}
                    <SheetContent className="w-[320px] sm:w-[380px] bg-ok_gray1">
                      <SheetHeader className="mb-6 text-left">
                        <SheetTitle className="font-bold text-xl">알림함</SheetTitle>
@@ -149,23 +164,23 @@ export default function Header() {
                      </div>
                    </SheetContent>
                  </Sheet>
-                 {/* 🔔 [끝] 알림 서랍 끝 */}
 
-                 <button onClick={() => setLocation("/my")} className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent">
+                 <button onClick={() => setLocation("/my")} className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent flex-shrink-0">
                    <Avatar className="w-8 h-8"><AvatarFallback className="bg-transparent text-sm font-medium text-primary">{user.username[0].toUpperCase()}</AvatarFallback></Avatar>
                  </button>
-                 <Button variant="outline" size="sm" className="rounded-full h-9 px-4 hidden sm:flex" onClick={() => logout()} disabled={isLoggingOut}><LogOut className="w-3.5 h-3.5 mr-2" />로그아웃</Button>
+                 <Button variant="outline" size="sm" className="rounded-full h-9 px-4 hidden sm:flex flex-shrink-0 whitespace-nowrap" onClick={() => logout()} disabled={isLoggingOut}><LogOut className="w-3.5 h-3.5 mr-2" />로그아웃</Button>
                </>
              ) : (
-               <Button className="rounded-full px-6 font-bold shadow-sm" onClick={() => setShowLoginDialog(true)}><LogIn className="w-4 h-4 mr-2" />로그인</Button>
+               <Button className="rounded-full px-6 font-bold shadow-sm flex-shrink-0 whitespace-nowrap" onClick={() => setShowLoginDialog(true)}><LogIn className="w-4 h-4 mr-2" />로그인</Button>
              )}
           </div>
 
         </header>
 
+        {/* 검색 버튼도 찌그러지지 않게 */}
         <button 
           onClick={() => setLocation("/search")} 
-          className="relative z-50 cursor-pointer rounded-full bg-primary w-10 h-10 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md"
+          className="relative z-50 cursor-pointer rounded-full bg-primary w-10 h-10 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md flex-shrink-0"
         >
           <Search className="w-5 h-5 text-white" />
         </button>
@@ -174,12 +189,12 @@ export default function Header() {
       </div>
       </div>
 
-      {/* 로그인 다이얼로그 */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <DialogContent 
         data-testid="dialog-login"
         className = "bg-ok_gray1 sm:rounded-lg"
         >
+          {/* 다이얼로그 내용은 그대로 */}
           <DialogHeader>
             <DialogTitle>로그인</DialogTitle>
             <DialogDescription>

@@ -76,7 +76,7 @@ export default function OpinionListPage() {
       <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
         <div className="max-w-4xl mx-auto w-full px-4 pt-12">
         <TitleCard
-          title="주민의 목소리 🫒"
+          title="주민의 목소리"
           description="우리 마을에 필요한 것이 있나요? 여러분의 생각을 자유롭게 남겨주세요."
         />
         </div>
