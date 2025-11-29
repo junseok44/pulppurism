@@ -57,20 +57,23 @@ export default function Header() {
           <div className="flex items-center gap-3">
             {/* PC 로고 */}
             <Link href="/">
-              <div className="flex items-center gap-2 cursor-pointer group" data-testid="logo">
+              <div className="flex flex-col items-start cursor-pointer group select-none leading-none pb-[10px]" data-testid="logo">
                 
-                {/* 👇 [수정] 기존 동그라미 div 삭제하고 img 태그로 교체! */}
-                <img 
-                  src="/icons/title.png"  // 👈 여기에 네 파일 경로를 적어! (예: /icons/logo.png)
-                  alt="Logo"
-                  // object-contain: 이미지가 찌그러지지 않게 비율 유지
-                  className="w-auto h-5 object-contain group-hover:scale-110 transition-transform"
-                />
+                {/* 2. 윗쪽 박스: [두런두런 + 나뭇잎] -> 가로(Row) 정렬 */}
+                <div className="flex items-end mb-[-17px]"> {/* mb-[-2px]: 옥천마루와 간격 좁히기 */}
+                  <span className="pb-[10px] pl-[3px] font-edu text-s tracking-tighter">
+                    두런두런
+                  </span>
+                  <img 
+                    src="/icons/title.png" 
+                    alt="Logo"
+                    // w-4 h-4: 작은 글씨에 맞춰 아이콘 크기도 작게 조절
+                    className="w-11 h-11 object-contain group-hover:rotate-12 transition-transform duration-300" 
+                  />
+                </div>
 
-                {/* 👇 옆에 글씨('주민참여')는 남겨둘게. (이미지에 글씨까지 포함돼있으면 이 줄 삭제해!) */}
-                <h1 >
-                </h1>
-                <h1 className="font-bagel text-xl hidden sm:block">
+                {/* 3. 아랫쪽 박스: [옥천마루] */}
+                <h1 className="font-bagel text-2xl text-[#1e293b]">
                   옥천마루
                 </h1>
                 

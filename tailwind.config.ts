@@ -94,6 +94,7 @@ export default {
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
         bagel: ["BagelFat"],
+        edu:["IncheonEducationHimchan"],
       },
       keyframes: {
         "accordion-down": {
