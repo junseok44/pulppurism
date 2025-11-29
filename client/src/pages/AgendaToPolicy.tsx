@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CategoryFilter from "@/components/CategoryFilter";
+import TitleCard from "@/components/TitleCard";
 
 interface AgendaWithCategory extends Agenda {
   category?: Category;
@@ -194,15 +195,13 @@ export default function AgendaToPolicy() {
     <div className="min-h-screen bg-background pb-24">
       <Header />
 
-      <main className="w-full max-w-5xl mx-auto px-4 py-8">
+      <main className="w-full max-w-5xl mx-auto px-4 py-12">
         {/* 헤더 섹션 */}
         <div className="text-center mb-10 space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            정책 실현 현황 🚀
-          </h1>
-          <p className="text-gray-500">
-            주민의 의견이 현실이 되는 과정을 투명하게 공개합니다.
-          </p>
+          <TitleCard
+            title="정책 실현 현황 🌳"
+            description="주민의 의견이 현실이 되는 과정을 투명하게 공개합니다."
+          />
         </div>
 
         {/* 통계 요약 카드 */}

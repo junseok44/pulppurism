@@ -17,6 +17,7 @@ export default {
         ok_gray1:"var(--ok_gray1)",  
         primary_hov:"var(--primary_hov)",
         ok_sub1:"var(--ok_sub1)",
+        ok_sub2:"var(--ok_sub2)",
         // Flat / base colors (regular buttons)
         background: "var(--background)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",

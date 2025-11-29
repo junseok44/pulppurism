@@ -7,10 +7,9 @@ export default function HowToPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header />
-      
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <TitleCard
-          title="풀뿌리광장 성장 과정 🌱"
+          title="풀뿌리광장 성장 과정 🕊️"
           description="작은 씨앗이 거대한 나무가 되기까지의 여정"
         />
         {/* 2. [핵심] 성장 과정 다이어그램 (그림 대신 코드로 구현) */}
@@ -21,7 +20,7 @@ export default function HowToPage() {
             icon={<img src="/icons/seed.png" alt="씨앗" className="w-16 h-16 object-contain" />}
             title="주민의 목소리"
             subtitle="씨앗"
-            color="bg-amber-100"
+            color="bg-ok_sub2"
             description="우리 마을에 필요한 것이 있나요? 작은 아이디어를 심어주세요."
           />
 
@@ -31,9 +30,9 @@ export default function HowToPage() {
           {/* 단계 2: 새싹 (안건) */}
           <StepCard 
             icon={<img src="/icons/sprout.png" alt="새싹" className="w-16 h-16 object-contain" />}
-            title="안건 생성"
+            title="안건 보기"
             subtitle="새싹"
-            color="bg-green-100"
+            color="bg-ok_sub2"
             description="AI가 비슷한 의견을 모아 안건으로 새싹을 틔웁니다. 함께 의견을 모아주세요."
           />
 
@@ -45,8 +44,8 @@ export default function HowToPage() {
             icon={<img src="/icons/tree.png" alt="나무" className="w-16 h-16 object-contain" />}
             title="정책 실현"
             subtitle="나무"
-            color="bg-emerald-100"
-            description="무럭무럭 자란 안건은 지자체에 전달되어 든든한 '정책(나무)'이 됩니다."
+            color="bg-ok_sub2"
+            description="무럭무럭 자란 안건은 지자체에 전달되어 든든한 정책이 됩니다."
           />
 
         </div>
@@ -79,7 +78,7 @@ function StepCard({ icon, title, subtitle, color, description }: any) {
       
       {/* 텍스트 영역 */}
       <h3 className="text-2xl font-bold text-gray-900 mb-1">{title}</h3>
-      <span className="text-sm font-bold text-blue-600 mb-3 block">{subtitle}</span>
+      <span className="text-sm font-bold text-ok_sub1 mb-3 block">{subtitle}</span>
       <p className="text-gray-500 text-sm leading-keep word-break-keep">
         {description}
       </p>
