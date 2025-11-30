@@ -1,0 +1,67 @@
+# 의존성
+node_modules
+npm-debug.log
+yarn-error.log
+
+# 빌드 출력
+dist
+build
+*.tsbuildinfo
+
+# 개발 파일
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# 문서
+README.md
+*.md
+!package.json
+
+# 테스트
+coverage
+.nyc_output
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# 로그
+logs
+*.log
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 기타
+.editorconfig
+.prettierrc
+.eslintrc
+*.config.js
+!vite.config.ts
+!tailwind.config.ts
+!postcss.config.js
+!drizzle.config.ts
+!tsconfig.json
+
+# 스크립트 (프로덕션에서 불필요)
+scripts
+attached_assets
+articles.json
+
+# 예제 파일
+client/src/components/examples
+

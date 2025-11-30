@@ -73,7 +73,11 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // 프로덕션 빌드에서는 dist/index.js가 실행되므로,
+  // dist/index.js 기준으로 dist/public을 찾아야 함
+  // import.meta.dirname은 esbuild 번들에서 예상과 다를 수 있으므로
+  // process.cwd()를 사용하여 작업 디렉토리 기준으로 경로 설정
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
