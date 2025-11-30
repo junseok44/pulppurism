@@ -77,11 +77,13 @@ export function trackEvent(
   window.gtag("event", eventName, eventParams);
 }
 
+import { getEnv } from "./env";
+
 /**
  * 환경 변수에서 측정 ID 가져오기
  */
 function getMeasurementId(): string {
-  return import.meta.env.VITE_GA_MEASUREMENT_ID || "";
+  return getEnv("VITE_GA_MEASUREMENT_ID") || "";
 }
 
 // 가설 검증을 위한 이벤트 추적 함수들

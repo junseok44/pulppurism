@@ -2,9 +2,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { initGA } from "./lib/analytics";
+import { getEnv } from "./lib/env";
 
 // GA 초기화
-const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const measurementId = getEnv("VITE_GA_MEASUREMENT_ID");
 if (measurementId) {
   initGA(measurementId);
 }
