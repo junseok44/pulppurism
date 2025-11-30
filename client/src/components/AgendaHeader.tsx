@@ -12,6 +12,7 @@ import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 import type { Agenda, Category } from "@shared/schema";
 import { useState, useEffect } from "react";
 import { trackShare } from "@/lib/analytics";
+import { getEnv } from "@/lib/env";
 
 interface AgendaHeaderProps {
   agenda: Agenda & { category?: Category; isBookmarked?: boolean };
@@ -52,7 +53,7 @@ export default function AgendaHeader({
       }
 
       // 환경 변수에서 JavaScript 키 가져오기
-      const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY || "";
+      const kakaoKey = getEnv("VITE_KAKAO_JAVASCRIPT_KEY") || "";
       if (!kakaoKey) {
         return false;
       }
@@ -125,7 +126,7 @@ export default function AgendaHeader({
       }
 
       if (!window.Kakao.isInitialized()) {
-        const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY || "";
+        const kakaoKey = getEnv("VITE_KAKAO_JAVASCRIPT_KEY") || "";
         if (kakaoKey) {
           try {
             window.Kakao.init(kakaoKey);
