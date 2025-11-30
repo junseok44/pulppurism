@@ -126,11 +126,29 @@ export function setupAuth(app: Express) {
   const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
   const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
 
-  // 동적으로 포트를 가져오거나 환경 변수에서 가져옴
+  // Base URL 우선순위:
+  // 1. BASE_URL (가장 명시적, 배포 환경에서 사용)
+  // 2. PUBLIC_URL (대안)
+  // 3. HOST (호스트명만 있는 경우)
+  // 4. localhost (개발 환경 기본값)
   const port = process.env.PORT || '5000';
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : `http://localhost:${port}`;
+  let baseUrl: string;
+  
+  if (process.env.BASE_URL) {
+    baseUrl = process.env.BASE_URL;
+  } else if (process.env.PUBLIC_URL) {
+    baseUrl = process.env.PUBLIC_URL;
+  } else if (process.env.HOST) {
+    const protocol = process.env.HOST.startsWith('http') ? '' : 'https://';
+    baseUrl = `${protocol}${process.env.HOST}`;
+  } else {
+    baseUrl = `http://localhost:${port}`;
+  }
+  
+  // baseUrl이 슬래시로 끝나면 제거
+  baseUrl = baseUrl.replace(/\/$/, '');
+  
+  console.log(`[setupAuth] Using base URL: ${baseUrl}`);
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(
