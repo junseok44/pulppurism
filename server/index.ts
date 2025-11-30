@@ -118,7 +118,8 @@ process.on('uncaughtException', (error: Error) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  // NODE_ENV가 명시적으로 "production"이 아니면 개발 모드로 간주
+  if (process.env.NODE_ENV !== "production") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
