@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -199,28 +198,28 @@ export default function AgendaToPolicy() {
         {/* 헤더 섹션 */}
         <div className="text-center mb-10 space-y-2">
           <TitleCard
-            title="정책 실현 현황 🌳"
-            description="주민의 의견이 현실이 되는 과정을 투명하게 공개합니다."
+            title="정책 실현 현황"
+            description="안건들이 통과된 이후 어떻게 진행되고 있는지 궁금하신가요?"
           />
         </div>
 
         {/* 통계 요약 카드 */}
         <TooltipProvider>
           <div className="grid grid-cols-3 gap-4 mb-10">
-            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="bg-ok_gray1 p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+              <div className="text-2xl font-bold text-ok_sub1">
                 {stats.executedCount}건
               </div>
               <div className="text-xs text-gray-400">실현 완료</div>
             </div>
-            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
-              <div className="text-2xl font-bold text-orange-500">
+            <div className="bg-ok_gray1 p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+              <div className="text-2xl font-bold text-ok_sandtxt">
                 {stats.executingCount}건
               </div>
               <div className="text-xs text-gray-400">진행 중</div>
             </div>
-            <div className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 relative">
-              <div className="text-2xl font-bold text-gray-700">
+            <div className="bg-ok_gray1 p-4 rounded-2xl shadow-sm text-center border border-gray-100 relative">
+              <div className="text-2xl font-bold text-ok_primary">
                 {stats.realizationRate}%
               </div>
               <div className="text-xs text-gray-400 flex items-center justify-center gap-1">
@@ -361,8 +360,6 @@ export default function AgendaToPolicy() {
           </div>
         )}
       </main>
-
-      <MobileNav />
     </div>
   );
 }

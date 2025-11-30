@@ -5,6 +5,12 @@
   font-weight: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'SchoolSafeUniverse';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/HakgyoansimWoojuR.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,14 +18,22 @@
 /* LIGHT MODE */
 :root {
   --ok_white1:hsl(0,0,100%,100%);
-  --ok_gray1:hsl(240,24%,96%,100%);
-  --ok_gray2:hsl(240,16%,93%,100%);
-  --ok_sub1:hsl(232,63%,65%,100%);
-  --ok_sub2:hsl(167,25%,86%,100%);
+  --ok_gray1:hsl(290, 100%, 99%);
+  --ok_gray2:hsl(270, 31%, 95%);
+  --ok_gray3:hsl(264, 8%, 76%);
+  --ok_sub1:#8e83ed;
+  --ok_sub2:hsl(152, 74%, 71%);
+  --ok_emp:#e8d5b5;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --black-n1:hsl(0,0%,0%,80%);
   --primary_hov:hsl(246,29%,16%,100%);
+  --ok_txtgray0:#b1abb2;
+  --ok_txtgray1:#685E6A;
+  --ok_txtgray2:#1f1e1f;
+  --ok_sand:#e8d5b5;
+  --ok_sandhover:#ceb894;
+  --ok_sandtxt:#997230;
 
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */
@@ -28,7 +42,7 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: hsl(240,17%,94%,100%);
+  --background: #f9f5fb;
 
   --foreground: 220 15% 12%;
 

@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import OpinionCard from "@/components/OpinionCard";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
@@ -8,8 +7,10 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react"; // useState 추가
 import TitleCard from "@/components/TitleCard";
+import OpinionInputSheet from "@/components/OpinionInputSheet"; // 👈 새로 만든 컴포넌트 import
+import { useToast } from "@/hooks/use-toast";
 
 interface OpinionWithUser {
   id: string;
@@ -27,7 +28,11 @@ const PAGE_SIZE = 20;
 export default function OpinionListPage() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
+  const { toast } = useToast();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // 1️⃣ 팝업 열림/닫힘 상태 관리
+  const [isInputOpen, setIsInputOpen] = useState(false);
 
   const {
     data,
@@ -70,20 +75,35 @@ export default function OpinionListPage() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // 2️⃣ 제안하기 버튼 핸들러
+  const handleOpenInput = () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "로그인이 필요합니다",
+        description: "의견을 제안하려면 먼저 로그인해주세요.",
+      });
+      // 혹은 로그인 다이얼로그를 여는 로직 추가 가능
+      return;
+    }
+    setIsInputOpen(true);
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
         <div className="max-w-4xl mx-auto w-full px-4 pt-12">
-        <TitleCard
-          title="주민의 목소리 🫒"
-          description="우리 마을에 필요한 것이 있나요? 작은 아이디어를 남겨주세요."
-        />
+          <TitleCard
+            title="주민의 목소리"
+            description="우리 마을에 필요한 것이 있나요? 여러분의 생각을 자유롭게 남겨주세요."
+          />
         </div>
         <div className="flex-1 min-h-0">
           <div className="max-w-4xl mx-auto w-full px-4 space-y-4 min-h-full">
             {isLoading ? (
               <div className="text-center py-12 text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                 의견을 불러오는 중...
               </div>
             ) : opinions.length === 0 ? (
@@ -110,7 +130,6 @@ export default function OpinionListPage() {
                   />
                 ))}
                 
-                {/* Infinite scroll trigger */}
                 <div ref={loadMoreRef} className="py-8">
                   {isFetchingNextPage && (
                     <div className="flex justify-center items-center gap-2 text-muted-foreground">
@@ -119,7 +138,7 @@ export default function OpinionListPage() {
                     </div>
                   )}
                   {!hasNextPage && opinions.length > 0 && (
-                    <div className="text-center text-muted-foreground">
+                    <div className="text-center text-muted-foreground pb-20">
                       모든 의견을 불러왔습니다
                     </div>
                   )}
@@ -129,15 +148,22 @@ export default function OpinionListPage() {
           </div>
         </div>
       </div>
+
+      {/* 3️⃣ 플로팅 버튼 수정: setLocation 대신 setIsInputOpen(true) */}
       <Button
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36"
-        onClick={() => setLocation("/opinion/new")}
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36 bg-primary hover:bg-primary/90 transition-all hover:scale-105"
+        onClick={handleOpenInput}
         data-testid="button-add-opinion"
       >
         <Plus className="w-5 h-5 mr-2" />
         <span className="font-semibold">제안하기</span>
       </Button>
-      <MobileNav />
+
+      {/* 4️⃣ 팝업 컴포넌트 삽입 */}
+      <OpinionInputSheet 
+        open={isInputOpen} 
+        onOpenChange={setIsInputOpen} 
+      />
     </div>
   );
 }

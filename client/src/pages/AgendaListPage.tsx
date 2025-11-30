@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import CategoryFilter from "@/components/CategoryFilter";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, Filter, ChevronDown } from "lucide-react";
+import { Loader2, Filter, ChevronDown } from "lucide-react";
 import type { Agenda, Category } from "@shared/schema";
 import OkAgendaCard from "@/components/OkAgendaCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -212,8 +211,8 @@ export default function AgendaListPage() {
       <Header />
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <TitleCard
-          title="안건 보기 🌱"
-          description="남겨주신 의견을 모아 만들어진 안건 페이지입니다."
+          title="안건 보기"
+          description="비슷한 목소리가 많이 모이면, 관리자가 안건으로 채택하게 됩니다."
         />
         {spotlightAgendas.length > 0 && spotlightConfig && (
           <div className="mb-10">
@@ -411,7 +410,6 @@ export default function AgendaListPage() {
           )}
         </div>
       </main>
-      <MobileNav />
     </div>
   );
 }

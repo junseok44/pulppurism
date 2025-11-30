@@ -14,10 +14,18 @@ export default {
         //okinews color
         ok_white1:"#ffffff",
         ok_gray2:"var(--ok_gray2)",
+        ok_gray3:"var(--ok_gray3)",
         ok_gray1:"var(--ok_gray1)",  
         primary_hov:"var(--primary_hov)",
         ok_sub1:"var(--ok_sub1)",
         ok_sub2:"var(--ok_sub2)",
+        ok_emp:"var(--ok_emp)",
+        ok_txtgray0:"var(--ok_txtgray0)",
+        ok_txtgray1:"var(--ok_txtgray1)",
+        ok_txtgray2:"var(--ok_txtgray2)",
+        ok_sand:"var(--ok_sand)",
+        ok_sandhover:"var(--ok_sandhover)",
+        ok_sandtxt:"var(--ok_sandtxt)",
         // Flat / base colors (regular buttons)
         background: "var(--background)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
@@ -94,6 +102,7 @@ export default {
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
         bagel: ["BagelFat"],
+        logosub:["SchoolSafeUniverse"],
       },
       keyframes: {
         "accordion-down": {
