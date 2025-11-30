@@ -120,7 +120,7 @@ export default function HomePage() {
                     <div 
                       key={opinion.id} 
                       className="min-w-[240px] w-[240px] bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sand hover:shadow-md transition-all cursor-pointer text-left"
-                      onClick={() => setLocation(`/opinions/${opinion.id}`)}
+                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
                     >
                       <div className="mb-3">
                         <MessageSquare className="w-8 h-8 text-ok_sandtxt bg-ok_sand p-1.5 rounded-full mb-3" />
