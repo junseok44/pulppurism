@@ -238,13 +238,13 @@ export default function Header() {
                 <div className="p-4 flex flex-col gap-2">
                   <Link href="/howto">
                     <a className={`p-4 rounded-xl font-bold flex items-center gap-3 transition-colors ${isActive("/howto") ? "bg-primary/10 text-primary" : "text-ok_txtgray2 hover:bg-white"}`}>
-                      📘 이용방법
+                      이용방법
                     </a>
                   </Link>
                   {sliderNavItems.map((item) => (
                     <Link key={item.path} href={item.path}>
                       <a className={`p-4 rounded-xl font-bold flex items-center gap-3 transition-colors ${isActive(item.path) ? "bg-primary/10 text-primary" : "text-ok_txtgray2 hover:bg-white"}`}>
-                        👉 {item.label}
+                        {item.label}
                       </a>
                     </Link>
                   ))}
