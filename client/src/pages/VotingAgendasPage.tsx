@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import AgendaCard from "@/components/AgendaCard";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -86,7 +85,6 @@ export default function VotingAgendasPage() {
           </div>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

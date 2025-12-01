@@ -21,6 +21,7 @@
   --ok_gray1:hsl(290, 100%, 99%);
   --ok_gray2:hsl(270, 31%, 95%);
   --ok_gray3:hsl(264, 8%, 76%);
+  --ok_gray3hov:hsl(264,8%,76%,30%);
   --ok_sub1:#8e83ed;
   --ok_sub2:hsl(152, 74%, 71%);
   --ok_emp:#e8d5b5;
