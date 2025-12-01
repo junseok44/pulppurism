@@ -66,7 +66,7 @@ interface ExecutionTimelineItem {
 }
 
 export default function AgendaDetailPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [comment, setComment] = useState("");
   const [match, params] = useRoute("/agendas/:id");
   const agendaId = params?.id;
@@ -114,6 +114,9 @@ export default function AgendaDetailPage() {
     }>
   >([]);
   const timelineImageInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // 관리자 쿼리파라미터(edit=1)로 인한 자동 모달 오픈이 한 번만 일어나도록 제어
+  const hasAutoOpenedFromQueryRef = useRef(false);
   
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
@@ -151,6 +154,21 @@ export default function AgendaDetailPage() {
     queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
     enabled: !!agendaId && (agenda?.status === "executing" || agenda?.status === "executed"),
   });
+
+  // 관리자 페이지에서 "/agendas/:id?edit=1" 형태로 들어온 경우 자동으로 편집 모달 열기
+  useEffect(() => {
+    if (!agenda || !user?.isAdmin || hasAutoOpenedFromQueryRef.current) return;
+    try {
+      const search = window.location.search || "";
+      const params = new URLSearchParams(search);
+      if (params.get("edit") === "1" && !editDialogOpen) {
+        hasAutoOpenedFromQueryRef.current = true;
+        handleEditClick();
+      }
+    } catch {
+      // URL 파싱 실패 시 무시
+    }
+  }, [agenda, user, editDialogOpen]);
 
   const voteMutation = useMutation({
     mutationFn: async (voteType: "agree" | "disagree" | "neutral") => {
@@ -390,6 +408,29 @@ export default function AgendaDetailPage() {
       }
       setEditDialogOpen(true);
     }
+  };
+
+  const handleSaveBasicInfo = async () => {
+    // 기본 정보만 저장 (제목, 설명, 참고자료)
+    await updateAgendaMutation.mutateAsync({
+      title: editedTitle,
+      description: editedDescription,
+      status: editedStatus, // 상태는 유지
+      response: editedResponse.content.trim() && editedResponse.authorName.trim()
+        ? {
+            authorName: editedResponse.authorName.trim(),
+            responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
+            content: editedResponse.content.trim(),
+          }
+        : null,
+      okinewsUrl: editedOkinewsUrl.trim() || null,
+      referenceLinks: editedReferenceLinks,
+      referenceFiles: editedReferenceFiles,
+      regionalCases: editedRegionalCases,
+    });
+    
+    // 저장 후 편집 모드 닫기
+    setShowBasicInfoEdit(false);
   };
 
   const handleSaveEdit = async () => {
@@ -1249,8 +1290,17 @@ export default function AgendaDetailPage() {
                                     variant="outline"
                                     onClick={() => setShowBasicInfoEdit(false)}
                                     className="flex-1"
+                                    data-testid="button-cancel-basic-info-edit"
                                   >
                                     취소
+                                  </Button>
+                                  <Button
+                                    onClick={handleSaveBasicInfo}
+                                    disabled={updateAgendaMutation.isPending}
+                                    className="flex-1"
+                                    data-testid="button-save-basic-info"
+                                  >
+                                    {updateAgendaMutation.isPending ? "저장 중..." : "저장"}
                                   </Button>
                                 </div>
                               </div>
