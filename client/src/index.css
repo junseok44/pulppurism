@@ -23,7 +23,7 @@
   --ok_gray3:hsl(264, 8%, 76%);
   --ok_gray3hov:hsl(264,8%,76%,30%);
   --ok_sub1:#8e83ed;
-  --ok_sub2:hsl(152, 74%, 71%);
+  --ok_subtrns:#d3daff9f;
   --ok_emp:#e8d5b5;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -35,6 +35,14 @@
   --ok_sand:#e8d5b5;
   --ok_sandhover:#ceb894;
   --ok_sandtxt:#997230;
+  --ok_like:#E36181;
+  --ok_liketrns:#99344d84;
+  --ok_green:#76D5C3;
+  --ok_greentrns:#266e614c;
+  --ok_yellow:#F6CC7E;
+  --ok_yellowtrns:#dfa4352a;
+  --ok_yellowtrnslt:#f0bb5950;
+
 
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */

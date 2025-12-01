@@ -69,14 +69,14 @@ export default function HomeAgendaCard({
         {/* ✨ [추가] 북마크 버튼 (우측 상단) ✨ */}
         <button
           onClick={handleBookmarkClick}
-          className="absolute top-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow-sm transition-all z-10 group/btn"
+          className="absolute top-3 right-3 flex items-center gap-1.5 bg-ok_yellowtrns hover:bg-ok_yellowtrnslt backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow-sm transition-all z-10 group/btn"
         >
           <Bookmark
             className={`w-3.5 h-3.5 transition-transform group-active/btn:scale-90 ${
-              marked ? "fill-primary text-primary" : "text-gray-400"
+              marked ? "fill-ok_yellow text-ok_yellow" : "text-ok_yellow"
             }`}
           />
-          <span className={`text-[10px] font-bold leading-none ${marked ? "text-primary" : "text-gray-500"}`}>
+          <span className={`text-[10px] font-bold leading-none ${marked ? "text-white" : "text-white"}`}>
             {count}
           </span>
         </button>
@@ -86,18 +86,18 @@ export default function HomeAgendaCard({
       <div className="p-5 flex flex-col gap-2 flex-1">
         {/* 태그 (카테고리) */}
         <div className="flex items-center gap-1 mb-1">
-          <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 font-medium py-0.5">
+          <Badge variant="outline" className="bg-white text-[12px] text-ok_txtgray1 border-gray-200 font-medium py-0.5">
             {category}
           </Badge>
         </div>
 
         {/* 제목 */}
-        <h3 className="font-bold text-lg text-gray-900 leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+        <h3 className="font-extrabold text-xl text-ok_txtgray2 leading-tight line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
 
         {/* 설명 */}
-        <p className="text-sm text-gray-500 line-clamp-4 leading-snug">
+        <p className="text-sm text-ok_txtgray1 line-clamp-4 leading-snug">
           {description}
         </p>
       </div>

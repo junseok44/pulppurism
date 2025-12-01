@@ -26,7 +26,34 @@ export function getStatusLabel(status: string): string {
   }
 }
 
-export function getStatusBadgeClass(status: string): string {
+// 🚀 [수정] 두 번째 인자 type 추가 (기본값 'default')
+// 'default'일 때는 기존 코드 그대로, 'soft'일 때는 밝은 배경용 스타일 반환
+export function getStatusBadgeClass(status: string, type: 'default' | 'soft' = 'default'): string {
+  
+  // 1. [새로 추가된 부분] 밝은 카드용 스타일 (AgendaCard용)
+  // 기존 색상 테마(파랑, 보라, 오렌지 등)는 유지하되, 배경은 연하게, 글자는 진하게 변경
+  if (type === 'soft') {
+    switch (status) {
+      case "created":
+        return "bg-gray-100 text-gray-700 border-gray-200";
+      case "rejected":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "voting":
+        return "bg-ok_subtrns text-ok_sub1 border-ok_sub1";
+      case "proposing":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      case "answered":
+        return "bg-cyan-100 text-cyan-700 border-cyan-200";
+      case "executing":
+        return "bg-orange-100 text-orange-700 border-orange-200";
+      case "executed":
+        return "bg-green-100 text-green-700 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  }
+
+  // 2. [기존 코드 유지] 어두운 배경용 스타일 (OkAgendaCard용)
   switch (status) {
     case "created":
       return "bg-gray-500/10 text-gray-200 dark:text-gray-400 border-gray-200 dark:border-gray-800";

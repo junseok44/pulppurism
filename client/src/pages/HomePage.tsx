@@ -6,6 +6,7 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import HomeAgendaCard from "@/components/HomeAgendaCard";
 import { useMemo, useState, useEffect } from "react"; // useState, useEffect 추가
 import PolicyCard from "@/components/PolicyCard";
+import HomeOpinionCard from "@/components/HomeOpinionCard";
 
 // 타임라인 아이템 타입 정의
 interface ExecutionTimelineItem {
@@ -205,7 +206,7 @@ export default function HomePage() {
 
             <div className="flex-1 w-full flex items-start overflow-hidden mt-2">
               {policiesWithAuthor.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-4 px-1 scrollbar-hide snap-x w-full">
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x w-full">
                   {policiesWithAuthor.map((policy) => (
                     <div key={policy.id} className="min-w-[280px] md:min-w-[320px] snap-center">
                       <PolicyCard
@@ -280,7 +281,7 @@ export default function HomePage() {
           </div>
 
           {/* 3️⃣ [하단 박스] 주민 의견 */}
-          <div className="lg:col-span-3 bg-ok_sand border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_gray3 transition-colors">
+          <div className="lg:col-span-3 bg-ok_sand border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_sandhover transition-colors">
             <div className="md:w-1/3 text-left">
               <h2 className="text-3xl font-extrabold text-ok_txtgray2 mb-2">
                 주민의 목소리
@@ -305,26 +306,11 @@ export default function HomePage() {
               ) : recentOpinions.length > 0 ? (
                 <div className="flex gap-4">
                   {recentOpinions.map((opinion) => (
-                    <div
-                      key={opinion.id}
-                      className="min-w-[240px] w-[240px] bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sand hover:shadow-md transition-all cursor-pointer text-left"
-                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                    >
-                      <div className="mb-3">
-                        <MessageSquare className="w-8 h-8 text-ok_sandtxt bg-ok_sand p-1.5 rounded-full mb-3" />
-                        <p className="text-ok_txtgray2 font-bold line-clamp-2 leading-snug">
-                          {opinion.content}
-                        </p>
-                      </div>
-
-                      <div className="flex justify-between items-center text-xs text-ok_txtgray0 mt-2">
-                        <span>{new Date(opinion.createdAt).toLocaleDateString()}</span>
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-3.5 h-3.5" />
-                          {opinion.likes || 0}
-                        </span>
-                      </div>
-                    </div>
+                    <HomeOpinionCard 
+                    key={opinion.id}
+                    opinion={opinion}
+                    onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                  />
                   ))}
                   <div
                     onClick={() => setLocation("/opinions")}
