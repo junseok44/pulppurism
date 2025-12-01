@@ -76,7 +76,7 @@ export default function OkAgendaCard({
 
       {/* ================= 컨텐츠 영역 (z-index로 띄움) ================= */}
       {/* z-10: 배경 위에 올라오게 함 */}
-      <div className="relative z-10 w-full h-full flex flex-col justify-between px-3 py-3 md:px-5 md:py-6">
+      <div className="relative z-10 w-full h-full flex flex-col justify-between pt-4 pb-6 px-4 md:px-5 md:py-6">
         
         {/* 1. 최상단 영역 (카테고리 + 북마크 버튼) */}
         <div className="w-full flex justify-between items-start mb-4">
@@ -138,12 +138,12 @@ export default function OkAgendaCard({
           </div>
 
           {/* 순서 2: 제목 (text-shadow 추가로 가독성 UP) */}
-          <div className="w-full font-extrabold text-white text-lg leading-6 md:text-2xl md:leading-7 line-clamp-2 drop-shadow-md">
+          <div className="w-full font-extrabold text-white text-xl leading-6 md:text-2xl md:leading-7 line-clamp-2 drop-shadow-md">
             {title}
           </div>
 
           {/* 순서 3: 내용 */}
-          <div className="w-full text-white/90 text-[10px] md:text-xs font-medium leading-4 md:leading-5 line-clamp-2 drop-shadow-sm">
+          <div className="w-full text-white/90 text-[13px] md:text-[14px] leading-4 md:leading-5 line-clamp-2 drop-shadow-sm">
             {content}
           </div>
 
