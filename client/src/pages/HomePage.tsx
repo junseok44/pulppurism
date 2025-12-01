@@ -1,14 +1,13 @@
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
-import { ArrowRight, MessageSquare, Loader2, HelpCircle, Heart } from "lucide-react";
+import { ArrowRight, MessageSquare, Loader2, HelpCircle, Heart, X } from "lucide-react"; // X 아이콘 추가
 import type { Opinion, Agenda, Category } from "@shared/schema";
-// 👇 useQueries 추가 import
-import { useQuery, useQueries } from "@tanstack/react-query"; 
+import { useQuery, useQueries } from "@tanstack/react-query";
 import HomeAgendaCard from "@/components/HomeAgendaCard";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react"; // useState, useEffect 추가
 import PolicyCard from "@/components/PolicyCard";
 
-// 타임라인 아이템 타입 정의 (API 응답용)
+// 타임라인 아이템 타입 정의
 interface ExecutionTimelineItem {
   id: string;
   authorName: string;
@@ -17,6 +16,23 @@ interface ExecutionTimelineItem {
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
+
+  // 0️⃣ 배너 상태 관리 (localStorage 연동)
+  const [showBanner, setShowBanner] = useState(true);
+
+  useEffect(() => {
+    // 컴포넌트 마운트 시 localStorage 확인
+    const isHidden = localStorage.getItem("hide-guide-banner");
+    if (isHidden === "true") {
+      setShowBanner(false);
+    }
+  }, []);
+
+  const handleCloseBanner = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 부모의 onClick(페이지 이동) 이벤트 전파 방지
+    setShowBanner(false);
+    localStorage.setItem("hide-guide-banner", "true"); // 로컬 스토리지에 저장
+  };
 
   // 1️⃣ 의견 데이터 가져오기
   const { data: opinions, isLoading: isOpinionsLoading } = useQuery<Opinion[]>({
@@ -44,16 +60,16 @@ export default function HomePage() {
     },
   });
 
-  // 3️⃣ 정책 실현 데이터 기본 필터링 (최신 5개)
+  // 3️⃣ 정책 실현 데이터 필터링
   const realizedPolicies = useMemo(() => {
     if (!agendas) return [];
     return agendas
-      .filter(a => a.status === 'executed') 
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()) 
-      .slice(0, 5); 
+      .filter(a => a.status === 'executed')
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5);
   }, [agendas]);
 
-  // 4️⃣ 🚀 [추가] 각 정책의 타임라인(작성자 정보) 가져오기 - useQueries 사용
+  // 4️⃣ 각 정책의 타임라인(작성자 정보) 가져오기
   const timelineQueries = useQueries({
     queries: realizedPolicies.map((policy) => ({
       queryKey: [`/api/agendas/${policy.id}/execution-timeline`],
@@ -62,23 +78,17 @@ export default function HomePage() {
         if (!res.ok) throw new Error("Failed to fetch timeline");
         return res.json() as Promise<ExecutionTimelineItem[]>;
       },
-      // 안건 ID가 있을 때만 실행
-      enabled: !!policy.id, 
+      enabled: !!policy.id,
     })),
   });
 
-  // 5️⃣ 🚀 [추가] 안건 정보 + 타임라인 정보(작성자) 합치기
+  // 5️⃣ 안건 정보 + 타임라인 정보(작성자) 합치기
   const policiesWithAuthor = useMemo(() => {
     return realizedPolicies.map((policy, index) => {
       const timelineData = timelineQueries[index]?.data;
-      // 타임라인 데이터 중 가장 최신 것(보통 마지막에 생성된 것 or 날짜순 정렬)을 가져옴
-      // 여기서는 배열의 마지막 요소나 날짜 정렬 로직을 쓸 수 있음. 
-      // 보통 DB에서 가져올 때 정렬이 안되어 있다면 클라이언트에서 정렬 필요.
-      
-      let latestAuthor = "옥천군청"; // 기본값
+      let latestAuthor = "옥천군청";
       
       if (timelineData && timelineData.length > 0) {
-        // 날짜 내림차순 정렬 (최신순)
         const sorted = [...timelineData].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
@@ -87,11 +97,10 @@ export default function HomePage() {
 
       return {
         ...policy,
-        agency: latestAuthor // agency 필드에 작성자 이름 할당
+        agency: latestAuthor
       };
     });
   }, [realizedPolicies, timelineQueries]);
-
 
   // 랜덤 스포트라이트 로직
   const spotlightData = useMemo(() => {
@@ -142,17 +151,31 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-24">
       <Header />
 
-      {/* 이용안내 배너 */}
-      <div
-        onClick={() => setLocation("/howto")}
-        className="w-full bg-ok_sand text-ok_sandtxt py-3 px-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-ok_sandhover transition-colors text-sm md:text-base font-medium animate-in slide-in-from-top duration-300"
-      >
-        <HelpCircle className="w-5 h-5" />
-        <span>
-          옥천마루에 처음 오셨나요? 이용 안내 보러가기
-        </span>
-        <ArrowRight className="w-4 h-4" />
-      </div>
+      {/* 이용안내 배너 (showBanner가 true일 때만 표시) */}
+      {showBanner && (
+        <div
+          onClick={() => setLocation("/howto")}
+          className="w-[98vw] mx-auto mt-4 rounded-2xl bg-ok_sand text-ok_sandtxt py-3 px-4 flex items-center justify-center cursor-pointer hover:bg-ok_sandhover transition-colors text-sm md:text-base font-medium animate-in slide-in-from-top duration-300 relative"
+        >
+          {/* 내용 컨테이너 (중앙 정렬 유지) */}
+          <div className="flex items-center gap-2">
+            <HelpCircle className="w-5 h-5" />
+            <span>
+              옥천마루에 처음 오셨나요? 이용 안내 보러가기
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </div>
+
+          {/* 닫기 버튼 (우측 끝 고정) */}
+          <button
+            onClick={handleCloseBanner}
+            className="absolute right-4 p-1 rounded-full hover:bg-black/5 transition-colors"
+            aria-label="배너 닫기"
+          >
+            <X className="w-4 h-4 text-ok_sandtxt" />
+          </button>
+        </div>
+      )}
 
       <main className="w-full mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[70vh] text-center">
 
@@ -162,7 +185,6 @@ export default function HomePage() {
           <div
             className="lg:col-span-2 bg-ok_gray2 rounded-[40px] p-8 md:p-10 flex flex-col justify-start gap-6 min-h-[450px] relative overflow-hidden group transition-transform"
           >
-            {/* 상단: 텍스트 & 버튼 영역 */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full z-10 text-left gap-4">
               <div>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
@@ -181,9 +203,7 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* 하단: PolicyCard 슬라이더 */}
             <div className="flex-1 w-full flex items-start overflow-hidden mt-2">
-              {/* 🚀 [변경] realizedPolicies 대신 policiesWithAuthor 사용 */}
               {policiesWithAuthor.length > 0 ? (
                 <div className="flex gap-4 overflow-x-auto pb-4 px-1 scrollbar-hide snap-x w-full">
                   {policiesWithAuthor.map((policy) => (
@@ -191,8 +211,7 @@ export default function HomePage() {
                       <PolicyCard
                         title={policy.title}
                         content={(policy.response as string) || policy.description}
-                        // 🚀 [연동 완료] API에서 가져온 작성자 이름 사용
-                        agency={policy.agency} 
+                        agency={policy.agency}
                         date={new Date(policy.updatedAt).toLocaleDateString()}
                         onClick={() => setLocation(`/agendas/${policy.id}`)}
                       />
@@ -208,7 +227,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ... (2번, 3번 박스는 기존 코드 그대로) ... */}
           {/* 2️⃣ [사이드 박스] 안건 보기 */}
           <div className="lg:col-span-1 bg-primary rounded-[40px] p-8 md:p-12 flex flex-col min-h-[400px] relative overflow-hidden">
             <div className="text-left mb-6 relative z-10">

@@ -4,10 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogIn, LogOut, Search, Bell, Menu, Loader2 } from "lucide-react"; 
 import { useUser } from "@/hooks/useUser";
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"; 
-import { SiGoogle, SiKakaotalk } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
+import LoginDialog from "@/components/LoginDialog";
 
 interface AuthProviders {
   google: boolean;
@@ -311,57 +310,10 @@ export default function Header() {
       </div>
       </div>
 
-      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        {/* 다이얼로그 내용은 그대로 유지 */}
-        <DialogContent 
-        data-testid="dialog-login"
-        className = "bg-ok_gray1 sm:rounded-lg"
-        >
-          <DialogHeader>
-            <DialogTitle>로그인</DialogTitle>
-            <DialogDescription>
-              {hasAnyProvider
-                ? "소셜 계정으로 간편하게 로그인하세요"
-                : "OAuth 인증 설정이 필요합니다"}
-            </DialogDescription>
-          </DialogHeader>
-          {hasAnyProvider ? (
-            <>
-              <div className="space-y-3">
-                {providers?.google && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3 h-12"
-                    onClick={handleGoogleLogin}
-                    data-testid="button-google-login"
-                  >
-                    <SiGoogle className="w-5 h-5" />
-                    Google로 로그인
-                  </Button>
-                )}
-                {providers?.kakao && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3 h-12"
-                    onClick={handleKakaoLogin}
-                    data-testid="button-kakao-login"
-                  >
-                    <SiKakaotalk className="w-5 h-5 text-yellow-500" />
-                    Kakao로 로그인
-                  </Button>
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground text-center mt-4">
-                로그인하면 서비스 이용약관에 동의하게 됩니다
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              <p className="mb-3">OAuth 인증 키가 설정되지 않았습니다.</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <LoginDialog 
+        open={showLoginDialog} 
+        onOpenChange={setShowLoginDialog} 
+      />
     </>
   );
 }
