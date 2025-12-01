@@ -25,10 +25,8 @@ export default function NewAgendaForm() {
   const [categoryId, setCategoryId] = useState("");
   const [clusterId, setClusterId] = useState("");
   const [okinewsUrl, setOkinewsUrl] = useState("");
-  const [referenceLinks, setReferenceLinks] = useState<string[]>([]);
-  const [regionalCases, setRegionalCases] = useState<string[]>([]);
-  const [newReferenceLink, setNewReferenceLink] = useState("");
-  const [newRegionalCase, setNewRegionalCase] = useState("");
+  const [referenceLinks, setReferenceLinks] = useState<string[]>([""]);
+  const [regionalCases, setRegionalCases] = useState<string[]>([""]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [, setLocation] = useLocation();
   const search = useSearch();
@@ -44,11 +42,11 @@ export default function NewAgendaForm() {
   const urlTitle = searchParams.get('title');
   const urlSummary = searchParams.get('summary');
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: clusters = [] } = useQuery<Cluster[]>({
+  const { data: clusters = [], isLoading: clustersLoading } = useQuery<Cluster[]>({
     queryKey: ["/api/clusters"],
   });
 
@@ -91,8 +89,8 @@ export default function NewAgendaForm() {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         okinewsUrl: okinewsUrl || null,
-        referenceLinks: referenceLinks.length > 0 ? referenceLinks : null,
-        regionalCases: regionalCases.length > 0 ? regionalCases : null,
+        referenceLinks: referenceLinks.filter(link => link.trim()).length > 0 ? referenceLinks.filter(link => link.trim()) : null,
+        regionalCases: regionalCases.filter(caseText => caseText.trim()).length > 0 ? regionalCases.filter(caseText => caseText.trim()) : null,
       });
       const agenda = await res.json();
 
@@ -139,10 +137,10 @@ export default function NewAgendaForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !categoryId || !clusterId || clusterId === "none") {
+    if (!title || !description || !categoryId) {
       toast({
         title: "입력 오류",
-        description: "모든 필수 항목을 입력해주세요.",
+        description: "제목, 설명, 카테고리는 필수 항목입니다.",
         variant: "destructive",
       });
       return;
@@ -178,22 +176,35 @@ export default function NewAgendaForm() {
 
             <div className="space-y-2">
               <Label htmlFor="cluster">
-                클러스터 선택 <span className="text-destructive">*</span>
+                클러스터 선택
               </Label>
-              <Select value={clusterId || undefined} onValueChange={(val) => setClusterId(val || "")}>
-                <SelectTrigger data-testid="select-cluster">
-                  <SelectValue placeholder="클러스터를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clusters
-                    .filter(c => !c.agendaId)
-                    .map((cluster) => (
-                      <SelectItem key={cluster.id} value={cluster.id}>
-                        {cluster.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              {clustersLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  클러스터 목록을 불러오는 중...
+                </div>
+              ) : (
+                <Select value={clusterId || "none"} onValueChange={(val) => setClusterId(val === "none" ? "" : val)}>
+                  <SelectTrigger data-testid="select-cluster">
+                    <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">클러스터 없이 생성</SelectItem>
+                    {clusters
+                      .filter(c => !c.agendaId)
+                      .map((cluster) => (
+                        <SelectItem key={cluster.id} value={cluster.id}>
+                          {cluster.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {!clustersLoading && clusters.filter(c => !c.agendaId).length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  안건화되지 않은 클러스터가 없습니다. 클러스터 없이 생성할 수 있습니다.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -249,44 +260,48 @@ export default function NewAgendaForm() {
                   {referenceLinks.map((link, index) => (
                     <div key={index} className="flex gap-2">
                       <Input
+                        type="url"
+                        placeholder="참고링크 URL을 입력하세요"
                         value={link}
-                        readOnly
+                        onChange={(e) => {
+                          const newLinks = [...referenceLinks];
+                          newLinks[index] = e.target.value;
+                          setReferenceLinks(newLinks);
+                        }}
+                        onBlur={() => {
+                          // 빈 값이 마지막이 아니면 제거하지 않음
+                          if (link.trim() === "" && referenceLinks.length > 1 && index === referenceLinks.length - 1) {
+                            setReferenceLinks(referenceLinks.filter((_, i) => i !== index));
+                          }
+                        }}
                         data-testid={`reference-link-${index}`}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => setReferenceLinks(referenceLinks.filter((_, i) => i !== index))}
+                        onClick={() => {
+                          if (referenceLinks.length > 1) {
+                            setReferenceLinks(referenceLinks.filter((_, i) => i !== index));
+                          } else {
+                            setReferenceLinks([""]);
+                          }
+                        }}
                         data-testid={`button-remove-reference-link-${index}`}
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
-                  <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      placeholder="참고링크 URL을 입력하세요"
-                      value={newReferenceLink}
-                      onChange={(e) => setNewReferenceLink(e.target.value)}
-                      data-testid="input-new-reference-link"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (newReferenceLink.trim()) {
-                          setReferenceLinks([...referenceLinks, newReferenceLink.trim()]);
-                          setNewReferenceLink("");
-                        }
-                      }}
-                      data-testid="button-add-reference-link"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      추가
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setReferenceLinks([...referenceLinks, ""])}
+                    data-testid="button-add-reference-link"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    참고링크 추가
+                  </Button>
                 </div>
               </div>
 
@@ -296,8 +311,19 @@ export default function NewAgendaForm() {
                   {regionalCases.map((caseText, index) => (
                     <div key={index} className="flex gap-2">
                       <Textarea
+                        placeholder="타 지역 사례를 입력하세요 (예: 서울시 강남구 - 주민참여 예산제 운영)"
                         value={caseText}
-                        readOnly
+                        onChange={(e) => {
+                          const newCases = [...regionalCases];
+                          newCases[index] = e.target.value;
+                          setRegionalCases(newCases);
+                        }}
+                        onBlur={() => {
+                          // 빈 값이 마지막이 아니면 제거하지 않음
+                          if (caseText.trim() === "" && regionalCases.length > 1 && index === regionalCases.length - 1) {
+                            setRegionalCases(regionalCases.filter((_, i) => i !== index));
+                          }
+                        }}
                         rows={2}
                         data-testid={`regional-case-${index}`}
                       />
@@ -305,36 +331,28 @@ export default function NewAgendaForm() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => setRegionalCases(regionalCases.filter((_, i) => i !== index))}
+                        onClick={() => {
+                          if (regionalCases.length > 1) {
+                            setRegionalCases(regionalCases.filter((_, i) => i !== index));
+                          } else {
+                            setRegionalCases([""]);
+                          }
+                        }}
                         data-testid={`button-remove-regional-case-${index}`}
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
-                  <div className="flex gap-2">
-                    <Textarea
-                      placeholder="타 지역 사례를 입력하세요 (예: 서울시 강남구 - 주민참여 예산제 운영)"
-                      value={newRegionalCase}
-                      onChange={(e) => setNewRegionalCase(e.target.value)}
-                      rows={2}
-                      data-testid="input-new-regional-case"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (newRegionalCase.trim()) {
-                          setRegionalCases([...regionalCases, newRegionalCase.trim()]);
-                          setNewRegionalCase("");
-                        }
-                      }}
-                      data-testid="button-add-regional-case"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      추가
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setRegionalCases([...regionalCases, ""])}
+                    data-testid="button-add-regional-case"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    타 지역 사례 추가
+                  </Button>
                 </div>
               </div>
 

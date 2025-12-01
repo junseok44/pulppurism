@@ -327,7 +327,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClusters(options?: { limit?: number; offset?: number; status?: string }): Promise<Cluster[]> {
-    let query: any = db.select().from(clusters);
+    let query: any = db
+      .select({
+        id: clusters.id,
+        title: clusters.title,
+        summary: clusters.summary,
+        categoryId: clusters.categoryId,
+        status: clusters.status,
+        opinionCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM ${opinionClusters}
+          WHERE ${opinionClusters.clusterId} = ${clusters.id}
+        )`.as("opinion_count"),
+        similarity: clusters.similarity,
+        agendaId: clusters.agendaId,
+        tags: clusters.tags,
+        createdAt: clusters.createdAt,
+      })
+      .from(clusters);
     
     if (options?.status) {
       query = query.where(eq(clusters.status, options.status as any));
