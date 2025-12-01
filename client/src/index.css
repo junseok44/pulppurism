@@ -23,6 +23,7 @@
   --ok_gray3:hsl(264, 8%, 76%);
   --ok_gray3hov:hsl(264,8%,76%,30%);
   --ok_sub1:#8e83ed;
+  --ok_subtrns:#d3daff9f;
   --ok_emp:#e8d5b5;
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
