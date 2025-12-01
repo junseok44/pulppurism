@@ -16,6 +16,7 @@ import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { trackOpinionLike, trackCommentCreated } from "@/lib/analytics";
 import LoginDialog from "@/components/LoginDialog"; // 👈 LoginDialog import
+import { getUserDisplayName } from "@/utils/user";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -463,7 +464,7 @@ export default function OpinionDetailPage() {
   }
 
 
-  const authorName = opinion.displayName || opinion.username;
+  const authorName = getUserDisplayName(opinion.displayName, opinion.username);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">

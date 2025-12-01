@@ -26,6 +26,7 @@ import { Search, Eye, Trash2, ThumbsUp, Mic, ArrowLeft, Loader2 } from "lucide-r
 import type { Opinion } from "@shared/schema";
 import { format, isToday, isValid } from "date-fns";
 import { useLocation } from "wouter";
+import { getUserDisplayName } from "@/utils/user";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -207,7 +208,7 @@ export default function TodayOpinionsPage() {
                 <TableRow key={opinion.id} data-testid={`opinion-row-${opinion.id}`}>
                   <TableCell>
                     <p className="font-medium text-sm">
-                      {opinion.displayName || opinion.username}
+                      {getUserDisplayName(opinion.displayName, opinion.username)}
                     </p>
                   </TableCell>
                   <TableCell>

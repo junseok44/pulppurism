@@ -5,6 +5,7 @@ import { Strategy as KakaoStrategy } from "passport-kakao";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -80,15 +81,18 @@ async function handleOAuthUser(profile: OAuthProfile) {
 
     while (attempt < maxAttempts) {
       const randomSuffix = generateRandomString();
-      const candidateUsername = `익명 주민 ${randomSuffix}`;
-      // displayName이 없으면 username과 동일하게 설정
-      const finalDisplayName = displayName || candidateUsername;
+      const candidateUsername = `익명의 옥천 주민 ${randomSuffix}`;
+      // displayName 정규화: 없거나 "미연동 계정"이면 username으로 저장
+      const finalDisplayName =
+        !displayName || displayName === "미연동 계정"
+          ? candidateUsername
+          : displayName;
 
       try {
         const insertData: any = {
           username: candidateUsername,
           email,
-          displayName: finalDisplayName, // 카카오 닉네임 또는 "익명 주민 abc"
+          displayName: finalDisplayName, // 정규화된 displayName (username 또는 소셜 닉네임)
           avatarUrl,
           provider: profile.provider,
         };
@@ -114,6 +118,18 @@ async function handleOAuthUser(profile: OAuthProfile) {
           throw error;
         }
       }
+    }
+  } else {
+    // 기존 유저 로그인 시: displayName이 "미연동 계정"이면 username으로 업데이트
+    if (user.displayName === "미연동 계정") {
+      console.log(`[handleOAuthUser] Normalizing displayName for existing user:`, user.id);
+      const updatedUsers = await db
+        .update(users)
+        .set({ displayName: user.username })
+        .where(eq(users.id, user.id))
+        .returning();
+      user = updatedUsers[0];
+      console.log(`[handleOAuthUser] Updated user displayName:`, user.id, user.displayName);
     }
   }
 

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { getUserDisplayName } from "@/utils/user";
 
 interface Opinion {
   id: string;
@@ -98,7 +99,7 @@ export default function MyOpinionsPage() {
               <OpinionCard
                 key={opinion.id}
                 id={opinion.id}
-                authorName={opinion.displayName || opinion.username}
+                authorName={getUserDisplayName(opinion.displayName, opinion.username)}
                 content={opinion.content}
                 likeCount={opinion.likes}
                 commentCount={opinion.commentCount}

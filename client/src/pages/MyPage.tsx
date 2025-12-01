@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getUserDisplayName } from "@/utils/user";
 
 interface UserStats {
   myOpinionsCount: number;
@@ -100,7 +101,7 @@ export default function MyPage() {
 
   const handleEditClick = () => {
     if (user) {
-      setDisplayName(user.displayName || user.username || "");
+      setDisplayName(getUserDisplayName(user.displayName, user.username) || "");
       setIsEditDialogOpen(true);
     }
   };
@@ -175,7 +176,7 @@ export default function MyPage() {
   }
 
   const userProfile = {
-    name: user.displayName || user.username,
+    name: getUserDisplayName(user.displayName, user.username),
     email: user.email || "",
     avatar: user.avatarUrl || "",
   };

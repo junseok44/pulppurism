@@ -22,6 +22,7 @@ import type { Report, Opinion } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useState } from "react";
+import { getUserDisplayName } from "@/utils/user";
 import {
   LineChart,
   Line,
@@ -334,7 +335,7 @@ export default function AdminDashboardHome() {
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                   <p className="text-sm font-medium">
-                                    {opinion.displayName || opinion.username}
+                                    {getUserDisplayName(opinion.displayName, opinion.username)}
                                   </p>
                                   <span className="text-xs text-muted-foreground">
                                     {format(new Date(opinion.createdAt), "MM/dd HH:mm")}
