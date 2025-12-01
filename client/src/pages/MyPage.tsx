@@ -9,9 +9,7 @@ import {
   Heart,
   FileText,
   Bookmark,
-  Bell,
   User,
-  Settings,
   LogOut,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -135,31 +133,6 @@ export default function MyPage() {
     email: user.email || "",
     avatar: user.avatarUrl || "",
   };
-
-  const notifications = [
-    {
-      id: "1",
-      type: "reply",
-      message: "내 의견에 새로운 답글이 달렸습니다",
-      time: "2시간 전",
-      isRead: false,
-    },
-    {
-      id: "2",
-      type: "agenda",
-      message: "내 의견이 '학교 앞 교통안전' 안건에 포함되었습니다",
-      time: "1일 전",
-      isRead: false,
-    },
-    {
-      id: "3",
-      type: "update",
-      message:
-        "즐겨찾기한 '공원 소음 문제' 안건이 '검토 중'으로 변경되었습니다",
-      time: "2일 전",
-      isRead: true,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -313,73 +286,10 @@ export default function MyPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">알림 내역</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-testid="button-view-all-notifications"
-            >
-              전체보기
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`p-4 hover-elevate active-elevate-2 cursor-pointer ${
-                  !notification.isRead ? "border-l-4 border-l-primary" : ""
-                }`}
-                data-testid={`card-notification-${notification.id}`}
-              >
-                <div className="flex items-start gap-3">
-                  <Bell
-                    className={`w-5 h-5 mt-0.5 ${!notification.isRead ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  <div className="flex-1">
-                    <p
-                      className={
-                        notification.isRead ? "text-muted-foreground" : ""
-                      }
-                    >
-                      {notification.message}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {notification.time}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
         <Separator />
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">계정 설정</h3>
-
-          <Card
-            className="p-4 hover-elevate active-elevate-2 cursor-pointer"
-            data-testid="card-account-settings"
-          >
-            <div className="flex items-center gap-3">
-              <Settings className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium">계정 정보</span>
-            </div>
-          </Card>
-
-          <Card
-            className="p-4 hover-elevate active-elevate-2 cursor-pointer"
-            data-testid="card-notification-settings"
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium">알림 설정</span>
-            </div>
-          </Card>
 
           <Card
             className="p-4 hover-elevate active-elevate-2 cursor-pointer"
