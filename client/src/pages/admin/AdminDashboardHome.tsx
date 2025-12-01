@@ -31,6 +31,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useUser } from "@/hooks/useUser";
 
 type DashboardStats = {
   today: {
@@ -68,6 +69,7 @@ type OpinionWithUser = Opinion & {
 export default function AdminDashboardHome() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading: isUserLoading } = useUser();
   const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
@@ -109,7 +111,13 @@ export default function AdminDashboardHome() {
 
   const pendingReports = reports.filter((r) => r.status === "pending");
 
-  if (statsLoading || reportsLoading || weeklyLoading) {
+  // 비로그인 또는 관리자가 아닌 경우 홈으로 리다이렉트
+  if (!isUserLoading && !user?.isAdmin) {
+    setLocation("/");
+    return null;
+  }
+
+  if (isUserLoading || statsLoading || reportsLoading || weeklyLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

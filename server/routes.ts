@@ -1801,8 +1801,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/stats/dashboard", async (req, res) => {
+  // 관리자 대시보드용 통계 (관리자 전용)
+  app.get("/api/stats/dashboard", requireAuth, async (req, res) => {
     try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
       const now = new Date();
       const todayStart = new Date(
         now.getFullYear(),
@@ -1878,8 +1882,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/stats/weekly-opinions", async (req, res) => {
+  // 관리자 대시보드용 주간 의견 통계 (관리자 전용)
+  app.get("/api/admin/stats/weekly-opinions", requireAuth, async (req, res) => {
     try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
       const now = new Date();
       const weeklyData = [];
 
@@ -1920,8 +1928,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/stats/active-agendas", async (req, res) => {
+  // 관리자 대시보드용 활발한 안건 목록 (관리자 전용)
+  app.get("/api/admin/stats/active-agendas", requireAuth, async (req, res) => {
     try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
       const agendasWithStats = await db
         .select({
           id: agendas.id,

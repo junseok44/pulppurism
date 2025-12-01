@@ -21,6 +21,7 @@ import AdminOpinionsPage from "@/pages/admin/AdminOpinionsPage";
 import AdminAgendasPage from "@/pages/admin/AdminAgendasPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import ActiveAgendasPage from "@/pages/admin/ActiveAgendasPage";
+import { useUser } from "@/hooks/useUser";
 
 function AppSidebar() {
   const [location] = useLocation();
@@ -81,7 +82,8 @@ function AppSidebar() {
 }
 
 export default function AdminDashboard() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { user, isLoading: isUserLoading } = useUser();
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -112,7 +114,20 @@ export default function AdminDashboard() {
             <div className="flex-1" />
           </header>
           <main className="flex-1 overflow-auto p-6">
-            {renderContent()}
+            {/* 사용자 정보 로딩 중이면 로딩 상태 표시 */}
+            {isUserLoading ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                관리자 정보를 확인하는 중입니다...
+              </div>
+            ) : !user?.isAdmin ? (
+              // 비관리자(또는 비로그인)인 경우 홈으로 리다이렉트
+              (() => {
+                setLocation("/");
+                return null;
+              })()
+            ) : (
+              renderContent()
+            )}
           </main>
         </div>
       </div>
