@@ -1,10 +1,10 @@
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
-import { ArrowRight, MessageSquare, Loader2, HelpCircle, Heart, X } from "lucide-react"; // X 아이콘 추가
+import { ArrowRight, MessageSquare, Loader2, HelpCircle, Heart, X } from "lucide-react";
 import type { Opinion, Agenda, Category } from "@shared/schema";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import HomeAgendaCard from "@/components/HomeAgendaCard";
-import { useMemo, useState, useEffect } from "react"; // useState, useEffect 추가
+import { useMemo, useState, useEffect } from "react";
 import PolicyCard from "@/components/PolicyCard";
 import HomeOpinionCard from "@/components/HomeOpinionCard";
 
@@ -18,11 +18,10 @@ interface ExecutionTimelineItem {
 export default function HomePage() {
   const [, setLocation] = useLocation();
 
-  // 0️⃣ 배너 상태 관리 (localStorage 연동)
+  // 0️⃣ 배너 상태 관리
   const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
-    // 컴포넌트 마운트 시 localStorage 확인
     const isHidden = localStorage.getItem("hide-guide-banner");
     if (isHidden === "true") {
       setShowBanner(false);
@@ -30,9 +29,9 @@ export default function HomePage() {
   }, []);
 
   const handleCloseBanner = (e: React.MouseEvent) => {
-    e.stopPropagation(); // 부모의 onClick(페이지 이동) 이벤트 전파 방지
+    e.stopPropagation();
     setShowBanner(false);
-    localStorage.setItem("hide-guide-banner", "true"); // 로컬 스토리지에 저장
+    localStorage.setItem("hide-guide-banner", "true");
   };
 
   // 1️⃣ 의견 데이터 가져오기
@@ -61,7 +60,7 @@ export default function HomePage() {
     },
   });
 
-  // 3️⃣ 정책 실현 데이터 필터링
+  // 3️⃣ 정책 실현 데이터 필터링 (최신순 정렬됨)
   const realizedPolicies = useMemo(() => {
     if (!agendas) return [];
     return agendas
@@ -152,22 +151,17 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-24">
       <Header />
 
-      {/* 이용안내 배너 (showBanner가 true일 때만 표시) */}
+      {/* 이용안내 배너 */}
       {showBanner && (
         <div
           onClick={() => setLocation("/howto")}
           className="w-[98vw] mx-auto mt-4 rounded-2xl bg-ok_sand text-ok_sandtxt py-3 px-4 flex items-center justify-center cursor-pointer hover:bg-ok_sandhover transition-colors text-sm md:text-base font-medium animate-in slide-in-from-top duration-300 relative"
         >
-          {/* 내용 컨테이너 (중앙 정렬 유지) */}
           <div className="flex items-center gap-2">
             <HelpCircle className="w-5 h-5" />
-            <span>
-              옥천마루에 처음 오셨나요? 이용 안내 보러가기
-            </span>
+            <span>옥천마루에 처음 오셨나요? 이용 안내 보러가기</span>
             <ArrowRight className="w-4 h-4" />
           </div>
-
-          {/* 닫기 버튼 (우측 끝 고정) */}
           <button
             onClick={handleCloseBanner}
             className="absolute right-4 p-1 rounded-full hover:bg-black/5 transition-colors"
@@ -204,19 +198,19 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="flex-1 w-full flex items-start overflow-hidden mt-2">
+            <div className="flex-1 w-full mt-2">
               {policiesWithAuthor.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x w-full">
+                // 🚀 [수정] flex-col로 세로 배치 & gap-4 & w-full
+                <div className="flex flex-col gap-4 w-full">
                   {policiesWithAuthor.map((policy) => (
-                    <div key={policy.id} className="min-w-[280px] md:min-w-[320px] snap-center">
-                      <PolicyCard
-                        title={policy.title}
-                        content={(policy.response as string) || policy.description}
-                        agency={policy.agency}
-                        date={new Date(policy.updatedAt).toLocaleDateString()}
-                        onClick={() => setLocation(`/agendas/${policy.id}`)}
-                      />
-                    </div>
+                    <PolicyCard
+                      key={policy.id}
+                      title={policy.title}
+                      content={(policy.response as string) || policy.description}
+                      agency={policy.agency}
+                      date={new Date(policy.updatedAt).toLocaleDateString()}
+                      onClick={() => setLocation(`/agendas/${policy.id}`)}
+                    />
                   ))}
                 </div>
               ) : (
