@@ -223,12 +223,8 @@ export default function AllAgendasManagement() {
   };
 
   const handleEdit = (agenda: Agenda) => {
-    setEditingAgenda(agenda);
-    setEditTitle(agenda.title);
-    setEditDescription(agenda.description);
-    setEditStatus(agenda.status as AgendaStatus);
-    setEditResponse(String(agenda.response || ""));
-    setEditDialogOpen(true);
+    // 상세 페이지로 이동하면서 관리자용 편집 모달이 자동으로 뜨도록 쿼리 파라미터 전달
+    setLocation(`/agendas/${agenda.id}?edit=1`);
   };
 
   const handleSaveEdit = () => {

@@ -67,7 +67,7 @@ interface ExecutionTimelineItem {
 }
 
 export default function AgendaDetailPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [comment, setComment] = useState("");
   const [match, params] = useRoute("/agendas/:id");
   const agendaId = params?.id;
@@ -115,6 +115,9 @@ export default function AgendaDetailPage() {
     }>
   >([]);
   const timelineImageInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // 관리자 쿼리파라미터(edit=1)로 인한 자동 모달 오픈이 한 번만 일어나도록 제어
+  const hasAutoOpenedFromQueryRef = useRef(false);
   
   const [showOkinewsForm, setShowOkinewsForm] = useState(false);
   const [showReferenceLinkForm, setShowReferenceLinkForm] = useState(false);
@@ -179,6 +182,21 @@ export default function AgendaDetailPage() {
     queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
     enabled: !!agendaId && (agenda?.status === "executing" || agenda?.status === "executed"),
   });
+
+  // 관리자 페이지에서 "/agendas/:id?edit=1" 형태로 들어온 경우 자동으로 편집 모달 열기
+  useEffect(() => {
+    if (!agenda || !user?.isAdmin || hasAutoOpenedFromQueryRef.current) return;
+    try {
+      const search = window.location.search || "";
+      const params = new URLSearchParams(search);
+      if (params.get("edit") === "1" && !editDialogOpen) {
+        hasAutoOpenedFromQueryRef.current = true;
+        handleEditClick();
+      }
+    } catch {
+      // URL 파싱 실패 시 무시
+    }
+  }, [agenda, user, editDialogOpen]);
 
   const voteMutation = useMutation({
     mutationFn: async (voteType: "agree" | "disagree" | "neutral") => {
