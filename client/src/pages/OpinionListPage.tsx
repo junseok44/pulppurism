@@ -7,10 +7,11 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useEffect, useRef, useState } from "react"; // useState 추가
+import { useEffect, useRef, useState } from "react";
 import TitleCard from "@/components/TitleCard";
-import OpinionInputSheet from "@/components/OpinionInputSheet"; // 👈 새로 만든 컴포넌트 import
+import OpinionInputSheet from "@/components/OpinionInputSheet";
 import { useToast } from "@/hooks/use-toast";
+import LoginDialog from "@/components/LoginDialog"; // 👈 LoginDialog import
 
 interface OpinionWithUser {
   id: string;
@@ -31,8 +32,9 @@ export default function OpinionListPage() {
   const { toast } = useToast();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // 1️⃣ 팝업 열림/닫힘 상태 관리
+  // 1️⃣ 팝업 상태 관리 (의견 작성 / 로그인)
   const [isInputOpen, setIsInputOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false); // 👈 로그인 팝업 상태 추가!
 
   const {
     data,
@@ -75,18 +77,15 @@ export default function OpinionListPage() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // 2️⃣ 제안하기 버튼 핸들러
+  // 2️⃣ 제안하기 버튼 핸들러 (수정됨)
   const handleOpenInput = () => {
+    // 로그인이 안 되어 있으면?
     if (!user) {
-      toast({
-        variant: "destructive",
-        title: "로그인이 필요합니다",
-        description: "의견을 제안하려면 먼저 로그인해주세요.",
-      });
-      // 혹은 로그인 다이얼로그를 여는 로직 추가 가능
+      setIsLoginOpen(true); // 로그인 팝업을 열라고 신호 보냄
       return;
     }
-    setIsInputOpen(true);
+    // 로그인이 되어 있으면?
+    setIsInputOpen(true); // 의견 작성 팝업을 열라고 신호 보냄
   };
 
   return (
@@ -149,7 +148,7 @@ export default function OpinionListPage() {
         </div>
       </div>
 
-      {/* 3️⃣ 플로팅 버튼 수정: setLocation 대신 setIsInputOpen(true) */}
+      {/* 3️⃣ 플로팅 버튼 */}
       <Button
         className="fixed bottom-20 left-1/2 -translate-x-1/2 md:bottom-6 h-14 px-6 rounded-full shadow-lg z-50 w-32 md:w-36 bg-primary hover:bg-primary/90 transition-all hover:scale-105"
         onClick={handleOpenInput}
@@ -159,10 +158,16 @@ export default function OpinionListPage() {
         <span className="font-semibold">제안하기</span>
       </Button>
 
-      {/* 4️⃣ 팝업 컴포넌트 삽입 */}
+      {/* 4️⃣ 팝업 컴포넌트들 (여기에 배치!) */}
       <OpinionInputSheet 
         open={isInputOpen} 
         onOpenChange={setIsInputOpen} 
+      />
+      
+      {/* 로그인 팝업 */}
+      <LoginDialog 
+        open={isLoginOpen} 
+        onOpenChange={setIsLoginOpen} 
       />
     </div>
   );
