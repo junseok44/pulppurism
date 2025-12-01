@@ -27,6 +27,13 @@ export default {
         ok_sand:"var(--ok_sand)",
         ok_sandhover:"var(--ok_sandhover)",
         ok_sandtxt:"var(--ok_sandtxt)",
+        ok_like:"var(--ok_like)",
+        ok_liketrns:"var(--ok_liketrns)",
+        ok_green:"var(--ok_green)",
+        ok_greentrns:"var(--ok_greentrns)",
+        ok_yellow:"var(--ok_yellow)",
+        ok_yellowtrns:"var(--ok_yellowtrns)",
+        ok_yellowtrnslt:"var(--ok_yellowtrnslt)",
         // Flat / base colors (regular buttons)
         background: "var(--background)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
