@@ -671,6 +671,29 @@ export default function AgendaDetailPage() {
     }
   };
 
+  const handleSaveBasicInfo = async () => {
+    // 기본 정보만 저장 (제목, 설명, 참고자료)
+    await updateAgendaMutation.mutateAsync({
+      title: editedTitle,
+      description: editedDescription,
+      status: editedStatus, // 상태는 유지
+      response: editedResponse.content.trim() && editedResponse.authorName.trim()
+        ? {
+            authorName: editedResponse.authorName.trim(),
+            responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
+            content: editedResponse.content.trim(),
+          }
+        : null,
+      okinewsUrl: editedOkinewsUrl.trim() || null,
+      referenceLinks: editedReferenceLinks,
+      referenceFiles: editedReferenceFiles,
+      regionalCases: editedRegionalCases,
+    });
+    
+    // 저장 후 편집 모드 닫기
+    setShowBasicInfoEdit(false);
+  };
+
   const handleSaveEdit = async () => {
     // 안건 정보 저장 (기본 정보만)
     await updateAgendaMutation.mutateAsync({
@@ -1564,8 +1587,17 @@ export default function AgendaDetailPage() {
                                     variant="outline"
                                     onClick={() => setShowBasicInfoEdit(false)}
                                     className="flex-1"
+                                    data-testid="button-cancel-basic-info-edit"
                                   >
                                     취소
+                                  </Button>
+                                  <Button
+                                    onClick={handleSaveBasicInfo}
+                                    disabled={updateAgendaMutation.isPending}
+                                    className="flex-1"
+                                    data-testid="button-save-basic-info"
+                                  >
+                                    {updateAgendaMutation.isPending ? "저장 중..." : "저장"}
                                   </Button>
                                 </div>
                               </div>
