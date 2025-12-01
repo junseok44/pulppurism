@@ -138,12 +138,12 @@ export default function OkAgendaCard({
           </div>
 
           {/* 순서 2: 제목 (text-shadow 추가로 가독성 UP) */}
-          <div className="w-full font-extrabold text-white text-lg leading-6 md:text-2xl md:leading-7 line-clamp-2 drop-shadow-md">
+          <div className="w-full font-extrabold text-white text-xl leading-6 md:text-2xl md:leading-7 line-clamp-2 drop-shadow-md">
             {title}
           </div>
 
           {/* 순서 3: 내용 */}
-          <div className="w-full text-white/90 text-[10px] md:text-xs font-medium leading-4 md:leading-5 line-clamp-2 drop-shadow-sm">
+          <div className="w-full text-white/90 text-[13px] md:text-[14px] leading-4 md:leading-5 line-clamp-2 drop-shadow-sm">
             {content}
           </div>
 

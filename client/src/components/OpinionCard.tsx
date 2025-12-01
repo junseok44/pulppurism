@@ -50,7 +50,7 @@ export default function OpinionCard({
         <div className="flex-1 space-y-2">
           <div>
             <p className="font-medium" data-testid={`text-author-${id}`}>{authorName}</p>
-            <p className="text-sm text-muted-foreground" data-testid={`text-time-${id}`}>{timestamp}</p>
+            <p className="text-sm text-ok_txtgray1" data-testid={`text-time-${id}`}>{timestamp}</p>
           </div>
           <p className="text-base line-clamp-3" data-testid={`text-content-${id}`}>{content}</p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
