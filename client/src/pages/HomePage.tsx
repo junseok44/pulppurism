@@ -6,6 +6,7 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import HomeAgendaCard from "@/components/HomeAgendaCard";
 import { useMemo, useState, useEffect } from "react"; // useState, useEffect 추가
 import PolicyCard from "@/components/PolicyCard";
+import HomeOpinionCard from "@/components/HomeOpinionCard";
 
 // 타임라인 아이템 타입 정의
 interface ExecutionTimelineItem {
@@ -305,26 +306,11 @@ export default function HomePage() {
               ) : recentOpinions.length > 0 ? (
                 <div className="flex gap-4">
                   {recentOpinions.map((opinion) => (
-                    <div
-                      key={opinion.id}
-                      className="min-w-[240px] w-[240px] bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sand hover:shadow-md transition-all cursor-pointer text-left"
-                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                    >
-                      <div className="mb-3">
-                        <MessageSquare className="w-8 h-8 text-ok_sandtxt bg-ok_sand p-1.5 rounded-full mb-3" />
-                        <p className="text-ok_txtgray2 font-bold line-clamp-2 leading-snug">
-                          {opinion.content}
-                        </p>
-                      </div>
-
-                      <div className="flex justify-between items-center text-xs text-ok_txtgray0 mt-2">
-                        <span>{new Date(opinion.createdAt).toLocaleDateString()}</span>
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-3.5 h-3.5" />
-                          {opinion.likes || 0}
-                        </span>
-                      </div>
-                    </div>
+                    <HomeOpinionCard 
+                    key={opinion.id}
+                    opinion={opinion}
+                    onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                  />
                   ))}
                   <div
                     onClick={() => setLocation("/opinions")}
