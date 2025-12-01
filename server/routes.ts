@@ -945,6 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: agendas.updatedAt,
           category: categories,
           okinews: agendas.okinews,
+          imageUrl:agendas.imageUrl, //image url add.
           bookmarkId: agendaBookmarks.id,
           bookmarkCount: sql<number>`(
             SELECT COUNT(*)::int
@@ -997,6 +998,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agendas/:id/image", requireAuth, upload.single("image"), async (req, res) => {
+    try {
+      if (!req.user?.isAdmin) return res.status(403).json({ error: "Admin only" });
+      if (!req.file) return res.status(400).json({ error: "No file" });
+
+      const agendaId = req.params.id;
+      const timestamp = Date.now();
+      const filename = `agendas/${agendaId}/cover-${timestamp}-${req.file.originalname}`;
+
+      await objectStorageService.uploadFile(filename, req.file.buffer as any);
+      const imageUrl = `/public-objects/${filename}`;
+
+      await db.update(agendas).set({ imageUrl }).where(eq(agendas.id, agendaId));
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      res.status(500).json({ error: "Upload failed" });
+    }
+  });
+
   app.get("/api/agendas/my-opinions", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
@@ -1016,6 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceLinks: agendas.referenceLinks,
           referenceFiles: agendas.referenceFiles,
           createdAt: agendas.createdAt,
+          imageUrl:agendas.imageUrl,
           updatedAt: agendas.updatedAt,
           okinews: agendas.okinews,
         })
@@ -1102,6 +1123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: agendas.updatedAt,
           category: categories,
           bookmarkId: agendaBookmarks.id,
+          imageUrl:agendas.imageUrl,
         })
         .from(agendas)
         .leftJoin(categories, eq(agendas.categoryId, categories.id))

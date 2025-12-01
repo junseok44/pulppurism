@@ -15,6 +15,7 @@ export default {
         ok_white1:"#ffffff",
         ok_gray2:"var(--ok_gray2)",
         ok_gray3:"var(--ok_gray3)",
+        ok_gray3hov:"var(--ok_gray3hov)",
         ok_gray1:"var(--ok_gray1)",  
         primary_hov:"var(--primary_hov)",
         ok_sub1:"var(--ok_sub1)",

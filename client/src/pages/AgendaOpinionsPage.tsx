@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import AgendaHeader from "@/components/AgendaHeader";
 import OpinionCard from "@/components/OpinionCard";
 import { Card } from "@/components/ui/card";
@@ -238,7 +237,7 @@ export default function AgendaOpinionsPage() {
           <div className="space-y-6">
             <AgendaHeader
               agenda={agenda}
-              user={user}
+              user={user ?? undefined}
               onBookmarkClick={handleBookmarkClick}
               bookmarkLoading={bookmarkMutation.isPending}
               showBackButton={true}
@@ -303,8 +302,6 @@ export default function AgendaOpinionsPage() {
           </Button>
         </div>
       </div>
-
-      <MobileNav />
     </div>
   );
 }

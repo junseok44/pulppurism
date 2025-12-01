@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -171,7 +170,6 @@ export default function MyPage() {
             <Button onClick={() => setLocation("/")}>홈으로 이동</Button>
           </Card>
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -447,8 +445,6 @@ export default function MyPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <MobileNav />
     </div>
   );
 }

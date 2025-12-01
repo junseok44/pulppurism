@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import OpinionCard from "@/components/OpinionCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,7 +54,6 @@ export default function LikedOpinionsPage() {
             ))}
           </div>
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -116,7 +114,6 @@ export default function LikedOpinionsPage() {
           </div>
         )}
       </div>
-      <MobileNav />
     </div>
   );
 }

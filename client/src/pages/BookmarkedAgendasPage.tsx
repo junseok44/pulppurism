@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import AgendaCard from "@/components/AgendaCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +52,6 @@ export default function BookmarkedAgendasPage() {
             ))}
           </div>
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -110,7 +108,6 @@ export default function BookmarkedAgendasPage() {
           </div>
         )}
       </div>
-      <MobileNav />
     </div>
   );
 }

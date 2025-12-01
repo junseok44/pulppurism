@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -207,7 +206,6 @@ export default function SuccessAgendaPage() {
           </Tabs>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

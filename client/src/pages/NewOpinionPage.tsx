@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -53,7 +52,6 @@ export default function NewOpinionPage() {
             </Button>
           </Card>
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -374,7 +372,6 @@ export default function NewOpinionPage() {
           </div>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

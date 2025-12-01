@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -47,7 +46,6 @@ export default function SuccessPage() {
           </Button>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

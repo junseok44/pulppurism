@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MoreVertical, ArrowLeft, CheckCircle, ArrowRight, Pencil, Trash2, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -448,7 +447,6 @@ export default function OpinionDetailPage() {
         <div className="max-w-4xl mx-auto px-4 py-6 text-center">
           의견을 불러오는 중...
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -460,7 +458,6 @@ export default function OpinionDetailPage() {
         <div className="max-w-4xl mx-auto px-4 py-6 text-center">
           의견을 찾을 수 없습니다
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -805,7 +802,6 @@ export default function OpinionDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <MobileNav />
     </div>
   );
 }

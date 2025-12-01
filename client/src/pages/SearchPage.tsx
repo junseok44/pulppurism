@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowLeft, Loader2, MessageSquare, FileText } from "lucide-react"; // 아이콘 추가
@@ -183,7 +182,6 @@ export default function SearchPage() {
           )}
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }
