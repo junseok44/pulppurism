@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Trash2, ThumbsUp, Mic } from "lucide-react";
 import type { Opinion } from "@shared/schema";
 import { format } from "date-fns";
+import { getUserDisplayName } from "@/utils/user";
 
 type OpinionWithUser = Opinion & {
   username: string;
@@ -120,7 +121,7 @@ export default function AllOpinionsManagement() {
                 <TableRow key={opinion.id} data-testid={`opinion-row-${opinion.id}`}>
                   <TableCell>
                     <p className="font-medium text-sm">
-                      {opinion.displayName || opinion.username}
+                      {getUserDisplayName(opinion.displayName, opinion.username)}
                     </p>
                   </TableCell>
                   <TableCell>

@@ -17,6 +17,7 @@ import { Search, Users, Loader2, Shield } from "lucide-react";
 import type { User } from "@shared/schema";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { getUserDisplayName } from "@/utils/user";
 
 type UserWithoutPassword = Omit<User, "password">;
 
@@ -141,12 +142,12 @@ export default function AdminUsersPage() {
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={user.avatarUrl || undefined} />
                         <AvatarFallback>
-                          {(user.displayName || user.username || "U")[0].toUpperCase()}
+                          {(getUserDisplayName(user.displayName, user.username) || "U")[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {user.displayName || user.username}
+                          {getUserDisplayName(user.displayName, user.username)}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           @{user.username}

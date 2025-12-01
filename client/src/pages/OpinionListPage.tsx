@@ -12,6 +12,7 @@ import TitleCard from "@/components/TitleCard";
 import OpinionInputSheet from "@/components/OpinionInputSheet";
 import { useToast } from "@/hooks/use-toast";
 import LoginDialog from "@/components/LoginDialog"; // 👈 LoginDialog import
+import { getUserDisplayName } from "@/utils/user";
 
 interface OpinionWithUser {
   id: string;
@@ -115,7 +116,7 @@ export default function OpinionListPage() {
                   <OpinionCard
                     key={opinion.id}
                     id={opinion.id}
-                    authorName={opinion.displayName || opinion.username}
+                    authorName={getUserDisplayName(opinion.displayName, opinion.username)}
                     authorAvatar={opinion.avatarUrl || undefined}
                     content={opinion.content}
                     likeCount={opinion.likes}

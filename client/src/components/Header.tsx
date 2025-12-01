@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"; 
 import { useQuery } from "@tanstack/react-query";
 import LoginDialog from "@/components/LoginDialog";
+import { getUserDisplayName } from "@/utils/user";
 
 interface AuthProviders {
   google: boolean;
@@ -186,9 +187,9 @@ export default function Header() {
 
                  <button onClick={() => setLocation("/my")} className="w-9 h-9 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-accent flex-shrink-0 overflow-hidden">
                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={user.avatarUrl || undefined} alt={user.username} className="object-cover" />
+                      <AvatarImage src={user.avatarUrl || undefined} alt={getUserDisplayName(user.displayName, user.username)} className="object-cover" />
                       <AvatarFallback className="bg-transparent text-sm font-medium text-primary">
-                        {user.username[0].toUpperCase()}
+                        {getUserDisplayName(user.displayName, user.username)[0].toUpperCase()}
                       </AvatarFallback>
                    </Avatar>
                  </button>
@@ -219,14 +220,14 @@ export default function Header() {
                       className="flex items-center gap-3 cursor-pointer group"
                     >
                       <Avatar className="w-12 h-12 border border-gray-100 shadow-sm transition-transform group-hover:scale-105">
-                        <AvatarImage src={user.avatarUrl || undefined} alt={user.username} className="object-cover" />
+                        <AvatarImage src={user.avatarUrl || undefined} alt={getUserDisplayName(user.displayName, user.username)} className="object-cover" />
                         <AvatarFallback className="bg-primary text-white text-lg font-bold">
-                          {user.username[0].toUpperCase()}
+                          {getUserDisplayName(user.displayName, user.username)[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <SheetTitle className="text-lg font-bold text-ok_txtgray2 group-hover:text-primary transition-colors">
-                          {user.username}님
+                          {getUserDisplayName(user.displayName, user.username)}님
                         </SheetTitle>
                         <p className="text-xs text-ok_txtgray1">오늘도 즐거운 하루 되세요! 🌱</p>
                       </div>

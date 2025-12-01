@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { getUserDisplayName } from "@/utils/user";
 
 type OpinionWithUser = Opinion & {
   username: string;
@@ -208,7 +209,7 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-medium text-sm">
-                            {opinion.displayName || opinion.username}
+                            {getUserDisplayName(opinion.displayName, opinion.username)}
                           </p>
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(opinion.createdAt), "yyyy-MM-dd")}
@@ -535,7 +536,7 @@ export default function ClusterWorkbench() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-medium text-sm">
-                            {opinion.displayName || opinion.username}
+                            {getUserDisplayName(opinion.displayName, opinion.username)}
                           </p>
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(opinion.createdAt), "yyyy-MM-dd")}

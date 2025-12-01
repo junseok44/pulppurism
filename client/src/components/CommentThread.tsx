@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { getUserDisplayName } from "@/utils/user";
 
 export interface CommentThreadComment {
   id: string;
@@ -55,7 +56,7 @@ interface CommentItemProps {
 
 function CommentItem({ comment, currentUserId, onEdit, onDelete, onReport }: CommentItemProps) {
   const isAuthor = currentUserId === comment.userId;
-  const displayName = comment.displayName || comment.username;
+  const displayName = getUserDisplayName(comment.displayName, comment.username);
   const hasMenu = currentUserId && (isAuthor ? (onEdit || onDelete) : onReport);
   
   return (
