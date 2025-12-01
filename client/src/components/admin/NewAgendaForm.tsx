@@ -44,11 +44,11 @@ export default function NewAgendaForm() {
   const urlTitle = searchParams.get('title');
   const urlSummary = searchParams.get('summary');
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: clusters = [] } = useQuery<Cluster[]>({
+  const { data: clusters = [], isLoading: clustersLoading } = useQuery<Cluster[]>({
     queryKey: ["/api/clusters"],
   });
 
@@ -139,10 +139,10 @@ export default function NewAgendaForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !categoryId || !clusterId || clusterId === "none") {
+    if (!title || !description || !categoryId) {
       toast({
         title: "입력 오류",
-        description: "모든 필수 항목을 입력해주세요.",
+        description: "제목, 설명, 카테고리는 필수 항목입니다.",
         variant: "destructive",
       });
       return;
@@ -178,22 +178,35 @@ export default function NewAgendaForm() {
 
             <div className="space-y-2">
               <Label htmlFor="cluster">
-                클러스터 선택 <span className="text-destructive">*</span>
+                클러스터 선택
               </Label>
-              <Select value={clusterId || undefined} onValueChange={(val) => setClusterId(val || "")}>
-                <SelectTrigger data-testid="select-cluster">
-                  <SelectValue placeholder="클러스터를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clusters
-                    .filter(c => !c.agendaId)
-                    .map((cluster) => (
-                      <SelectItem key={cluster.id} value={cluster.id}>
-                        {cluster.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              {clustersLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  클러스터 목록을 불러오는 중...
+                </div>
+              ) : (
+                <Select value={clusterId || "none"} onValueChange={(val) => setClusterId(val === "none" ? "" : val)}>
+                  <SelectTrigger data-testid="select-cluster">
+                    <SelectValue placeholder="클러스터를 선택하세요 (선택사항)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">클러스터 없이 생성</SelectItem>
+                    {clusters
+                      .filter(c => !c.agendaId)
+                      .map((cluster) => (
+                        <SelectItem key={cluster.id} value={cluster.id}>
+                          {cluster.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {!clustersLoading && clusters.filter(c => !c.agendaId).length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  안건화되지 않은 클러스터가 없습니다. 클러스터 없이 생성할 수 있습니다.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
