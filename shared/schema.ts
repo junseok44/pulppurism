@@ -75,6 +75,7 @@ export const opinions = pgTable("opinions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// 롤백됨: answered 포함
 export const agendaStatusEnum = pgEnum("agenda_status", [
   "created",
   "voting",
@@ -103,10 +104,11 @@ export const agendas = pgTable("agendas", {
   referenceFiles: text("reference_files").array(),
   regionalCases: text("regional_cases").array(),
   tags: text("tags").array(),
-  response: jsonb("response"),
+  response: jsonb("response"), // 롤백됨: jsonb 타입
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   okinews: boolean("okinews").notNull().default(false),
+  imageUrl: text("image_url"), 
 });
 
 export const voteTypeEnum = pgEnum("vote_type", [
@@ -297,6 +299,7 @@ export const insertOpinionSchema = createInsertSchema(opinions).omit({
   createdAt: true,
   likes: true,
 });
+
 // status 필드를 먼저 omit하고 나중에 새 enum으로 재정의
 const baseAgendaSchema = createInsertSchema(agendas)
   .omit({
@@ -309,7 +312,7 @@ const baseAgendaSchema = createInsertSchema(agendas)
     response: true, // response도 omit하고 재정의
   })
   .extend({
-    // 새로운 status enum 정의
+    // 롤백됨: answered 상태로 복귀
     status: z.enum(["created", "voting", "proposing", "answered", "executing", "executed"]).optional(),
     startDate: z
       .string()
@@ -323,6 +326,7 @@ const baseAgendaSchema = createInsertSchema(agendas)
     referenceLinks: z.array(z.string().url()).nullish(),
     referenceFiles: z.array(z.string()).nullish(),
     regionalCases: z.array(z.string()).nullish(),
+    // 롤백됨: response를 객체로 받음
     response: z
       .object({
         authorName: z.string().min(1, "답변자를 입력해주세요"),
@@ -330,6 +334,8 @@ const baseAgendaSchema = createInsertSchema(agendas)
         content: z.string().min(1, "답변 내용을 입력해주세요"),
       })
       .nullish(),
+    // 이미지 업로드를 위해 추가
+    imageUrl: z.string().nullish(),
   });
 
 export const insertAgendaSchema = baseAgendaSchema;

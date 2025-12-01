@@ -148,24 +148,24 @@ export default function AgendaListPage() {
     onMutate: async ({ agendaId, isBookmarked }) => {
       // Optimistic update: 즉시 UI 업데이트
       await queryClient.cancelQueries({ queryKey: [agendasQueryKey] });
-      
+
       const previousAgendas = queryClient.getQueryData<AgendaWithCategory[]>([agendasQueryKey]);
-      
+
       if (previousAgendas) {
         const updatedAgendas = previousAgendas.map((agenda) =>
           agenda.id === agendaId
             ? {
-                ...agenda,
-                isBookmarked: !isBookmarked,
-                bookmarkCount: isBookmarked
-                  ? (agenda.bookmarkCount || 0) - 1
-                  : (agenda.bookmarkCount || 0) + 1,
-              }
+              ...agenda,
+              isBookmarked: !isBookmarked,
+              bookmarkCount: isBookmarked
+                ? (agenda.bookmarkCount || 0) - 1
+                : (agenda.bookmarkCount || 0) + 1,
+            }
             : agenda
         );
         queryClient.setQueryData<AgendaWithCategory[]>([agendasQueryKey], updatedAgendas);
       }
-      
+
       return { previousAgendas };
     },
     onError: (err, variables, context) => {
@@ -235,11 +235,18 @@ export default function AgendaListPage() {
                 더보기
               </Button>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
+            <div className="flex gap-1 md:gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x">
               {spotlightAgendas.map((agenda) => (
                 <div
                   key={agenda.id}
-                  className="w-[42vw] min-w-[130px] md:w-[18vw] md:min-w-[220px] h-[30vh] md:h-[50vh] md:min-h-[180px] snap-center"
+                  // 👇 [수정됨] 너비와 최소 너비를 대폭 늘렸습니다.
+                  className="
+                      shrink-0 snap-center
+                      w-[60vw] min-w-[240px] 
+                      h-[35vh] min-h-[220px] 
+                      md:w-[22vw] md:min-w-[280px] 
+                      md:h-[50vh] md:min-h-[300px]
+                    "
                 >
                   <OkAgendaCard
                     id={agenda.id}
@@ -251,6 +258,7 @@ export default function AgendaListPage() {
                     bookmarkCount={agenda.bookmarkCount || 0}
                     isBookmarked={agenda.isBookmarked || false}
                     okinews={agenda.okinews}
+                    imageUrl={agenda.imageUrl}
                     onClick={() => setLocation(`/agendas/${agenda.id}`)}
                   />
                 </div>
