@@ -192,7 +192,6 @@ export default function Header() {
                       </AvatarFallback>
                    </Avatar>
                  </button>
-                 <Button variant="outline" size="sm" className="rounded-full h-9 px-4 hidden sm:flex flex-shrink-0 whitespace-nowrap" onClick={() => logout()} disabled={isLoggingOut}><LogOut className="w-3.5 h-3.5 mr-2" />로그아웃</Button>
                </>
              ) : (
                <Button className="rounded-full px-6 font-bold shadow-sm flex-shrink-0 whitespace-nowrap" onClick={() => setShowLoginDialog(true)}><LogIn className="w-4 h-4 mr-2" />로그인</Button>
