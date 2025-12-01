@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import TitleCard from "@/components/TitleCard";
 import { ArrowRight, ArrowDown } from "lucide-react";
 
@@ -9,7 +8,7 @@ export default function HowToPage() {
       <Header />
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <TitleCard
-          title="두런두런 옥천마루 성장 과정"
+          title="두런두런 옥천마루 이용 방법"
           description="작은 씨앗이 거대한 나무가 되기까지의 여정"
         />
         {/* 2. [핵심] 성장 과정 다이어그램 (그림 대신 코드로 구현) */}
@@ -61,8 +60,6 @@ export default function HowToPage() {
         </div>
 
       </main>
-
-      <MobileNav />
     </div>
   );
 }

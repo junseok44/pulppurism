@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import AgendaHeader from "@/components/AgendaHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -567,7 +566,6 @@ export default function AgendaReferencesPage() {
           </div>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

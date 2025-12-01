@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import MobileNav from "@/components/MobileNav";
 import AgendaHeader from "@/components/AgendaHeader";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, X, Trash2, Upload, ChevronRight, Check } from "lucide-react";
@@ -1292,7 +1291,6 @@ export default function AgendaDetailPage() {
         </div>
       </div>
 
-      <MobileNav />
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent
@@ -2400,8 +2398,6 @@ export default function AgendaDetailPage() {
           )}
         </DialogContent>
       </Dialog>
-
-      <MobileNav />
     </div>
   );
 }
