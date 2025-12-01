@@ -9,10 +9,9 @@ import {
   Heart,
   FileText,
   Bookmark,
-  Bell,
   User,
-  Settings,
   LogOut,
+  Trash2,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +43,7 @@ export default function MyPage() {
   const { user, logout } = useUser();
   const [, setLocation] = useLocation();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const { toast } = useToast();
 
@@ -112,6 +112,52 @@ export default function MyPage() {
     }
   };
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !user.id) {
+        throw new Error("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+      }
+
+      console.log("[MyPage] Deleting account:", {
+        userId: user.id,
+      });
+
+      try {
+        const response = await apiRequest("DELETE", "/api/users/me");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "회원 탈퇴 중 오류가 발생했습니다.");
+        }
+        return await response.json();
+      } catch (error: any) {
+        console.error("[MyPage] Account deletion error:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      console.log("[MyPage] Account deletion success");
+      toast({
+        title: "회원 탈퇴가 완료되었습니다",
+        description: "이용해주셔서 감사합니다.",
+      });
+      logout();
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      console.error("[MyPage] Account deletion error:", error);
+      const errorMessage = error?.message || "회원 탈퇴 중 오류가 발생했습니다.";
+      toast({
+        variant: "destructive",
+        title: "탈퇴 실패",
+        description: errorMessage,
+      });
+    },
+  });
+
+  const handleDeleteAccount = () => {
+    deleteAccountMutation.mutate();
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -135,31 +181,6 @@ export default function MyPage() {
     email: user.email || "",
     avatar: user.avatarUrl || "",
   };
-
-  const notifications = [
-    {
-      id: "1",
-      type: "reply",
-      message: "내 의견에 새로운 답글이 달렸습니다",
-      time: "2시간 전",
-      isRead: false,
-    },
-    {
-      id: "2",
-      type: "agenda",
-      message: "내 의견이 '학교 앞 교통안전' 안건에 포함되었습니다",
-      time: "1일 전",
-      isRead: false,
-    },
-    {
-      id: "3",
-      type: "update",
-      message:
-        "즐겨찾기한 '공원 소음 문제' 안건이 '검토 중'으로 변경되었습니다",
-      time: "2일 전",
-      isRead: true,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -313,73 +334,10 @@ export default function MyPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">알림 내역</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-testid="button-view-all-notifications"
-            >
-              전체보기
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`p-4 hover-elevate active-elevate-2 cursor-pointer ${
-                  !notification.isRead ? "border-l-4 border-l-primary" : ""
-                }`}
-                data-testid={`card-notification-${notification.id}`}
-              >
-                <div className="flex items-start gap-3">
-                  <Bell
-                    className={`w-5 h-5 mt-0.5 ${!notification.isRead ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  <div className="flex-1">
-                    <p
-                      className={
-                        notification.isRead ? "text-muted-foreground" : ""
-                      }
-                    >
-                      {notification.message}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {notification.time}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
         <Separator />
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">계정 설정</h3>
-
-          <Card
-            className="p-4 hover-elevate active-elevate-2 cursor-pointer"
-            data-testid="card-account-settings"
-          >
-            <div className="flex items-center gap-3">
-              <Settings className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium">계정 정보</span>
-            </div>
-          </Card>
-
-          <Card
-            className="p-4 hover-elevate active-elevate-2 cursor-pointer"
-            data-testid="card-notification-settings"
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium">알림 설정</span>
-            </div>
-          </Card>
 
           <Card
             className="p-4 hover-elevate active-elevate-2 cursor-pointer"
@@ -392,6 +350,17 @@ export default function MyPage() {
             <div className="flex items-center gap-3">
               <LogOut className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">로그아웃</span>
+            </div>
+          </Card>
+
+          <Card
+            className="p-4 hover-elevate active-elevate-2 cursor-pointer"
+            data-testid="card-delete-account"
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
+            <div className="flex items-center gap-3">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              <span className="font-medium text-destructive">회원 탈퇴</span>
             </div>
           </Card>
         </div>
@@ -435,6 +404,45 @@ export default function MyPage() {
               data-testid="button-save-profile"
             >
               {updateProfileMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent data-testid="dialog-delete-account">
+          <DialogHeader>
+            <DialogTitle>회원 탈퇴</DialogTitle>
+            <DialogDescription>
+              정말로 회원 탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없으며, 모든 데이터가 삭제됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              회원 탈퇴 시 다음 정보가 모두 삭제됩니다:
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+              <li>프로필 정보</li>
+              <li>작성한 의견 및 댓글</li>
+              <li>좋아요 및 즐겨찾기</li>
+              <li>기타 모든 활동 내역</li>
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              data-testid="button-cancel-delete"
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteAccountMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteAccountMutation.isPending ? "처리 중..." : "회원 탈퇴"}
             </Button>
           </DialogFooter>
         </DialogContent>

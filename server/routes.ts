@@ -29,6 +29,9 @@ import {
   reports,
   opinionLikes,
   agendaBookmarks,
+  votes,
+  commentLikes,
+  executionTimelineItems,
 } from "@shared/schema";
 import { eq, and, desc, inArray, sql, isNull } from "drizzle-orm";
 import { requireAuth } from "./auth";
@@ -2017,6 +2020,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("[PATCH /api/users/me] Error:", error);
       res.status(500).json({ error: "Failed to update user profile" });
+    }
+  });
+
+  app.delete("/api/users/me", requireAuth, async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userId = req.user.id;
+
+      // 사용자 관련 데이터 삭제 (외래키 제약조건을 고려한 순서)
+      // 1. 댓글 좋아요 삭제 (comments를 참조하므로 먼저 삭제)
+      const userComments = await db
+        .select({ id: dbComments.id })
+        .from(dbComments)
+        .where(eq(dbComments.userId, userId));
+
+      if (userComments.length > 0) {
+        const commentIds = userComments.map((c) => c.id);
+        await db.delete(commentLikes).where(inArray(commentLikes.commentId, commentIds));
+      }
+
+      // 2. 댓글 삭제
+      await db.delete(dbComments).where(eq(dbComments.userId, userId));
+
+      // 3. 의견 클러스터 연결 삭제 (opinions를 참조하므로 먼저 삭제)
+      const userOpinions = await db
+        .select({ id: opinions.id })
+        .from(opinions)
+        .where(eq(opinions.userId, userId));
+
+      if (userOpinions.length > 0) {
+        const opinionIds = userOpinions.map((o) => o.id);
+        // 의견 클러스터 연결 삭제
+        await db.delete(opinionClusters).where(inArray(opinionClusters.opinionId, opinionIds));
+        // 사용자가 작성한 의견에 대한 모든 좋아요 삭제 (다른 사용자들이 누른 것 포함)
+        await db.delete(opinionLikes).where(inArray(opinionLikes.opinionId, opinionIds));
+      }
+
+      // 4. 사용자가 누른 의견 좋아요 삭제 (다른 사용자들이 작성한 의견에 대한 좋아요)
+      await db.delete(opinionLikes).where(eq(opinionLikes.userId, userId));
+
+      // 5. 의견 삭제
+      await db.delete(opinions).where(eq(opinions.userId, userId));
+
+      // 6. 투표 삭제
+      await db.delete(votes).where(eq(votes.userId, userId));
+
+      // 7. 안건 즐겨찾기 삭제
+      await db.delete(agendaBookmarks).where(eq(agendaBookmarks.userId, userId));
+
+      // 8. 신고 삭제 (reporterId로)
+      await db.delete(reports).where(eq(reports.reporterId, userId));
+
+      // 9. 실행 타임라인 삭제
+      await db.delete(executionTimelineItems).where(eq(executionTimelineItems.userId, userId));
+
+      // 10. 사용자 계정 삭제
+      await db.delete(users).where(eq(users.id, userId));
+
+      // 응답 먼저 전송
+      res.json({ message: "Account deleted successfully" });
+
+      // 세션 삭제 (비동기로 처리)
+      req.logout((err) => {
+        if (err) {
+          console.error("[DELETE /api/users/me] Logout error:", err);
+        }
+      });
+    } catch (error) {
+      console.error("[DELETE /api/users/me] Error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
     }
   });
 
