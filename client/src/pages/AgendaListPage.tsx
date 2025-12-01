@@ -44,20 +44,6 @@ export default function AgendaListPage() {
   // 1️⃣ [추가] 로그인 팝업 상태 관리
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  // 2️⃣ [수정] 스포트라이트 섹션 랜덤 로직 확장
-  const spotlightSection = useMemo<SpotlightSection>(() => {
-    const sections: SpotlightSection[] = [
-      "created", 
-      "voting", 
-      "proposing", 
-      "answered", 
-      "executing", 
-      "executed",
-      "rejected" // 반려 상태도 포함
-    ];
-    return sections[Math.floor(Math.random() * sections.length)];
-  }, []);
-
   const {
     data: categories,
     isLoading: categoriesLoading,
@@ -78,6 +64,31 @@ export default function AgendaListPage() {
   });
 
   const allAgendas = agendas || [];
+
+  const spotlightSection = useMemo<SpotlightSection>(() => {
+    const allSections: SpotlightSection[] = [
+      "created",
+      "voting",
+      "proposing",
+      "answered",
+      "executing",
+      "executed",
+      "rejected"
+    ];
+    // 데이터가 아직 로딩 중이거나 하나도 없으면 기본값 'voting' 리턴
+    if (allAgendas.length === 0) return "voting";
+
+    // 실제로 데이터가 하나라도 들어있는 상태만 골라내기
+    const validSections = allSections.filter(section =>
+      allAgendas.some(agenda => agenda.status === section)
+    );
+
+    // 모든 상태에 안건이 하나도 없다면? (예외 처리) -> 그냥 'voting' 리턴
+    if (validSections.length === 0) return "voting";
+
+    // 유효한 섹션 중에서 랜덤 선택
+    return validSections[Math.floor(Math.random() * validSections.length)];
+  }, [allAgendas]);
 
   let filteredAgendas = allAgendas;
 
@@ -107,6 +118,7 @@ export default function AgendaListPage() {
         return 0;
     }
   });
+
 
   const getStatusFilterLabel = () => {
     switch (statusFilter) {
@@ -363,9 +375,9 @@ export default function AgendaListPage() {
       </main>
 
       {/* 5️⃣ [추가] 로그인 팝업 배치 */}
-      <LoginDialog 
-        open={isLoginOpen} 
-        onOpenChange={setIsLoginOpen} 
+      <LoginDialog
+        open={isLoginOpen}
+        onOpenChange={setIsLoginOpen}
       />
     </div>
   );
