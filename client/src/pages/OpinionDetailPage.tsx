@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { trackOpinionLike, trackCommentCreated } from "@/lib/analytics";
+import LoginDialog from "@/components/LoginDialog"; // 👈 LoginDialog import
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,9 @@ export default function OpinionDetailPage() {
   const [reportingComment, setReportingComment] = useState<CommentWithUser | null>(null);
   const { user } = useUser();
   const { toast } = useToast();
+
+  // 1️⃣ 로그인 팝업 상태 관리
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const { data: opinion, isLoading: opinionLoading } = useQuery<OpinionDetail>({
     queryKey: [`/api/opinions/${opinionId}`],
@@ -325,12 +329,10 @@ export default function OpinionDetailPage() {
     },
   });
 
+  // 2️⃣ 좋아요 핸들러 수정
   const handleLike = () => {
     if (!user) {
-      toast({
-        title: "로그인이 필요합니다",
-        variant: "destructive",
-      });
+      setIsLoginOpen(true);
       return;
     }
     likeMutation.mutate();
@@ -377,12 +379,10 @@ export default function OpinionDetailPage() {
     },
   });
 
+  // 3️⃣ 답글 등록 핸들러 수정
   const handleSubmitComment = () => {
     if (!user) {
-      toast({
-        title: "로그인이 필요합니다",
-        variant: "destructive",
-      });
+      setIsLoginOpen(true);
       return;
     }
     if (comment.trim()) {
@@ -580,7 +580,7 @@ export default function OpinionDetailPage() {
               <button
                 className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleLike}
-                disabled={!user || likeMutation.isPending || likeStatusLoading}
+                disabled={likeMutation.isPending || likeStatusLoading} // !user 제거 (클릭 가능해야 팝업이 뜸)
                 data-testid="button-like"
               >
                 <Heart
@@ -801,6 +801,12 @@ export default function OpinionDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 4️⃣ 로그인 다이얼로그 추가 */}
+      <LoginDialog 
+        open={isLoginOpen} 
+        onOpenChange={setIsLoginOpen} 
+      />
 
     </div>
   );

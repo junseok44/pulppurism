@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Mic, StopCircle, Send, Loader2, Bot, Check, Edit2 } from "lucide-react"; 
+import { Mic, StopCircle, Send, Loader2, Bot, Check, Edit2, X } from "lucide-react"; // X 아이콘 추가
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,8 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isConfirming, setIsConfirming] = useState(false);
+  // 🚀 [추가] 제출 완료 상태 관리
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [draftContent, setDraftContent] = useState("");
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
       setContent("");
       setDraftContent("");
       setIsConfirming(false);
+      setIsSubmitted(false); // 🚀 초기화
       voiceRecorder.clearRecording();
     }
   }, [open, user]);
@@ -60,7 +63,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isConfirming]);
+  }, [messages, isConfirming, isSubmitted]); // isSubmitted 의존성 추가
 
   useEffect(() => {
     return () => {
@@ -109,13 +112,12 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
       trackOpinionCreated("text");
       setMessages(prev => [
         ...prev, 
-        { id: 'done', role: 'system', text: "소중한 의견 감사합니다! 주신 의견과 비슷한 목소리들이 모이면 안건으로 생성될 수 있어요." }
+        { id: 'done', role: 'system', text: "소중한 의견 감사합니다! 주신 의견과 비슷한 목소리들이 모이면 안건으로 생성될 수 있어요. 😊" }
       ]);
       
-      setTimeout(() => {
-        onOpenChange(false);
-        queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
-      }, 2000);
+      // 🚀 [수정] 자동 닫힘 제거하고 제출 완료 상태로 변경
+      setIsSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/opinions"] });
     },
     onError: () => {
       toast({ variant: "destructive", title: "제출 실패", description: "다시 시도해주세요." });
@@ -183,6 +185,10 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full bg-ok_gray2" side="right">
@@ -197,7 +203,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
           </div>
         </SheetHeader>
 
-        {/* 2. 채팅 영역 (여기에 배너 넣음!) */}
+        {/* 2. 채팅 영역 */}
         <div 
           ref={scrollRef}
           className="flex-1 overflow-y-auto p-4 space-y-4"
@@ -226,8 +232,8 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
             </div>
           ))}
 
-          {/* ✨ [위치 이동] 음성 입력 배너: 채팅 메시지들 바로 아래에 배치! */}
-          {!isConfirming && !voiceRecorder.isRecording && (
+          {/* 음성 입력 배너 (제출 전까지만 표시) */}
+          {!isConfirming && !isSubmitted && !voiceRecorder.isRecording && (
             <div className="py-2 pl-10 pr-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <Button
                 variant="ghost"
@@ -253,11 +259,23 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
           )}
         </div>
 
-        {/* 3. 하단 입력창 영역 (배너 제거하고 입력창만 남김) */}
+        {/* 3. 하단 입력창 영역 */}
         <div className="bg-ok_gray1 p-3">
           
-          {isConfirming ? (
-            // 확인 모드 버튼
+          {/* 🚀 [수정] 상태에 따른 버튼 렌더링 분기 */}
+          {isSubmitted ? (
+            // 1️⃣ 제출 완료 상태: 닫기 버튼 표시
+            <div className="animate-in slide-in-from-bottom-2 fade-in duration-300">
+              <Button 
+                onClick={handleClose}
+                className="w-full h-12 rounded-xl text-base bg-primary hover:bg-ok_sub1/90 gap-2"
+              >
+                <X className="w-5 h-5" />
+                닫기
+              </Button>
+            </div>
+          ) : isConfirming ? (
+            // 2️⃣ 확인 모드: 수정/등록 버튼
             <div className="flex gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
               <Button 
                 variant="ghost" 
@@ -281,7 +299,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
               </Button>
             </div>
           ) : (
-            // 일반 입력 모드
+            // 3️⃣ 일반 입력 모드
             <>
               {voiceRecorder.isRecording ? (
                  <div className="flex items-center justify-between bg-red-50 rounded-full px-4 py-2 animate-pulse border border-red-100">
@@ -319,7 +337,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
 
                   <Button
                     size="icon"
-                    className={`flex-shrink-0 rounded-full w-10 h-10 mb-1 transition-all ${
+                    className={`flex items-center justify-center flex-shrink-0 rounded-full w-10 h-10 mb-1 transition-all ${
                       content.trim() ? "bg-primary hover:bg-primary/90" : "bg-gray-200 text-gray-400 hover:bg-gray-200"
                     }`}
                     onClick={handleDraftSubmit}
@@ -328,7 +346,7 @@ export default function OpinionInputSheet({ open, onOpenChange }: OpinionInputSh
                     {transcribeMutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Send className="w-5 h-5 ml-0.5" />
+                      <Send className="w-5 h-5" />
                     )}
                   </Button>
                 </div>
