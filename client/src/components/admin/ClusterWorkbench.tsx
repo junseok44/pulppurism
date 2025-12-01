@@ -45,8 +45,17 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: opinions = [], isLoading } = useQuery<OpinionWithUser[]>({
+  const { data: opinions = [], isLoading, error } = useQuery<OpinionWithUser[]>({
     queryKey: ["/api/clusters", cluster.id, "opinions"],
+    queryFn: async () => {
+      const response = await fetch(`/api/clusters/${cluster.id}/opinions`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch opinions: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: isExpanded,
   });
 
@@ -195,6 +204,14 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin opacity-50" />
                 <p className="text-sm text-muted-foreground">로딩 중...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-destructive">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">의견을 불러오는 중 오류가 발생했습니다</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {error instanceof Error ? error.message : "알 수 없는 오류"}
+                </p>
               </div>
             ) : opinions.length > 0 ? (
               <div className="space-y-2">

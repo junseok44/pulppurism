@@ -1854,7 +1854,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: clusters.id,
             title: clusters.title,
             summary: clusters.summary,
-            opinionCount: clusters.opinionCount,
+            opinionCount: sql<number>`(
+              SELECT COUNT(*)::int
+              FROM ${opinionClusters}
+              WHERE ${opinionClusters.clusterId} = ${clusters.id}
+            )`.as("opinion_count"),
             similarity: clusters.similarity,
             createdAt: clusters.createdAt,
           })

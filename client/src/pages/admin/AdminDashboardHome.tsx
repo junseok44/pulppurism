@@ -84,8 +84,18 @@ export default function AdminDashboardHome() {
     queryKey: ["/api/reports"],
   });
 
-  const { data: clusterOpinions = [] } = useQuery<OpinionWithUser[]>({
+  const { data: clusterOpinions = [], isLoading: clusterOpinionsLoading, error: clusterOpinionsError } = useQuery<OpinionWithUser[]>({
     queryKey: ["/api/clusters", expandedClusterId, "opinions"],
+    queryFn: async () => {
+      if (!expandedClusterId) return [];
+      const response = await fetch(`/api/clusters/${expandedClusterId}/opinions`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch opinions: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: !!expandedClusterId,
   });
 
@@ -259,10 +269,10 @@ export default function AdminDashboardHome() {
                             <MessageSquare className="w-3 h-3" />
                             {cluster.opinionCount}개
                           </span>
-                          {cluster.similarity && (
+                          {cluster.similarity !== null && (
                             <span className="flex items-center gap-1 text-muted-foreground text-xs">
                               <Sparkles className="w-3 h-3" />
-                              {Math.round(cluster.similarity * 100)}%
+                              {cluster.similarity}%
                             </span>
                           )}
                           <span className="text-muted-foreground text-xs">
@@ -316,10 +326,24 @@ export default function AdminDashboardHome() {
                     {expandedClusterId === cluster.id && (
                       <div className="mt-3 pt-3 border-t space-y-2">
                         <p className="text-sm font-medium mb-2">관련 의견 ({clusterOpinions.length})</p>
-                        {clusterOpinions.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            의견을 불러오는 중...
-                          </p>
+                        {clusterOpinionsLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mr-2" />
+                            <p className="text-sm text-muted-foreground">의견을 불러오는 중...</p>
+                          </div>
+                        ) : clusterOpinionsError ? (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-destructive">
+                              의견을 불러오는 중 오류가 발생했습니다
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {clusterOpinionsError instanceof Error ? clusterOpinionsError.message : "알 수 없는 오류"}
+                            </p>
+                          </div>
+                        ) : clusterOpinions.length === 0 ? (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">이 클러스터에 등록된 의견이 없습니다</p>
+                          </div>
                         ) : (
                           <div className="space-y-2 max-h-64 overflow-y-auto">
                             {clusterOpinions.map((opinion) => (
