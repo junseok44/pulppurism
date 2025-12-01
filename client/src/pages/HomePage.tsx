@@ -206,7 +206,7 @@ export default function HomePage() {
 
             <div className="flex-1 w-full flex items-start overflow-hidden mt-2">
               {policiesWithAuthor.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-4 px-1 scrollbar-hide snap-x w-full">
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x w-full">
                   {policiesWithAuthor.map((policy) => (
                     <div key={policy.id} className="min-w-[280px] md:min-w-[320px] snap-center">
                       <PolicyCard
@@ -281,7 +281,7 @@ export default function HomePage() {
           </div>
 
           {/* 3️⃣ [하단 박스] 주민 의견 */}
-          <div className="lg:col-span-3 bg-ok_sand border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_gray3 transition-colors">
+          <div className="lg:col-span-3 bg-ok_sand border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_sandhover transition-colors">
             <div className="md:w-1/3 text-left">
               <h2 className="text-3xl font-extrabold text-ok_txtgray2 mb-2">
                 주민의 목소리

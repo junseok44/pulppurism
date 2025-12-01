@@ -27,7 +27,8 @@ export default function PolicyCard({
           <Badge variant="secondary" className="bg-primary/10 text-ok_sub1 hover:bg-primary/20 border-0 rounded-md px-2 py-0.5 text-[12px]">
             {agency}
           </Badge>
-          <span className="flex items-center gap-1 text-[12px] text-ok_txtgray0 font-medium">
+          {/* 🚀 [수정] hidden md:flex 추가 -> 모바일 숨김, PC 보임 */}
+          <span className="hidden md:flex items-center gap-1 text-[12px] text-ok_txtgray0 font-medium">
             <CheckCircle2 className="w-4 h-4 text-ok_green" />
             정책 실현됨
           </span>
@@ -36,12 +37,12 @@ export default function PolicyCard({
       </div>
 
       {/* 2. 제목 */}
-      <h3 className="font-bold text-base md:text-lg text-gray-900 leading-tight line-clamp-1 group-hover:text-primary transition-colors relative z-10">
+      <h3 className="font-bold text-lg md:text-lg text-ok_txtgray2 leading-tight line-clamp-1 group-hover:text-primary transition-colors relative z-10">
         {title}
       </h3>
 
       {/* 3. 내용 (답변 내용 등) */}
-      <p className="text-xs md:text-sm text-ok_txtgray1 line-clamp-2 leading-relaxed relative z-10">
+      <p className="text-sm md:text-sm text-ok_txtgray1 line-clamp-2 leading-relaxed relative z-10">
         {content}
       </p>
     </div>
