@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import TitleCard from "@/components/TitleCard";
 import { useUser } from "@/hooks/useUser";
+import LoginDialog from "@/components/LoginDialog"; // 👈 LoginDialog import
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,9 +26,12 @@ interface AgendaWithCategory extends Agenda {
   isBookmarked?: boolean;
 }
 
-type AgendaStatus = "all" | "created" | "voting" | "proposing" | "answered" | "executing" | "executed";
+// 🚀 [수정] AgendaStatus 타입에 'rejected' 추가 및 전체 상태 정의
+type AgendaStatus = "all" | "created" | "voting" | "proposing" | "answered" | "executing" | "executed" | "rejected";
 type SortOption = "latest" | "views" | "votes";
-type SpotlightSection = "voting" | "executed";
+
+// 🚀 [수정] SpotlightSection 타입 확장 (모든 상태 포함)
+type SpotlightSection = Exclude<AgendaStatus, "all">;
 
 export default function AgendaListPage() {
   const [, setLocation] = useLocation();
@@ -37,8 +41,20 @@ export default function AgendaListPage() {
   const { toast } = useToast();
   const { user } = useUser();
 
+  // 1️⃣ [추가] 로그인 팝업 상태 관리
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // 2️⃣ [수정] 스포트라이트 섹션 랜덤 로직 확장
   const spotlightSection = useMemo<SpotlightSection>(() => {
-    const sections: SpotlightSection[] = ["voting", "executed"];
+    const sections: SpotlightSection[] = [
+      "created", 
+      "voting", 
+      "proposing", 
+      "answered", 
+      "executing", 
+      "executed",
+      "rejected" // 반려 상태도 포함
+    ];
     return sections[Math.floor(Math.random() * sections.length)];
   }, []);
 
@@ -49,11 +65,6 @@ export default function AgendaListPage() {
   } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
-
-  const selectedCategory = categories?.find(
-    (c) => c.name === selectedCategoryName,
-  );
-  const selectedCategoryId = selectedCategory?.id;
 
   const agendasQueryKey = "/api/agendas";
 
@@ -99,39 +110,37 @@ export default function AgendaListPage() {
 
   const getStatusFilterLabel = () => {
     switch (statusFilter) {
-      case "all":
-        return "전체";
-      case "created":
-        return "안건 생성";
-      case "voting":
-        return "투표 중";
-      case "proposing":
-        return "제안 중";
-      case "answered":
-        return "답변 완료";
-      case "executing":
-        return "실행 중";
-      case "executed":
-        return "실행 완료";
-      default:
-        return "진행상황에 따라 보기";
+      case "all": return "전체";
+      case "created": return "안건 생성";
+      case "voting": return "투표 중";
+      case "proposing": return "제안 중";
+      case "answered": return "답변 완료";
+      case "executing": return "실행 중";
+      case "executed": return "실행 완료";
+      case "rejected": return "반려됨"; // 반려 라벨 추가
+      default: return "진행상황에 따라 보기";
     }
   };
 
+  // 3️⃣ [수정] 스포트라이트 설정 확장 (모든 상태에 대한 텍스트/이모지 정의)
   const getSpotlightConfig = () => {
     switch (spotlightSection) {
+      case "created":
+        return { emoji: "🆕", title: "새로 등록된 안건", testId: "button-view-all-created" };
       case "voting":
-        return {
-          emoji: "🔥",
-          title: "투표 진행 중",
-          testId: "button-view-all-voting",
-        };
+        return { emoji: "🔥", title: "지금 투표 중인 안건", testId: "button-view-all-voting" };
+      case "proposing":
+        return { emoji: "📢", title: "제안이 진행 중인 안건", testId: "button-view-all-proposing" };
+      case "answered":
+        return { emoji: "💬", title: "답변이 완료된 안건", testId: "button-view-all-answered" };
+      case "executing":
+        return { emoji: "🚧", title: "실행 중인 안건", testId: "button-view-all-executing" };
       case "executed":
-        return {
-          emoji: "✅",
-          title: "실행 완료 된 안건",
-          testId: "button-view-all-executed",
-        };
+        return { emoji: "✅", title: "실행 완료된 안건", testId: "button-view-all-executed" };
+      case "rejected":
+        return { emoji: "🛑", title: "반려된 안건", testId: "button-view-all-rejected" };
+      default:
+        return { emoji: "👀", title: "주목할 만한 안건", testId: "button-view-all" };
     }
   };
 
@@ -146,9 +155,7 @@ export default function AgendaListPage() {
       }
     },
     onMutate: async ({ agendaId, isBookmarked }) => {
-      // Optimistic update: 즉시 UI 업데이트
       await queryClient.cancelQueries({ queryKey: [agendasQueryKey] });
-
       const previousAgendas = queryClient.getQueryData<AgendaWithCategory[]>([agendasQueryKey]);
 
       if (previousAgendas) {
@@ -165,11 +172,9 @@ export default function AgendaListPage() {
         );
         queryClient.setQueryData<AgendaWithCategory[]>([agendasQueryKey], updatedAgendas);
       }
-
       return { previousAgendas };
     },
     onError: (err, variables, context) => {
-      // 에러 발생 시 이전 상태로 롤백
       if (context?.previousAgendas) {
         queryClient.setQueryData([agendasQueryKey], context.previousAgendas);
       }
@@ -181,20 +186,16 @@ export default function AgendaListPage() {
       });
     },
     onSuccess: () => {
-      // 성공 시 쿼리 무효화하여 서버 데이터와 동기화
       queryClient.invalidateQueries({ queryKey: [agendasQueryKey] });
       queryClient.invalidateQueries({ queryKey: ["/api/agendas/bookmarked"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/me/stats"] });
     },
   });
 
+  // 4️⃣ [수정] 북마크 핸들러: 로그인 안되어있으면 팝업 띄우기
   const handleBookmarkClick = (agendaId: string, isBookmarked: boolean) => {
     if (!user) {
-      toast({
-        title: "로그인이 필요합니다",
-        description: "북마크 기능을 사용하려면 로그인해주세요.",
-        variant: "destructive",
-      });
+      setIsLoginOpen(true); // 로그인 팝업 열기
       return;
     }
     bookmarkMutation.mutate({ agendaId, isBookmarked });
@@ -239,7 +240,6 @@ export default function AgendaListPage() {
               {spotlightAgendas.map((agenda) => (
                 <div
                   key={agenda.id}
-                  // 👇 [수정됨] 너비와 최소 너비를 대폭 늘렸습니다.
                   className="
                       shrink-0 snap-center
                       w-[60vw] min-w-[240px] 
@@ -294,24 +294,9 @@ export default function AgendaListPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" data-testid="dropdown-sort-menu">
-              <DropdownMenuItem
-                onClick={() => setSortOption("latest")}
-                data-testid="menu-item-sort-latest"
-              >
-                최신순
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setSortOption("views")}
-                data-testid="menu-item-sort-views"
-              >
-                조회수순
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setSortOption("votes")}
-                data-testid="menu-item-sort-votes"
-              >
-                투표순
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("latest")}>최신순</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("views")}>조회수순</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("votes")}>투표순</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -331,58 +316,21 @@ export default function AgendaListPage() {
               align="end"
               data-testid="dropdown-status-menu"
             >
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("all")}
-                data-testid="menu-item-filter-all"
-              >
-                전체
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("created")}
-                data-testid="menu-item-filter-created"
-              >
-                안건 생성
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("voting")}
-                data-testid="menu-item-filter-voting"
-              >
-                투표 중
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("proposing")}
-                data-testid="menu-item-filter-proposing"
-              >
-                제안 중
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("answered")}
-                data-testid="menu-item-filter-answered"
-              >
-                답변 완료
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("executing")}
-                data-testid="menu-item-filter-executing"
-              >
-                실행 중
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter("executed")}
-                data-testid="menu-item-filter-executed"
-              >
-                실행 완료
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("all")}>전체</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("created")}>안건 생성</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("voting")}>투표 중</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("proposing")}>제안 중</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("answered")}>답변 완료</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("executing")}>실행 중</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("executed")}>실행 완료</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("rejected")}>반려됨</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         <div className="py-6 space-y-4" id="agenda-list-section">
           {hasError && agendasError ? (
-            <div
-              className="p-4 bg-destructive/10 text-destructive rounded-md text-center"
-              data-testid="error-agendas"
-            >
+            <div className="p-4 bg-destructive/10 text-destructive rounded-md text-center">
               안건 목록을 불러오는 데 실패했습니다.
             </div>
           ) : isLoading ? (
@@ -408,16 +356,17 @@ export default function AgendaListPage() {
             ))
           ) : (
             <div className="text-center py-20">
-              <p
-                className="text-muted-foreground text-lg"
-                data-testid="text-no-agendas"
-              >
-                안건이 없어요
-              </p>
+              <p className="text-muted-foreground text-lg">안건이 없어요</p>
             </div>
           )}
         </div>
       </main>
+
+      {/* 5️⃣ [추가] 로그인 팝업 배치 */}
+      <LoginDialog 
+        open={isLoginOpen} 
+        onOpenChange={setIsLoginOpen} 
+      />
     </div>
   );
 }
