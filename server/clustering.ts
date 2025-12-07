@@ -2,6 +2,18 @@ import OpenAI from "openai";
 import { storage } from "./storage";
 import type { Opinion } from "@shared/schema";
 
+// ============================================================================
+// Constants
+// ============================================================================
+
+const similarityThreshold = 0.3;
+const minClusterSize = 2;
+const textEmbeddingModel = "text-embedding-3-large";
+
+// ============================================================================
+// OpenAI Client
+// ============================================================================
+
 function getOpenAIClient(): OpenAI {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY environment variable is required for clustering");
@@ -33,7 +45,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 async function getEmbedding(text: string): Promise<number[]> {
   const openai = getOpenAIClient();
   const response = await openai.embeddings.create({
-    model: "text-embedding-3-small",
+    model: textEmbeddingModel,
     input: text,
   });
   
@@ -76,16 +88,11 @@ export async function clusterOpinions(): Promise<{
   clustersCreated: number;
   opinionsProcessed: number;
 }> {
-  const similarityThreshold = 0.75;
-  const minClusterSize = 2;
-  
   const opinions = await storage.getUnclusteredOpinions();
-  
   if (opinions.length < minClusterSize) {
     return { clustersCreated: 0, opinionsProcessed: 0 };
   }
   
-  console.log(`Processing ${opinions.length} opinions for clustering...`);
   
   const opinionsWithEmbeddings: OpinionWithEmbedding[] = [];
   
@@ -126,15 +133,14 @@ export async function clusterOpinions(): Promise<{
     }
   }
   
-  console.log(`Found ${clusters.length} clusters`);
   
   let clustersCreated = 0;
   let opinionsProcessed = 0;
   
   for (const cluster of clusters) {
-    const opinions = cluster.map(c => c.opinion);
+    const clusterOpinions = cluster.map((c) => c.opinion);
     
-    const { title, summary } = await generateClusterTitle(opinions);
+    const { title, summary } = await generateClusterTitle(clusterOpinions);
     
     const avgSimilarity = cluster.reduce((sum, item, idx) => {
       if (idx === 0) return 0;
