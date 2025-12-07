@@ -596,7 +596,7 @@ export default function AgendaDetailPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">안건 소개</h2>
             <Card className="p-6">
-              <p className="text-base leading-relaxed" data-testid="text-description">
+              <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-description">
                 {agenda.description}
               </p>
             </Card>
