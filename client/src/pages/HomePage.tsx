@@ -64,7 +64,7 @@ export default function HomePage() {
   const realizedPolicies = useMemo(() => {
     if (!agendas) return [];
     return agendas
-      .filter(a => a.status === 'executed')
+
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 5);
   }, [agendas]);
@@ -87,7 +87,7 @@ export default function HomePage() {
     return realizedPolicies.map((policy, index) => {
       const timelineData = timelineQueries[index]?.data;
       let latestAuthor = "옥천군청";
-      
+
       if (timelineData && timelineData.length > 0) {
         const sorted = [...timelineData].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -176,54 +176,8 @@ export default function HomePage() {
 
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* 1️⃣ [메인 박스 - 정책 실현 현황] */}
-          <div
-            className="lg:col-span-2 bg-ok_gray2 rounded-[40px] p-8 md:p-10 flex flex-col justify-start gap-6 min-h-[450px] relative overflow-hidden group transition-transform"
-          >
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full z-10 text-left gap-4">
-              <div>
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
-                  함께 피우는 정책
-                </h2>
-                <p className="text-sm md:text-base text-gray-500">
-                  주민들의 소중한 의견이 모여 실제 변화를 만들어낸 기록입니다.
-                </p>
-              </div>
-              
-              <button
-                onClick={() => setLocation("/policy")}
-                className="bg-primary text-white px-6 py-3 rounded-full font-bold text-sm md:text-base flex items-center gap-2 hover:bg-ok_sub1 transition-colors shadow-md hover:shadow-lg shrink-0"
-              >
-                전체보기 <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 w-full mt-2">
-              {policiesWithAuthor.length > 0 ? (
-                // 🚀 [수정] flex-col로 세로 배치 & gap-4 & w-full
-                <div className="flex flex-col gap-4 w-full">
-                  {policiesWithAuthor.map((policy) => (
-                    <PolicyCard
-                      key={policy.id}
-                      title={policy.title}
-                      content={(policy.response as string) || policy.description}
-                      agency={policy.agency}
-                      date={new Date(policy.updatedAt).toLocaleDateString()}
-                      onClick={() => setLocation(`/agendas/${policy.id}`)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="w-full h-40 flex flex-col items-center justify-center bg-white/50 rounded-3xl border-2 border-dashed border-white/50 p-6 text-gray-400">
-                  <p className="text-lg font-bold mb-1">아직 실현된 정책이 없어요</p>
-                  <p className="text-xs">여러분의 의견으로 첫 번째 변화를 만들어주세요!</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 2️⃣ [사이드 박스] 안건 보기 */}
-          <div className="lg:col-span-1 bg-primary rounded-[40px] p-8 md:p-12 flex flex-col min-h-[400px] relative overflow-hidden">
+          {/* 2️⃣ [사이드 박스 - 안건 보기] (높이의 기준 / Master) */}
+          <div className="lg:col-span-2 bg-primary rounded-[40px] p-8 md:p-12 flex flex-col min-h-[400px] relative overflow-hidden">
             <div className="text-left mb-6 relative z-10">
               <div className="flex justify-between items-start">
                 <h2 className="text-4xl font-extrabold text-ok_gray1 mb-2">
@@ -247,7 +201,7 @@ export default function HomePage() {
                   <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                 </div>
               ) : spotlightAgendas.length > 0 ? (
-                <div className="flex gap-3 md:gap-5 overflow-x-auto pb-4 -mx-4 px-2 scrollbar-hide snap-x font-sans">
+                <div className="flex gap-3 md:gap-5 overflow-x-auto pb-4 -mx-4 px-2 scrollbar-hide snap-x font-sans w-full">
                   {spotlightAgendas.map((agenda) => (
                     <div
                       key={agenda.id}
@@ -271,6 +225,63 @@ export default function HomePage() {
                   표시할 안건이 없습니다.
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 1️⃣ [메인 박스 - 정책 실현 현황] (Slave) */}
+          <div className="lg:col-span-1 relative min-h-[450px] lg:min-h-0">
+
+            {/* 🌟 배경 & 둥근 모서리 (고정된 껍데기) */}
+            {/* 이 녀석이 배경색과 모양을 잡고, overflow-hidden으로 튀어나가는 걸 잘라줍니다. */}
+            <div className="bg-ok_gray2 rounded-[40px] w-full h-full lg:absolute lg:inset-0 overflow-hidden pt-10 pb-10">
+
+              {/* 🌟 스크롤 영역 (움직이는 알맹이) */}
+              {/* 여기에 padding(p-8 md:p-10)을 줘서 스크롤할 때도 위/아래/양옆 공간을 확보합니다. */}
+              <div className="w-full h-full overflow-y-auto p-8 pt-0 flex flex-col gap-6">
+
+                {/* 헤더 */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full z-10 text-left gap-4 shrink-0">
+                  <div>
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
+                      함께 피우는 정책
+                    </h2>
+                    <p className="text-sm md:text-base text-gray-500">
+                      주민들의 소중한 의견이 모여 실제 변화를 만들어낸 기록입니다.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setLocation("/policy")}
+                    className="bg-primary text-white px-6 py-3 rounded-full font-bold text-sm md:text-base flex items-center gap-2 hover:bg-ok_sub1 transition-colors shadow-md hover:shadow-lg shrink-0"
+                  >
+                    전체보기 <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* 정책 리스트 */}
+                <div className="w-full">
+                  {policiesWithAuthor.length > 0 ? (
+                    <div className="flex flex-col gap-4 w-full">
+                      {policiesWithAuthor.map((policy) => (
+                        <PolicyCard
+                          key={policy.id}
+                          title={policy.title}
+                          content={(policy.response as string) || policy.description}
+                          agency={policy.agency}
+                          date={new Date(policy.updatedAt).toLocaleDateString()}
+                          onClick={() => setLocation(`/agendas/${policy.id}`)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 flex flex-col items-center justify-center bg-white/50 rounded-3xl border-2 border-dashed border-white/50 p-6 text-gray-400">
+                      <p className="text-lg font-bold mb-1">아직 실현된 정책이 없어요</p>
+                      <p className="text-xs">여러분의 의견으로 첫 번째 변화를 만들어주세요!</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
 
@@ -300,11 +311,11 @@ export default function HomePage() {
               ) : recentOpinions.length > 0 ? (
                 <div className="flex gap-4">
                   {recentOpinions.map((opinion) => (
-                    <HomeOpinionCard 
-                    key={opinion.id}
-                    opinion={opinion}
-                    onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                  />
+                    <HomeOpinionCard
+                      key={opinion.id}
+                      opinion={opinion}
+                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                    />
                   ))}
                   <div
                     onClick={() => setLocation("/opinions")}
