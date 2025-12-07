@@ -242,7 +242,7 @@ export default function HomePage() {
                 {/* 헤더 */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full z-10 text-left gap-4 shrink-0">
                   <div>
-                    <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
+                    <h2 className="text-3xl md:text-3xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
                       함께 피우는 정책
                     </h2>
                     <p className="text-sm md:text-base text-gray-500">
