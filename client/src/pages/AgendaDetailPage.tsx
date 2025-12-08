@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import AgendaHeader from "@/components/AgendaHeader";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, X, Trash2, Upload, ChevronRight, Check ,ArrowLeft} from "lucide-react";
+import { Loader2, Plus, X, Trash2, Upload, ChevronRight, Check, ArrowLeft, PenTool } from "lucide-react";
 import VotingWidget from "@/components/VotingWidget";
 import Timeline from "@/components/Timeline";
 import OpinionCard from "@/components/OpinionCard";
@@ -117,7 +117,7 @@ export default function AgendaDetailPage() {
 
   // 관리자 쿼리파라미터(edit=1)로 인한 자동 모달 오픈이 한 번만 일어나도록 제어
   const hasAutoOpenedFromQueryRef = useRef(false);
-  
+
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const { user } = useUser();
@@ -311,11 +311,11 @@ export default function AgendaDetailPage() {
           formData.append("authorName", item.authorName);
           formData.append("content", item.content);
           formData.append("createdAt", item.date);
-          
+
           if (isExisting) {
             if (item.image) formData.append("image", item.image);
             else if (!item.existingImageUrl && item.imagePreview) formData.append("removeImage", "true");
-            
+
             const res = await fetch(`/api/agendas/${agendaId}/execution-timeline/${item.id}`, {
               method: "PATCH", body: formData, credentials: "include",
             });
@@ -373,24 +373,24 @@ export default function AgendaDetailPage() {
       setEditedTitle(agenda.title);
       setEditedDescription(agenda.description);
       setEditedStatus(agenda.status);
-      
-      const responseObj = typeof agenda.response === 'object' && agenda.response 
-        ? agenda.response as any 
+
+      const responseObj = typeof agenda.response === 'object' && agenda.response
+        ? agenda.response as any
         : { content: typeof agenda.response === 'string' ? agenda.response : "" };
-        
+
       setEditedResponse({
         authorName: responseObj.authorName || "",
         responseDate: responseObj.responseDate || new Date().toISOString().slice(0, 10),
         content: responseObj.content || "",
       });
-      
+
       setEditedOkinewsUrl(agenda.okinewsUrl || "");
       setEditedReferenceLinks(agenda.referenceLinks || []);
       setEditedReferenceFiles(agenda.referenceFiles || []);
       setEditedRegionalCases(agenda.regionalCases || []);
       setShowResponseInput(false);
       setShowBasicInfoEdit(false);
-      
+
       if ((agenda.status === "executing" || agenda.status === "executed") && executionTimelineItems.length > 0) {
         setTimelineItems(
           executionTimelineItems.map((item) => ({
@@ -418,17 +418,17 @@ export default function AgendaDetailPage() {
       status: editedStatus, // 상태는 유지
       response: editedResponse.content.trim() && editedResponse.authorName.trim()
         ? {
-            authorName: editedResponse.authorName.trim(),
-            responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
-            content: editedResponse.content.trim(),
-          }
+          authorName: editedResponse.authorName.trim(),
+          responseDate: editedResponse.responseDate || new Date().toISOString().slice(0, 10),
+          content: editedResponse.content.trim(),
+        }
         : null,
       okinewsUrl: editedOkinewsUrl.trim() || null,
       referenceLinks: editedReferenceLinks,
       referenceFiles: editedReferenceFiles,
       regionalCases: editedRegionalCases,
     });
-    
+
     // 저장 후 편집 모드 닫기
     setShowBasicInfoEdit(false);
   };
@@ -466,7 +466,7 @@ export default function AgendaDetailPage() {
         regionalCases: editedRegionalCases,
       });
       setEditedStatus(newStatus);
-      
+
       if (newStatus === "executing" && timelineItems.length > 0) {
         const validItems = timelineItems.filter((item) => item.content.trim());
         if (validItems.length > 0) await saveTimelineItemsMutation.mutateAsync(validItems);
@@ -502,7 +502,7 @@ export default function AgendaDetailPage() {
     const createdDate = new Date(createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
     const statusOrder = ["created", "voting", "proposing", "answered", "executing", "executed"];
     const currentIndex = statusOrder.indexOf(status);
-    
+
     const getStepStatus = (stepStatus: string) => {
       const stepIndex = statusOrder.indexOf(stepStatus);
       if (stepIndex < currentIndex) return "completed" as const;
@@ -565,7 +565,7 @@ export default function AgendaDetailPage() {
             }}
           />
           <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-gradient-to-b from-transparent to-black/90 pointer-events-none" />
-          
+
           {/* 🚀 [추가] 뒤로가기 버튼 (이미지 좌측 상단) */}
           <div className="absolute top-6 left-4 md:left-8 z-20">
             <Button
@@ -577,7 +577,7 @@ export default function AgendaDetailPage() {
               뒤로가기
             </Button>
           </div>
-          
+
           <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 z-10 flex flex-col items-start justify-end">
             <div className="w-full text-white [&_*]:text-white [&_.text-muted-foreground]:text-white/80 [&_.bg-background]:bg-transparent [&_.border]:border-white/30 text-left">
               <AgendaHeader
@@ -595,8 +595,8 @@ export default function AgendaDetailPage() {
           {/* 안건 소개 */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">안건 소개</h2>
-            <Card className="p-6">
-              <p className="text-base leading-relaxed whitespace-pre-wrap" data-testid="text-description">
+            <Card className="p-6 lg: py-14">
+              <p className="text-base leading-relaxed whitespace-pre-wrap break-keep" data-testid="text-description">
                 {agenda.description}
               </p>
             </Card>
@@ -605,53 +605,77 @@ export default function AgendaDetailPage() {
           {/* 타임라인 */}
           <Timeline steps={timelineSteps} />
 
-          {/* 투표 위젯 */}
+          {/* 👇 agenda.status가 'voting'이 아니면 true가 돼서 비활성화됨 */}
           <VotingWidget
             agreeCount={voteStats?.agree || 0}
             neutralCount={voteStats?.neutral || 0}
             disagreeCount={voteStats?.disagree || 0}
             userVote={userVote?.voteType}
             onVote={handleVote}
+            status={agenda.status}
             disabled={voteMutation.isPending}
           />
 
           {/* 관련 주민의견과 참고자료를 한 행에 배치 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {/* 관련 주민의견 섹션 */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">관련 주민의견</h2>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">관련 주민의견</h2>
+              </div>
+
               {opinionsLoading ? (
                 <div className="flex justify-center py-10">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
-              ) : relatedOpinions.length > 0 ? (
-                <>
-                  {relatedOpinions.slice(0, 3).map((opinion) => (
-                    <OpinionCard
-                      key={opinion.id}
-                      id={opinion.id}
-                      authorName="익명"
-                      content={opinion.content}
-                      likeCount={opinion.likes}
-                      commentCount={0}
-                      timestamp={new Date(opinion.createdAt).toLocaleDateString("ko-KR")}
-                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
-                    />
-                  ))}
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setLocation(`/agendas/${agendaId}/opinions`)}
-                    data-testid="button-view-all-opinions-bottom"
-                  >
-                    주민의견 전체보기 ({relatedOpinions.length}개)
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </>
               ) : (
-                <Card className="p-6 text-center">
-                  <p className="text-muted-foreground">관련 의견이 없습니다.</p>
-                </Card>
+                <div className="flex flex-col gap-1">
+                  {/* 1. 의견 리스트 영역 (데이터 유무에 따라 내용 갈아끼우기) */}
+                  {relatedOpinions.length > 0 ? (
+                    <>
+                      {/* 의견이 있을 때: 리스트 3개 + 전체보기 버튼 */}
+                      {relatedOpinions.slice(0, 3).map((opinion) => (
+                        <OpinionCard
+                          key={opinion.id}
+                          id={opinion.id}
+                          authorName="익명"
+                          content={opinion.content}
+                          likeCount={opinion.likes}
+                          commentCount={0}
+                          timestamp={new Date(opinion.createdAt).toLocaleDateString("ko-KR")}
+                          onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                        />
+                      ))}
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setLocation(`/agendas/${agendaId}/opinions`)}
+                        data-testid="button-view-all-opinions-bottom"
+                      >
+                        주민의견 전체보기 ({relatedOpinions.length}개)
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </>
+                  ) : (
+                    /* 의견이 없을 때: 안내 카드 표시 */
+                    <Card className="p-8 text-center bg-ok_gray1 border-dashed border-gray-200 shadow-none">
+                      <p className="text-muted-foreground font-medium mb-1">아직 등록된 의견이 없습니다.</p>
+                      <p className="text-xs text-gray-400">가장 먼저 소중한 의견을 남겨주세요! 🌱</p>
+                    </Card>
+                  )}
+
+                  {/* 2. 의견 작성 버튼 (★ 항상 보임 + 중앙 정렬) */}
+                  <div className="flex justify-center mt-2">
+                    <Button
+                      className="px-8 h-10 text-sm rounded-full font-bold shadow-sm hover:shadow-md transition-all"
+                      onClick={() => setLocation(`/agendas/${agendaId}/opinions`)} // 작성 페이지로 이동
+                      data-testid="button-write-opinion"
+                    >
+                      <PenTool className="w-4 h-4 mr-2" />
+                      의견 작성하기
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -800,8 +824,8 @@ export default function AgendaDetailPage() {
 
                 {/* 참고자료가 없는 경우 */}
                 {(!agenda?.okinewsUrl || !agenda?.referenceLinks?.length) &&
-                !agenda?.referenceFiles?.length &&
-                !agenda?.regionalCases?.length ? (
+                  !agenda?.referenceFiles?.length &&
+                  !agenda?.regionalCases?.length ? (
                   <Card className="p-6 text-center">
                     <p className="text-muted-foreground">등록된 참고자료가 없습니다.</p>
                   </Card>
@@ -825,46 +849,46 @@ export default function AgendaDetailPage() {
           {(agenda.status === "answered" ||
             agenda.status === "executing" ||
             agenda.status === "executed") && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">제안에 대한 답변</h2>
-              {agenda.response &&
-              (typeof agenda.response === "object" && "content" in agenda.response
-                ? (agenda.response as { content: string }).content
-                : typeof agenda.response === "string"
-                ? agenda.response
-                : null) ? (
-                <div className="flex gap-4">
-                  {/* 말풍선 꼬리 */}
-                  <div className="flex-shrink-0 w-2">
-                    <div className="w-full h-full bg-muted"></div>
-                  </div>
-                  {/* 말풍선 내용 */}
-                  <Card className="flex-1 p-6 relative">
-                    <div className="absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-card border-b-[8px] border-b-transparent"></div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                            {(
-                              typeof agenda.response === "object" &&
-                              "authorName" in agenda.response
-                                ? (agenda.response as { authorName: string }).authorName
-                                : "관리자"
-                            )[0]}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm">
-                              {typeof agenda.response === "object" &&
-                              "authorName" in agenda.response
-                                ? (agenda.response as { authorName: string })
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">제안에 대한 답변</h2>
+                {agenda.response &&
+                  (typeof agenda.response === "object" && "content" in agenda.response
+                    ? (agenda.response as { content: string }).content
+                    : typeof agenda.response === "string"
+                      ? agenda.response
+                      : null) ? (
+                  <div className="flex gap-4">
+                    {/* 말풍선 꼬리 */}
+                    <div className="flex-shrink-0 w-2">
+                      <div className="w-full h-full bg-muted"></div>
+                    </div>
+                    {/* 말풍선 내용 */}
+                    <Card className="flex-1 p-6 relative">
+                      <div className="absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-card border-b-[8px] border-b-transparent"></div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
+                              {(
+                                typeof agenda.response === "object" &&
+                                  "authorName" in agenda.response
+                                  ? (agenda.response as { authorName: string }).authorName
+                                  : "관리자"
+                              )[0]}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm">
+                                {typeof agenda.response === "object" &&
+                                  "authorName" in agenda.response
+                                  ? (agenda.response as { authorName: string })
                                     .authorName
-                                : "관리자"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {typeof agenda.response === "object" &&
-                              "responseDate" in agenda.response &&
-                              (agenda.response as { responseDate?: string }).responseDate
-                                ? new Date(
+                                  : "관리자"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {typeof agenda.response === "object" &&
+                                  "responseDate" in agenda.response &&
+                                  (agenda.response as { responseDate?: string }).responseDate
+                                  ? new Date(
                                     (agenda.response as { responseDate: string })
                                       .responseDate
                                   ).toLocaleDateString("ko-KR", {
@@ -872,38 +896,38 @@ export default function AgendaDetailPage() {
                                     month: "long",
                                     day: "numeric",
                                   })
-                                : new Date().toLocaleDateString("ko-KR", {
+                                  : new Date().toLocaleDateString("ko-KR", {
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric",
                                   })}
-                            </p>
+                              </p>
+                            </div>
                           </div>
                         </div>
+                        <div className="pt-2 border-t">
+                          <p
+                            className="text-base leading-relaxed whitespace-pre-wrap"
+                            data-testid="text-agenda-response"
+                          >
+                            {typeof agenda.response === "object" &&
+                              "content" in agenda.response
+                              ? (agenda.response as { content: string }).content
+                              : typeof agenda.response === "string"
+                                ? agenda.response
+                                : ""}
+                          </p>
+                        </div>
                       </div>
-                      <div className="pt-2 border-t">
-                        <p
-                          className="text-base leading-relaxed whitespace-pre-wrap"
-                          data-testid="text-agenda-response"
-                        >
-                          {typeof agenda.response === "object" &&
-                          "content" in agenda.response
-                            ? (agenda.response as { content: string }).content
-                            : typeof agenda.response === "string"
-                            ? agenda.response
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
+                    </Card>
+                  </div>
+                ) : (
+                  <Card className="p-6">
+                    <p className="text-muted-foreground">답변이 등록되지 않았습니다.</p>
                   </Card>
-                </div>
-              ) : (
-                <Card className="p-6">
-                  <p className="text-muted-foreground">답변이 등록되지 않았습니다.</p>
-                </Card>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
           {/* 실행 과정 */}
           {(agenda.status === "executing" || agenda.status === "executed") && (
@@ -1056,16 +1080,14 @@ export default function AgendaDetailPage() {
                                     <p className="text-sm font-medium text-muted-foreground">참고자료</p>
                                     <p className="text-sm">
                                       {editedOkinewsUrl ||
-                                      editedReferenceLinks.length > 0 ||
-                                      editedReferenceFiles.length > 0 ||
-                                      editedRegionalCases.length > 0
-                                        ? `${
-                                            editedOkinewsUrl
-                                              ? "옥천신문 링크 있음, "
-                                              : ""
-                                          }${editedReferenceLinks.length}개 링크, ${
-                                            editedReferenceFiles.length
-                                          }개 파일, ${editedRegionalCases.length}개 사례`
+                                        editedReferenceLinks.length > 0 ||
+                                        editedReferenceFiles.length > 0 ||
+                                        editedRegionalCases.length > 0
+                                        ? `${editedOkinewsUrl
+                                          ? "옥천신문 링크 있음, "
+                                          : ""
+                                        }${editedReferenceLinks.length}개 링크, ${editedReferenceFiles.length
+                                        }개 파일, ${editedRegionalCases.length}개 사례`
                                         : "참고자료가 없습니다."}
                                     </p>
                                   </div>
@@ -1525,20 +1547,20 @@ export default function AgendaDetailPage() {
                                         <p className="text-xs text-muted-foreground">
                                           {editedResponse.responseDate
                                             ? new Date(
-                                                editedResponse.responseDate
-                                              ).toLocaleDateString("ko-KR", {
+                                              editedResponse.responseDate
+                                            ).toLocaleDateString("ko-KR", {
+                                              year: "numeric",
+                                              month: "long",
+                                              day: "numeric",
+                                            })
+                                            : new Date().toLocaleDateString(
+                                              "ko-KR",
+                                              {
                                                 year: "numeric",
                                                 month: "long",
                                                 day: "numeric",
-                                              })
-                                            : new Date().toLocaleDateString(
-                                                "ko-KR",
-                                                {
-                                                  year: "numeric",
-                                                  month: "long",
-                                                  day: "numeric",
-                                                }
-                                              )}
+                                              }
+                                            )}
                                         </p>
                                       </div>
                                     </div>
@@ -1592,13 +1614,12 @@ export default function AgendaDetailPage() {
                           <div className="flex gap-4 items-start">
                             <div className="flex flex-col items-center">
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                                  stepStatus === "completed"
-                                    ? "bg-primary border-primary text-primary-foreground"
-                                    : stepStatus === "current"
+                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${stepStatus === "completed"
+                                  ? "bg-primary border-primary text-primary-foreground"
+                                  : stepStatus === "current"
                                     ? "border-primary bg-background"
                                     : "border-muted-foreground/25 bg-background"
-                                }`}
+                                  }`}
                               >
                                 {stepStatus === "completed" && (
                                   <Check className="w-4 h-4" />
@@ -1609,21 +1630,19 @@ export default function AgendaDetailPage() {
                               </div>
                               {index < timelineSteps.length - 1 && (
                                 <div
-                                  className={`w-0.5 min-h-12 ${
-                                    stepStatus === "completed"
-                                      ? "bg-primary"
-                                      : "bg-muted-foreground/25"
-                                  }`}
+                                  className={`w-0.5 min-h-12 ${stepStatus === "completed"
+                                    ? "bg-primary"
+                                    : "bg-muted-foreground/25"
+                                    }`}
                                 ></div>
                               )}
                             </div>
                             <div className="flex-1 pb-4">
                               <p
-                                className={`font-medium ${
-                                  stepStatus === "upcoming"
-                                    ? "text-muted-foreground/80"
-                                    : ""
-                                }`}
+                                className={`font-medium ${stepStatus === "upcoming"
+                                  ? "text-muted-foreground/80"
+                                  : ""
+                                  }`}
                               >
                                 {step.label}
                               </p>
@@ -1685,7 +1704,7 @@ export default function AgendaDetailPage() {
               data-testid="button-save-edit"
             >
               {updateAgendaMutation.isPending ||
-              saveTimelineItemsMutation.isPending
+                saveTimelineItemsMutation.isPending
                 ? "저장 중..."
                 : "저장"}
             </Button>
@@ -1872,8 +1891,8 @@ export default function AgendaDetailPage() {
       </Dialog>
 
       {/* 실행 과정 관리 모달 */}
-      <Dialog 
-        open={executionTimelineDialogOpen} 
+      <Dialog
+        open={executionTimelineDialogOpen}
         onOpenChange={async (open) => {
           setExecutionTimelineDialogOpen(open);
           // 모달이 열릴 때 기존 실행 과정 불러오기
@@ -1882,7 +1901,7 @@ export default function AgendaDetailPage() {
             await queryClient.invalidateQueries({
               queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
             });
-            
+
             // 데이터 가져오기
             const { data: items } = await queryClient.fetchQuery({
               queryKey: [`/api/agendas/${agendaId}/execution-timeline`],
@@ -1894,7 +1913,7 @@ export default function AgendaDetailPage() {
                 return res.json();
               },
             });
-            
+
             if (items && items.length > 0) {
               setTimelineItems(
                 items.map((item: ExecutionTimelineItem) => ({
@@ -1983,7 +2002,7 @@ export default function AgendaDetailPage() {
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                      
+
                       {/* 모든 아이템 편집 가능 */}
                       <div className="space-y-2">
                         <Label htmlFor={`timeline-author-${item.id}`}>작성자</Label>
@@ -2168,9 +2187,9 @@ export default function AgendaDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <LoginDialog 
-        open={showLoginDialog} 
-        onOpenChange={setShowLoginDialog} 
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
       />
     </div>
   );
