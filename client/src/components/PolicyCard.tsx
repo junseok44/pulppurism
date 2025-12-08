@@ -19,7 +19,7 @@ export default function PolicyCard({
   return (
     <div
       onClick={onClick}
-      className="group w-full bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer flex flex-col gap-3 text-left relative overflow-hidden"
+      className="group w-full bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-ok_sub1 transition-all cursor-pointer flex flex-col gap-3 text-left relative overflow-hidden"
     >
       {/* 1. 상단: 단체명 및 날짜 */}
       <div className="flex items-center justify-between relative z-10">

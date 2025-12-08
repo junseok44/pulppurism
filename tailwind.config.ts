@@ -20,6 +20,7 @@ export default {
         primary_hov:"var(--primary_hov)",
         ok_sub1:"var(--ok_sub1)",
         ok_subtrns:"var(--ok_subtrns)",
+        ok_blacktrns:"var(--ok_blacktrns)",
         ok_sub2:"var(--ok_sub2)",
         ok_emp:"var(--ok_emp)",
         ok_txtgray0:"var(--ok_txtgray0)",
