@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Bookmark, TrendingUp, HelpCircle } from "lucide-react";
+import { Vote, Bookmark, TrendingUp, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getStatusBadgeClass, getStatusLabel } from "@/lib/utils";
 
@@ -77,7 +77,7 @@ export default function AgendaCard({
                   {title}
                 </h3>
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0 bg-white/50 px-1.5 py-0.5 rounded-md">
-                  <MessageSquare className="w-3 h-3" />
+                  <Vote className="w-3 h-3" />
                   <span>{commentCount}</span>
                 </span>
               </div>
