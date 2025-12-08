@@ -76,7 +76,7 @@ export default function HomeOpinionCard({ opinion, onClick }: HomeOpinionCardPro
   return (
     <>
       <div 
-        className="min-w-[240px] w-full bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sand hover:shadow-md transition-all cursor-pointer text-left group"
+        className="min-w-[240px] w-full bg-white rounded-3xl p-5 flex flex-col justify-between border border-gray-100 hover:border-ok_sub1 hover:shadow-md transition-all cursor-pointer text-left group"
         onClick={onClick}
       >
         <div className="mb-3">

@@ -95,7 +95,7 @@ export default function OkAgendaCard({
           <div className="w-full flex justify-between items-start mb-4">
             <Badge
               variant="secondary"
-              className="font-medium bg-white/20 text-white hover:bg-white/30 border-0 text-[10px] md:text-xs backdrop-blur-sm"
+              className="font-medium bg-ok_blacktrns hover:text-ok_sub1 text-white/50 hover:bg-white border-0 text-[10px] md:text-xs backdrop-blur-sm"
             >
               {categoryIcon ? (
                     <span className="mr-1 text-xs leading-none">{categoryIcon}</span>
