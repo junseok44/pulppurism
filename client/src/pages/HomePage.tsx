@@ -212,6 +212,7 @@ export default function HomePage() {
                         description={agenda.description}
                         imageUrl={agenda.imageUrl}
                         category={agenda.category?.name || "기타"}
+                        categoryIcon={agenda.category?.icon}
                         status={agenda.status}
                         onClick={() => setLocation(`/agendas/${agenda.id}`)}
                         bookmarkCount={agenda.bookmarkCount || 0}
