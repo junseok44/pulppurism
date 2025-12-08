@@ -34,7 +34,7 @@ export default function HomePage() {
     localStorage.setItem("hide-guide-banner", "true");
   };
 
-  // 1️⃣ 의견 데이터 가져오기
+  // 🤍 의견 데이터 가져오기
   const { data: opinions, isLoading: isOpinionsLoading } = useQuery<Opinion[]>({
     queryKey: ["/api/opinions", "preview"],
     queryFn: async () => {
@@ -46,7 +46,7 @@ export default function HomePage() {
 
   const recentOpinions = opinions ? [...opinions].slice(0, 10) : [];
 
-  // 2️⃣ 안건 데이터 가져오기
+  // 🤍 안건 데이터 가져오기
   const { data: agendas, isLoading: isAgendasLoading } = useQuery<(Agenda & {
     category: Category | null;
     bookmarkCount: number;
@@ -60,11 +60,11 @@ export default function HomePage() {
     },
   });
 
-  // 3️⃣ 정책 실현 데이터 필터링 (최신순 정렬됨)
+  // 🤍 정책 실현 데이터 필터링 (executed, executing만 filter, 최신순 정렬됨)
   const realizedPolicies = useMemo(() => {
     if (!agendas) return [];
     return agendas
-
+      .filter(a => ['executed', 'executing'].includes(a.status))
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 5);
   }, [agendas]);
@@ -176,7 +176,7 @@ export default function HomePage() {
 
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* 2️⃣ [사이드 박스 - 안건 보기] (높이의 기준 / Master) */}
+          {/* 💙 [사이드 박스 - 안건 보기] (높이의 기준 / Master) */}
           <div className="lg:col-span-2 bg-primary rounded-[40px] p-8 md:p-12 flex flex-col min-h-[400px] relative overflow-hidden">
             <div className="text-left mb-6 relative z-10">
               <div className="flex justify-between items-start">
@@ -228,105 +228,106 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 1️⃣ [메인 박스 - 정책 실현 현황] (Slave) */}
-          <div className="lg:col-span-1 relative min-h-[450px] lg:min-h-0">
+          {/* 💙 [메인 박스 - 정책 실현 현황] (Slave) */}
+          <div className="lg:col-span-1 relative md:min-h-[450px] lg:min-h-0">
+            {/* 👇 수정 포인트 1: h-[500px]로 모바일 높이 강제 고정 (원하는 높이로 조절해!) */}
+            {/* 👇 수정 포인트 2: md: h-full -> md:h-full (띄어쓰기 삭제) */}
+            <div className="bg-ok_gray2 rounded-[40px] w-full h-[500px] md:h-full lg:absolute lg:inset-0 overflow-hidden flex flex-col gap-6 p-8 md:p-12 pt-10 pb-10">
 
-            {/* 🌟 배경 & 둥근 모서리 (고정된 껍데기) */}
-            {/* 이 녀석이 배경색과 모양을 잡고, overflow-hidden으로 튀어나가는 걸 잘라줍니다. */}
-            <div className="bg-ok_gray2 rounded-[40px] w-full h-full lg:absolute lg:inset-0 overflow-hidden pt-10 pb-10">
+              {/* 주민의 목소리 header 부분 */}
+              <div className="w-full text-left shrink-0"> {/* shrink-0 추가: 헤더는 절대 찌그러지지 않게 */}
+                <h2 className="text-3xl font-extrabold text-ok_txtgray2 mb-2">
+                  주민의 목소리
+                </h2>
+                <p className="text-ok_txtgray1">
+                  우리 동네에 필요한 점을<br />자유롭게 이야기해주세요.
+                </p>
+                <button
+                  onClick={() => setLocation("/opinions")}
+                  className="text-sm font-bold text-ok_txtgray2 underline underline-offset-4 hover:text-ok_sub1"
+                >
+                  전체보기 &rarr;
+                </button>
+              </div>
 
-              {/* 🌟 스크롤 영역 (움직이는 알맹이) */}
-              {/* 여기에 padding(p-8 md:p-10)을 줘서 스크롤할 때도 위/아래/양옆 공간을 확보합니다. */}
-              <div className="w-full h-full overflow-y-auto p-8 pt-0 flex flex-col gap-6">
-
-                {/* 헤더 */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full z-10 text-left gap-4 shrink-0">
-                  <div>
-                    <h2 className="text-3xl md:text-3xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
-                      함께 피우는 정책
-                    </h2>
-                    <p className="text-sm md:text-base text-gray-500">
-                      주민들의 소중한 의견이 모여 실제 변화를 만들어낸 기록입니다.
-                    </p>
+              {/* 주민의 목소리 content */}
+              {/* 👇 중요: flex-1 min-h-0 추가 -> 남은 공간을 모두 차지하면서 내부 스크롤 활성화 */}
+              <div className="flex-1 min-h-0 w-full overflow-y-auto pb-4 scrollbar-hide">
+                {isOpinionsLoading ? (
+                  <div className="flex items-center justify-center h-40 w-full text-gray-400">
+                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                    주민 의견을 불러오는 중입니다...🌱
                   </div>
-
-                  <button
-                    onClick={() => setLocation("/policy")}
-                    className="bg-primary text-white px-6 py-3 rounded-full font-bold text-sm md:text-base flex items-center gap-2 hover:bg-ok_sub1 transition-colors shadow-md hover:shadow-lg shrink-0"
-                  >
-                    전체보기 <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* 정책 리스트 */}
-                <div className="w-full">
-                  {policiesWithAuthor.length > 0 ? (
-                    <div className="flex flex-col gap-4 w-full">
-                      {policiesWithAuthor.map((policy) => (
-                        <PolicyCard
-                          key={policy.id}
-                          title={policy.title}
-                          content={(policy.response as string) || policy.description}
-                          agency={policy.agency}
-                          date={new Date(policy.updatedAt).toLocaleDateString()}
-                          onClick={() => setLocation(`/agendas/${policy.id}`)}
-                        />
-                      ))}
+                ) : recentOpinions.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    {recentOpinions.map((opinion) => (
+                      <HomeOpinionCard
+                        key={opinion.id}
+                        opinion={opinion}
+                        onClick={() => setLocation(`/opinion/${opinion.id}`)}
+                      />
+                    ))}
+                    <div
+                      onClick={() => setLocation("/opinions")}
+                      className="min-w-[100px] flex items-center justify-center bg-gray-50 rounded-3xl cursor-pointer hover:bg-gray-100 text-gray-400 font-bold text-sm py-4"
+                    >
+                      더보기 +
                     </div>
-                  ) : (
-                    <div className="w-full h-40 flex flex-col items-center justify-center bg-white/50 rounded-3xl border-2 border-dashed border-white/50 p-6 text-gray-400">
-                      <p className="text-lg font-bold mb-1">아직 실현된 정책이 없어요</p>
-                      <p className="text-xs">여러분의 의견으로 첫 번째 변화를 만들어주세요!</p>
-                    </div>
-                  )}
-                </div>
-
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-40 w-full bg-gray-50 rounded-3xl text-gray-400">
+                    아직 등록된 의견이 없습니다. 😅
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* 3️⃣ [하단 박스] 주민 의견 */}
-          <div className="lg:col-span-3 bg-ok_sand border-2 border-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-h-[250px] hover:border-ok_sandhover transition-colors">
-            <div className="md:w-1/3 text-left">
-              <h2 className="text-3xl font-extrabold text-ok_txtgray2 mb-2">
-                주민의 목소리
-              </h2>
-              <p className="text-ok_txtgray1">
-                우리 동네에 필요한 점을<br />자유롭게 이야기해주세요.
-              </p>
+          {/* 💙 [하단 박스] 주민 의견 */}
+          <div className="lg:col-span-3 bg-ok_gray2 rounded-[40px] p-8 md:p-12 flex flex-col lg:flex-row justify-start gap-8 min-h-[250px] overflow-hidden">
+            {/* ▲ flex-col lg:flex-row 추가: 모바일엔 위아래, PC엔 좌우 배치 */}
+
+            {/* 정책 헤더 */}
+            <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0 z-10 text-left gap-4">
+              {/* ▲ w-span-1 삭제하고 lg:w-[30%]로 변경. shrink-0은 찌그러짐 방지 */}
+              <div>
+                <h2 className="text-3xl md:text-3xl font-bold tracking-tighter text-gray-900 mb-2 leading-tight">
+                  함께 피우는 정책
+                </h2>
+                <p className="text-sm md:text-base text-gray-500">
+                  주민들의 소중한 의견이 모여 실제 변화를 만들어낸 기록입니다.
+                </p>
+              </div>
+
               <button
-                onClick={() => setLocation("/opinions")}
-                className="text-sm font-bold text-ok_txtgray2 underline underline-offset-4 hover:text-ok_sub1"
+                onClick={() => setLocation("/policy")}
+                className="bg-primary text-white px-6 py-3 rounded-full font-bold text-sm md:text-base flex items-center gap-2 hover:bg-ok_sub1 transition-colors shadow-md hover:shadow-lg shrink-0"
               >
-                전체보기 &rarr;
+                전체보기 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 w-full overflow-x-auto pb-4 scrollbar-hide">
-              {isOpinionsLoading ? (
-                <div className="flex items-center justify-center h-40 w-full text-gray-400">
-                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                  의견을 불러오는 중...
-                </div>
-              ) : recentOpinions.length > 0 ? (
-                <div className="flex gap-4">
-                  {recentOpinions.map((opinion) => (
-                    <HomeOpinionCard
-                      key={opinion.id}
-                      opinion={opinion}
-                      onClick={() => setLocation(`/opinion/${opinion.id}`)}
+            {/* 정책 리스트 content */}
+            <div className="w-full flex-1 overflow-x-auto scrollbar-hide">
+              {/* ▲ w-span-2 삭제하고 flex-1 (남은 공간 다 차지해라) 추가 */}
+
+              {policiesWithAuthor.length > 0 ? (
+                <div className="flex gap-4 w-[150vw] lg:w-[65vw] pb-2">
+                  {policiesWithAuthor.map((policy) => (
+                    <PolicyCard
+                      key={policy.id}
+                      title={policy.title}
+                      content={(policy.response as string) || policy.description}
+                      agency={policy.agency}
+                      date={new Date(policy.updatedAt).toLocaleDateString()}
+                      onClick={() => setLocation(`/agendas/${policy.id}`)}
                     />
                   ))}
-                  <div
-                    onClick={() => setLocation("/opinions")}
-                    className="min-w-[100px] flex items-center justify-center bg-gray-50 rounded-3xl cursor-pointer hover:bg-gray-100 text-gray-400 font-bold text-sm"
-                  >
-                    더보기 +
-                  </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-40 w-full bg-gray-50 rounded-3xl text-gray-400">
-                  아직 등록된 의견이 없습니다. 😅
+                <div className="w-full h-full min-h-[160px] flex flex-col items-center justify-center bg-white/50 rounded-3xl border-2 border-dashed border-white/50 p-6 text-gray-400">
+                  <p className="text-lg font-bold mb-1">아직 실현된 정책이 없어요</p>
+                  <p className="text-xs">여러분의 의견으로 첫 번째 변화를 만들어주세요!</p>
                 </div>
               )}
             </div>
