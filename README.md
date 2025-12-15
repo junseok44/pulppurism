@@ -1,21 +1,32 @@
-# 두런두런 옥천마루
 
-옥천마루는 주민의 일상적인 의견을 모아 정책 안건으로 정리하고, 실제 정책 제안과 실행 과정까지 연결하는 주민 참여 기반 정책 제안 플랫폼입니다. 
+<img width="3550" height="1249" alt="logo" src="https://github.com/user-attachments/assets/babd1400-ed7b-486c-9e77-e26130a737a5" />
+
+<br/>
+<div align="center">
+  옥천마루는 주민의 일상적인 의견을 모아 정책 안건으로 정리하고, 실제 정책 제안과 실행 과정까지 연결하는 주민 참여 기반 정책 제안 플랫폼입니다.
+</div>
+<br/><br/>
 
 ## 프로젝트 개요
 
 ### 문제 상황
 
-- 지방이 거주하기 좋은 공간이 되기 위해서는 주민의 삶에 밀착된 정책이 필요하지만, 이를 지속적으로 제안하고 논의할 수 있는 지역 차원의 공론장이 부족하다.
-- 주민들은 정책에 대한 구체적인 니즈를 가지고 있으나, 개인이 이를 공식적인 건의로 연결하기에는 심리적·행정적 부담이 크다.
-- 마을 내 소통은 비교적 활발하지만, 주민 의견이 객관적인 데이터로 축적되지 않아 행정을 설득할 근거가 부족하며, 개개인이 유사한 정책 사례나 선례를 찾기도 어렵다.
-- 그 결과, 반복적으로 제기되는 **주민 수요가 정책으로 연결되지 못하고 단발적인 의견에 그치는 구조**가 형성되어 있다.
+- 지방 소멸 막기 위해서는 주민의 삶에 밀착된 정책이 필요함
+- 정책을 지속적으로 제안, 논의할 지역 차원의 공론장 부재
+- 주민 개인이 공식적인 정책 건의를 진행하기에는 심리적·행정적 부담 있음
+- 마을 내 소통은 활발하나, 주민 의견이 객관적 데이터로 축적되지 않음
+- 행정을 설득할 데이터와 유사 정책 사례 탐색, 관리의 어려움
+- 반복되는 주민 수요가 정책으로 이어지지 못하고 단발성 의견에 그치는 구조 고착화
 
 ### 해결 아이디어
 
-- 주민 의견을 음성·텍스트로 쉽게 입력받고, 비슷한 의견들을 AI로 분류·클러스터링하여 하나의 ‘안건’으로 정제한다.
-- 안건 단위로 주민 공감도(좋아요, 댓글, 투표), 참고 자료, 타 지역 사례를 함께 축적해 정책 제안에 필요한 근거를 마련한다.
-- 의견 → 안건 → 정책 제안 → 실행까지의 전 과정을 타임라인으로 공개해 정책 흐름을 투명하게 보여주고, 정책 실행 현황에 대한 꾸준한 피드백을 제공한다.
+- 음성, 텍스트 기반의 간편한 주민 의견 입력 기능 제공
+- AI를 활용한 유사 의견 자동 클러스터링
+- 클러스터링된 의견을 하나의 정책 ‘안건’으로 정리
+- 안건 단위로 주민 공감도(좋아요·댓글·투표), 참고 자료, 타 지역 사례 모음
+- 정책 제안에 필요한 객관적 근거 데이터 확보
+- 의견 → 안건 → 정책 제안 → 실행의 전 과정을 타임라인로 제공
+- 정책 진행 상황 및 실행 결과에 대한 지속적인 피드백 제공
 
 ### 기대 효과
 
@@ -31,6 +42,8 @@
 - 연결성 : 개인의 의견을 공동의 안건과 정책으로 연결된다.
 - 투명성 : 정책 제안과 실행 과정을 주민에게 지속적으로 공유한다.
 
+<br>
+
 ## 주요 기능 및 사용 플로우
 
 ### 주민(일반 유저)
@@ -38,51 +51,104 @@
 1. 의견 제안
     - ‘제안하기’ 버튼을 눌러 채팅창을 활성화환다.
     - 텍스트 또는 음성 입력을 통해 일상적인 불편 또는 필요를 자유롭게 제안한다.
-      
-<img width="1920" height="1080" alt="옥천마루 최종 발표-의견제안" src="https://github.com/user-attachments/assets/0a87f91f-54bf-47df-b30e-15d7dfbd03fa" />
-<img width="1920" height="1080" alt="옥천마루 최종 발표-의견제안2" src="https://github.com/user-attachments/assets/e3574a0e-6e48-46b4-9b9b-3e4340a3c543" />
+
+ <div align="center">
+    <img src="https://github.com/user-attachments/assets/afe1d458-62fe-4ea0-8186-f1a3b75dcd37" alt="1-1" width="400"/>
+  &nbsp;&nbsp;&nbsp; 
+    <img src="https://github.com/user-attachments/assets/95fd1474-9d70-4af6-abed-ef254a82c6ba" alt="1-2" width="400"/>
+
+</div>
+ <div align="center">
+    <img src="https://github.com/user-attachments/assets/f1b0ad19-63ee-4ab1-9751-a743fca51c82" alt="1-3" width="400"/>
+  &nbsp;&nbsp;&nbsp; 
+    <img src="https://github.com/user-attachments/assets/f84dc660-cf28-4cba-b55a-86f0569c1dca" alt="1-4" width="400"/>
+</div>
+<br>
 
 2. 공감 및 상호작용
     - 다른 주민의 의견에 좋아요, 댓글을 표시한다.
-      
-<img width="1920" height="1080" alt="옥천마루-공감및상호작용" src="https://github.com/user-attachments/assets/9658962e-fccc-4086-88b9-83ec23814d14" />
+
+ <div align="center">
+    <img width="400" alt="2-1" src="https://github.com/user-attachments/assets/8cf71e59-0ca4-454d-8062-95c6f311609b" />
+</div>
+
+<br>
 
 3. 안건 확인 및 참여
     - 비슷한 의견이 모여 생성된 안건을 확인한다.
     - 참고 자료, 주민 의견, 타임라인 등을 확인한다.
     - 투표로 자신의 의사를 표현한다.
-      
-<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여" src="https://github.com/user-attachments/assets/04364da9-2898-4ca3-a32d-efd9f3a3bd9d" />
-<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여2" src="https://github.com/user-attachments/assets/5a4328b6-d7ba-44b6-9a94-a8ac208e6bfc" />
-<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여3" src="https://github.com/user-attachments/assets/ec0865d9-6275-42e2-83dc-339f12979f5b" />
 
+ <div align="center">
+    <img width="400" alt="3-1" src="https://github.com/user-attachments/assets/e4303b4e-0ca6-418f-b855-7277450f0a31" />
+     &nbsp;&nbsp;&nbsp;
+    <img width="400" alt="3-2" src="https://github.com/user-attachments/assets/463db35d-3996-4649-a5a4-6e9f9eb029ca" />
+
+ </div>
+ <div align="center">
+     <img width="400" alt="3-3" src="https://github.com/user-attachments/assets/3121e983-679f-40b0-97bc-7d46cb1ee025" />
+     &nbsp;&nbsp;&nbsp;
+    <img width="400" alt="3-4" src="https://github.com/user-attachments/assets/bbc71b5f-a530-48d9-9fd7-d1ab9637ee95" />
+ </div>
+ 
+<br>
 
 4. 정책 진행 상황 및 결과 확인
     - 안건이 정책으로 통과되어 실행되는 과정 또는 완료된 결과를 확인한다.
-      
-<img width="1920" height="1080" alt="옥천마루-정책 진행 상황 및 결과 확인" src="https://github.com/user-attachments/assets/baa62123-0337-4e5e-9107-59599101b24d" />
+
+  <div align="center">
+     <img width="400" alt="4-1" src="https://github.com/user-attachments/assets/066b249c-e1dc-4fa5-9aea-6dd1704b8d6b" />
+     &nbsp;&nbsp;&nbsp;
+     <img width="400" alt="4-2" src="https://github.com/user-attachments/assets/9b16c03e-866c-4c21-96cb-536a579a8e1a" />
+ </div>
+
+<br/>
+
+### 관리자
 
 
-### 관리자 웹 대시보드
+1. 대시보드
+  <div align="center">
+    <img width="800" alt="옥천마루 최종 발표" src="https://github.com/user-attachments/assets/f8ca36a3-17d6-47e8-843f-0076fd929174" />
+  </div>
+<br/><br/>
 
-<img width="1920" height="1002" alt="옥천마루 최종 발표" src="https://github.com/user-attachments/assets/f8ca36a3-17d6-47e8-843f-0076fd929174" />
+2. 주민 의견 관리
+    - AI 자동 클러스터링을 실행한다. (수동 실행 가능)
+  <div align="center">
+    <img width="800" alt="스크린샷 2025-12-15 오후 12 39 57" src="https://github.com/user-attachments/assets/34899a1d-9808-45cc-a416-e83597af319b" />
+  </div>    
 
-1. 주민 의견 관리
-    - AI 자동 클러스터링(수동 가능)
-<img width="1492" height="763" alt="스크린샷 2025-12-15 오후 12 39 57" src="https://github.com/user-attachments/assets/34899a1d-9808-45cc-a416-e83597af319b" />
+<br/><br/>
 
-2. 안건 관리
-    - 안건 생성 · 참고자료 업로드 · 타임라인 업데이트
-<img width="1480" height="755" alt="스크린샷 2025-12-15 오후 12 39 33" src="https://github.com/user-attachments/assets/8c93c434-1531-43a5-a656-a027a8cf64ca" />
+3. 안건 관리
+    - 중요도가 높은 클러스터를 선별하여 안건을 생성한다.
+    - 관련 참고자료를 함께 첨부한다.
+    - 안건의 진행 상황에 변동이 생기면 타임라인을 업데이트한다.
 
-3. 사용자 관리
-    - 사용자 조회 · 제재 · 관리자 권한 관리
+  <div align="center">
+    <img width="800" alt="스크린샷 2025-12-15 오후 12 39 33" src="https://github.com/user-attachments/assets/8c93c434-1531-43a5-a656-a027a8cf64ca" />
+  </div>
+
+<br/><br/>
+
+4. 사용자 관리
+    - 서비스 가입한 사용자를 조회 및 (필요한 경우) 제재한다.
+    - 관리자 권한을 관리한다.
+
+  <div align="center">
+    <img width="800" alt="스크린샷 2025-12-15 오후 7 03 34" src="https://github.com/user-attachments/assets/e3ea5e61-6f95-41ca-a17c-1fa8a55df253" />
+  </div>
+
+<br/>
 
 ## 데모 및 자료 링크
 
 - 배포 링크: https://ocmaru.com
 - 시연 영상: https://www.youtube.com/watch?v=I_FmlQDKaLA&feature=youtu.be
 - 발표 자료: https://drive.google.com/file/d/1ESu5QmNrhP2efFiaq4dIkC-Wadxkr2P6/view?usp=sharing
+
+<br/>
 
 ## 기술 스택
 
@@ -112,9 +178,13 @@
 - **Google Cloud Storage** - 파일 저장소
 - **Google Cloud Build** - CI/CD
 
+<br/>
+
 ## 서비스 아키텍처
 
 <img width="810" height="621" alt="스크린샷 2025-12-06 오후 3 53 56" src="https://github.com/user-attachments/assets/1012e850-4680-4ffd-a9de-996cf2ed8af5" />
+
+<br/>
 
 ## 코드 설치 및 실행 방법
 
@@ -190,8 +260,7 @@ docker run -d \
   pulppurism
 ```
 
-
-
+<br/>
 
 ## 팀 소개
 
@@ -203,6 +272,7 @@ docker run -d \
 | 장준석 | 백엔드 | 백엔드 개발 및 인프라 구축 |
 | 윤해리 | 프런트엔드 | 클라이언트 및 디자인 구현 |
 
+<br/>
 
 ## 협력기관, 참여 펠로우 멘토
 
@@ -216,12 +286,16 @@ docker run -d \
 - **Fellow**: 황민호 님 (옥천신문 Okinews)
 - **Mentor**: 김평안 님 (카카오 Kakao)
 
+<br/>
+
 ## 확장 방향
 
 - 주민 의견 태그(Tag) 도입
 - 디지털 소외 계층을 위한 레거시 채널(전화·문자) 연동 옴니채널 구축
 - 위치 기반(LBS) 지역 세분화 및 하이퍼로컬(Hyper-local) 서비스 적용
 - 생성형 AI(LLM) 기반 안건 작성 어시스턴트(Writing Assistant) 도입
+
+<br/>
 
 ## 저작권 및 라이선스
 
