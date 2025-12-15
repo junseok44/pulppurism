@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { getStatusLabel } from "@/lib/utils";
-import { Image as ImageIcon, Bookmark } from "lucide-react"; // Bookmark 아이콘 추가
+import { Image as ImageIcon, Bookmark, HelpCircle } from "lucide-react"; // Bookmark 아이콘 추가
 import { useState } from "react"; // useState 추가
 
 interface HomeAgendaCardProps {
@@ -8,9 +8,11 @@ interface HomeAgendaCardProps {
   description: string;
   imageUrl?: string | null;
   category: string;
+  categoryIcon?: string | null;
   status: string;
   bookmarkCount: number; // ✨ [추가]
   isBookmarked?: boolean; // ✨ [추가]
+
   onClick?: () => void;
 }
 
@@ -19,6 +21,7 @@ export default function HomeAgendaCard({
   description,
   imageUrl,
   category,
+  categoryIcon,
   status,
   bookmarkCount, // ✨
   isBookmarked, // ✨
@@ -58,12 +61,12 @@ export default function HomeAgendaCard({
             <ImageIcon className="w-12 h-12 opacity-50" />
           </div>
         )}
-        
+
         {/* 상태 배지 (좌측 상단) */}
         <div className="absolute top-3 left-3">
-            <Badge variant="secondary" className="bg-white/90 hover:bg-white text-gray-700 backdrop-blur-sm text-[10px] font-medium shadow-sm">
-                {getStatusLabel(status)}
-            </Badge>
+          <Badge variant="secondary" className="bg-white/90 hover:bg-white text-gray-700 backdrop-blur-sm text-[10px] font-medium shadow-sm">
+            {getStatusLabel(status)}
+          </Badge>
         </div>
 
         {/* ✨ [추가] 북마크 버튼 (우측 상단) ✨ */}
@@ -72,9 +75,8 @@ export default function HomeAgendaCard({
           className="absolute top-3 right-3 flex items-center gap-1.5 bg-ok_yellowtrns hover:bg-ok_yellowtrnslt backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow-sm transition-all z-10 group/btn"
         >
           <Bookmark
-            className={`w-3.5 h-3.5 transition-transform group-active/btn:scale-90 ${
-              marked ? "fill-ok_yellow text-ok_yellow" : "text-ok_yellow"
-            }`}
+            className={`w-3.5 h-3.5 transition-transform group-active/btn:scale-90 ${marked ? "fill-ok_yellow text-ok_yellow" : "text-ok_yellow"
+              }`}
           />
           <span className={`text-[10px] font-bold leading-none ${marked ? "text-white" : "text-white"}`}>
             {count}
@@ -87,6 +89,11 @@ export default function HomeAgendaCard({
         {/* 태그 (카테고리) */}
         <div className="flex items-center gap-1 mb-1">
           <Badge variant="outline" className="bg-white text-[12px] text-ok_txtgray1 border-gray-200 font-medium py-0.5">
+            {categoryIcon ? (
+              <span className="mr-1 text-xs leading-none">{categoryIcon}</span>
+            ) : (
+              <HelpCircle className="w-3 h-3 mr-1" />
+            )}
             {category}
           </Badge>
         </div>

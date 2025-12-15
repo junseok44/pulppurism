@@ -4,7 +4,7 @@ import OpinionCard from "@/components/OpinionCard";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -62,16 +62,16 @@ export default function AgendaOpinionsPage() {
     onMutate: async (isBookmarked: boolean) => {
       // Optimistic update: 즉시 UI 업데이트
       await queryClient.cancelQueries({ queryKey: [`/api/agendas/${agendaId}`] });
-      
+
       const previousAgenda = queryClient.getQueryData<AgendaWithCategory>([`/api/agendas/${agendaId}`]);
-      
+
       if (previousAgenda) {
         queryClient.setQueryData<AgendaWithCategory>([`/api/agendas/${agendaId}`], {
           ...previousAgenda,
           isBookmarked: !isBookmarked,
         });
       }
-      
+
       return { previousAgenda };
     },
     onError: (err, isBookmarked, context) => {
@@ -90,7 +90,7 @@ export default function AgendaOpinionsPage() {
       if (agendaId) {
         trackBookmark(agendaId, isBookmarked ? "unbookmark" : "bookmark");
       }
-      
+
       // 성공 시 쿼리 무효화하여 서버 데이터와 동기화
       queryClient.invalidateQueries({ queryKey: [`/api/agendas/${agendaId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/agendas/bookmarked"] });
@@ -130,7 +130,7 @@ export default function AgendaOpinionsPage() {
       if (agendaId) {
         trackAgendaComment(agendaId);
       }
-      
+
       setComment("");
       toast({
         title: "의견이 제출되었습니다",
@@ -182,7 +182,7 @@ export default function AgendaOpinionsPage() {
       setShowLoginDialog(true);
     }
   };
-
+  //여기부터 return
   if (!match || !agendaId) {
     return (
       <div className="min-h-screen bg-background">
@@ -235,17 +235,48 @@ export default function AgendaOpinionsPage() {
       <div className="flex-1 overflow-y-auto pb-32 md:pb-20">
         <div className="max-w-5xl mx-auto px-4 py-6">
           <div className="space-y-6">
-            <AgendaHeader
-              agenda={agenda}
-              user={user ?? undefined}
-              onBookmarkClick={handleBookmarkClick}
-              bookmarkLoading={bookmarkMutation.isPending}
-              showBackButton={true}
-            />
+            <div className="relative w-full h-[500px] group">
+              <img
+                src={
+                  agenda.imageUrl ||
+                  "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop"
+                }
+                alt="안건 대표 이미지"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='400'%3E%3Crect width='1200' height='400' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%239ca3af'%3E안건 이미지%3C/text%3E%3C/svg%3E";
+                }}
+              />
+              <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-gradient-to-b from-transparent to-black/90 pointer-events-none" />
+
+              {/* 🚀 [추가] 뒤로가기 버튼 (이미지 좌측 상단) */}
+              <div className="absolute top-6 left-4 md:left-8 z-20">
+                <Button
+                  variant="ghost"
+                  className="text-white hover:bg-white/20 hover:text-white pl-2 pr-4 h-10 rounded-full bg-black/20 backdrop-blur-sm"
+                  onClick={() => window.history.back()}
+                >
+                  <ArrowLeft className="w-5 h-5 mr-1" />
+                  뒤로가기
+                </Button>
+              </div>
+
+              <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 z-10 flex flex-col items-start justify-end">
+                <div className="w-full text-white [&_*]:text-white [&_.text-muted-foreground]:text-white/80 [&_.bg-background]:bg-transparent [&_.border]:border-white/30 text-left">
+                  <AgendaHeader
+                    agenda={agenda}
+                    user={user ? { isAdmin: user.isAdmin } : undefined}
+                    onBookmarkClick={handleBookmarkClick}
+                    bookmarkLoading={bookmarkMutation.isPending}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-6">
               <h2 className="text-xl font-semibold">주민의견</h2>
-              
+
               {opinionsLoading ? (
                 <div className="flex justify-center py-10">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />

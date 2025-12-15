@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Bookmark, TrendingUp, HelpCircle } from "lucide-react";
+import { Vote, Bookmark, TrendingUp, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getStatusBadgeClass, getStatusLabel } from "@/lib/utils";
 
@@ -77,7 +77,7 @@ export default function AgendaCard({
                   {title}
                 </h3>
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0 bg-white/50 px-1.5 py-0.5 rounded-md">
-                  <MessageSquare className="w-3 h-3" />
+                  <Vote className="w-3 h-3" />
                   <span>{commentCount}</span>
                 </span>
               </div>
@@ -112,7 +112,7 @@ export default function AgendaCard({
           </div>
 
           {/* 2-B. 북마크 영역 */}
-          <div className="flex flex-col items-center justify-center pl-2 ml-1 border-l border-gray-100/50">
+          <div className="flex flex-col items-center justify-center pl-2 ml-1">
             <Button
               size="icon"
               variant="ghost"
@@ -120,9 +120,9 @@ export default function AgendaCard({
                 e.stopPropagation(); // 카드 클릭 방지
                 onBookmarkClick?.(e); // 🚀 부모에게 이벤트 전달 (부모가 로그인 체크함)
               }}
-              className="h-9 w-9 hover:bg-white transition-colors rounded-full"
+              className="h-9 w-9 transition-colors rounded-full group"
             >
-              <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-ok_yellow text-ok_yellow" : "text-gray-300"}`} />
+              <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-ok_sub1 text-ok_sub1" : "text-ok_txtgray0 group-hover:text-ok_sub1"}`} />
             </Button>
             <span className="text-[10px] font-medium text-gray-400 mt-[-2px]">
               {bookmarkCount}

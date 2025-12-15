@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Bookmark } from "lucide-react";
+import { Vote, Bookmark, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { getStatusLabel, getStatusBadgeClass } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser"; // 👈 추가
@@ -12,6 +12,7 @@ interface OkAgendaCardProps {
   okinews: boolean;
   id: string;
   category: string;
+  categoryIcon?: string | null;
   commentCount: number;
   bookmarkCount: number;
   isBookmarked?: boolean;
@@ -26,8 +27,8 @@ export default function OkAgendaCard({
   status,
   content,
   okinews,
-  id,
   category,
+  categoryIcon,
   commentCount,
   bookmarkCount,
   isBookmarked,
@@ -94,8 +95,13 @@ export default function OkAgendaCard({
           <div className="w-full flex justify-between items-start mb-4">
             <Badge
               variant="secondary"
-              className="font-medium bg-white/20 text-white hover:bg-white/30 border-0 text-[10px] md:text-xs backdrop-blur-sm"
+              className="font-medium bg-ok_blacktrns hover:text-ok_sub1 text-white/50 hover:bg-white border-0 text-[10px] md:text-xs backdrop-blur-sm"
             >
+              {categoryIcon ? (
+                    <span className="mr-1 text-xs leading-none">{categoryIcon}</span>
+                  ) : (
+                    <HelpCircle className="w-3 h-3 mr-1" />
+                  )}
               {category}
             </Badge>
 
@@ -142,7 +148,7 @@ export default function OkAgendaCard({
                 variant="secondary"
                 className="bg-black/10 text-ok_sand border border-ok_sand backdrop-blur-md gap-1 px-2 py-0.5 h-[22px]"
               >
-                <MessageSquare className="w-3 h-3 opacity-90" />
+                <Vote className="w-3 h-3 opacity-90" />
                 <span className="text-[10px] md:text-[11px] font-medium leading-none mt-[1px]">
                   {commentCount}
                 </span>

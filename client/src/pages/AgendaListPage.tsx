@@ -242,6 +242,7 @@ export default function AgendaListPage() {
                     category={agenda.category?.name || "카테고리 없음"}
                     status={agenda.status}
                     content={agenda.description}
+                    categoryIcon={agenda.category?.icon || null}
                     commentCount={agenda.voteCount}
                     bookmarkCount={agenda.bookmarkCount || 0}
                     isBookmarked={agenda.isBookmarked || false}
