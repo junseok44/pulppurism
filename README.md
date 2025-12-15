@@ -38,24 +38,43 @@
 1. 의견 제안
     - ‘제안하기’ 버튼을 눌러 채팅창을 활성화환다.
     - 텍스트 또는 음성 입력을 통해 일상적인 불편 또는 필요를 자유롭게 제안한다.
+      
+<img width="1920" height="1080" alt="옥천마루 최종 발표-의견제안" src="https://github.com/user-attachments/assets/0a87f91f-54bf-47df-b30e-15d7dfbd03fa" />
+<img width="1920" height="1080" alt="옥천마루 최종 발표-의견제안2" src="https://github.com/user-attachments/assets/e3574a0e-6e48-46b4-9b9b-3e4340a3c543" />
 
 2. 공감 및 상호작용
     - 다른 주민의 의견에 좋아요, 댓글을 표시한다.
+      
+<img width="1920" height="1080" alt="옥천마루-공감및상호작용" src="https://github.com/user-attachments/assets/9658962e-fccc-4086-88b9-83ec23814d14" />
 
 3. 안건 확인 및 참여
     - 비슷한 의견이 모여 생성된 안건을 확인한다.
     - 참고 자료, 주민 의견, 타임라인 등을 확인한다.
     - 투표로 자신의 의사를 표현한다.
+      
+<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여" src="https://github.com/user-attachments/assets/04364da9-2898-4ca3-a32d-efd9f3a3bd9d" />
+<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여2" src="https://github.com/user-attachments/assets/5a4328b6-d7ba-44b6-9a94-a8ac208e6bfc" />
+<img width="1920" height="1080" alt="옥천마루-안건 확인 및 참여3" src="https://github.com/user-attachments/assets/ec0865d9-6275-42e2-83dc-339f12979f5b" />
+
 
 4. 정책 진행 상황 및 결과 확인
     - 안건이 정책으로 통과되어 실행되는 과정 또는 완료된 결과를 확인한다.
+      
+<img width="1920" height="1080" alt="옥천마루-정책 진행 상황 및 결과 확인" src="https://github.com/user-attachments/assets/baa62123-0337-4e5e-9107-59599101b24d" />
 
-### 관리자
+
+### 관리자 웹 대시보드
+
+<img width="1920" height="1002" alt="옥천마루 최종 발표" src="https://github.com/user-attachments/assets/f8ca36a3-17d6-47e8-843f-0076fd929174" />
 
 1. 주민 의견 관리
     - AI 자동 클러스터링(수동 가능)
+<img width="1492" height="763" alt="스크린샷 2025-12-15 오후 12 39 57" src="https://github.com/user-attachments/assets/34899a1d-9808-45cc-a416-e83597af319b" />
+
 2. 안건 관리
     - 안건 생성 · 참고자료 업로드 · 타임라인 업데이트
+<img width="1480" height="755" alt="스크린샷 2025-12-15 오후 12 39 33" src="https://github.com/user-attachments/assets/8c93c434-1531-43a5-a656-a027a8cf64ca" />
+
 3. 사용자 관리
     - 사용자 조회 · 제재 · 관리자 권한 관리
 
@@ -63,7 +82,7 @@
 
 - 배포 링크: https://ocmaru.com
 - 시연 영상: https://www.youtube.com/watch?v=I_FmlQDKaLA&feature=youtu.be
-- 발표 자료: 
+- 발표 자료: https://drive.google.com/file/d/1ESu5QmNrhP2efFiaq4dIkC-Wadxkr2P6/view?usp=sharing
 
 ## 기술 스택
 
@@ -95,7 +114,7 @@
 
 ## 서비스 아키텍처
 
-
+<img width="810" height="621" alt="스크린샷 2025-12-06 오후 3 53 56" src="https://github.com/user-attachments/assets/1012e850-4680-4ffd-a9de-996cf2ed8af5" />
 
 ## 코드 설치 및 실행 방법
 
