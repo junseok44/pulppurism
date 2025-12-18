@@ -148,7 +148,7 @@ export default function HomePage() {
   const { title: boxDescription, data: spotlightAgendas } = spotlightData;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 flex flex-col">
       <Header />
 
       {/* 이용안내 배너 */}
@@ -172,7 +172,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <main className="w-full mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[70vh] text-center">
+      <main className="w-full mx-auto px-4 py-8 flex flex-col items-center justify-center flex-1 text-center">
 
         <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -337,38 +337,27 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Tech for Impact / Kakao Impact 보증 푸터 (최소한의 각주 느낌으로) */}
-      <footer className="w-full border-t border-gray-100/60 mt-8">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col items-center justify-center gap-1 text-[10px] md:text-[11px] text-gray-400">
+      {/* Tech for Impact / Kakao Impact 보증 푸터 (참고 가이드 스타일) */}
+      <footer className="w-full border-t border-gray-100/80 mt-8">
+        <div className="max-w-4xl mx-auto px-4 py-5 flex flex-col items-center justify-center gap-2 text-[10px] md:text-[11px] text-gray-400">
+          {/* 합쳐진 kakao | TECH FOR IMPACT 로고 */}
+          <a
+            href="https://techforimpact.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center"
+            aria-label="Tech for Impact 홈페이지로 이동"
+          >
+            <img
+              src="/logo.png"
+              alt="kakao | TECH FOR IMPACT"
+              className="h-4 md:h-5 object-contain"
+            />
+          </a>
+
           <p className="leading-relaxed text-center">
             본 서비스는 카카오임팩트 재단의 지원과 테크포임팩트 커뮤니티의 기여로 개발되었습니다.
           </p>
-
-          <div className="flex items-center gap-3 opacity-80">
-            {/* Tech for Impact 로고 – 클릭 시 홈페이지로 이동 */}
-            <a
-              href="https://techforimpact.io/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center"
-              aria-label="Tech for Impact 홈페이지로 이동"
-            >
-              <img
-                src="/logo_techforimpact.svg"
-                alt="Tech for Impact"
-                className="h-4 md:h-5 object-contain"
-              />
-            </a>
-
-            {/* Kakao Impact 로고 – 링크 없음 */}
-            <div className="inline-flex items-center" aria-label="Kakao Impact">
-              <img
-                src="/logo_kakaoimpact.svg"
-                alt="Kakao Impact"
-                className="h-4 md:h-5 object-contain"
-              />
-            </div>
-          </div>
         </div>
       </footer>
     </div>
